@@ -3,10 +3,16 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic();
 
-const message = await client.messages.create({
-  model: "claude-opus-4-7",
+const response = await client.messages.create({
+  model: "claude-haiku-4-5",
   max_tokens: 1024,
-  messages: [{ role: "user", content: "안녕" }],
+  messages: [
+    { role: "user", content: "안녕! 짧게 한국어로 인사해줘." },
+  ],
 });
 
-console.log(message.content[0].text);
+for (const block of response.content) {
+  if (block.type === "text") {
+    console.log(block.text);
+  }
+}
