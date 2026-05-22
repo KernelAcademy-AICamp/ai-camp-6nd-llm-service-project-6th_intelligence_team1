@@ -36,6 +36,9 @@ const outputExample = readFileSync(
 // 3. 프로젝트 유형 (지금은 하드코딩, 나중에 인자로 받음)
 const projectType = "brand_awareness"; // "product_promotion" | "brand_awareness"
 
+// 최종 추천할 트렌드 개수 (예시 단계 1개, 최종 단계 3개)
+const SELECT_COUNT = 1;
+
 // 4. 시스템 컨텐츠 구성 — 안정적 컨텐츠 끝에 cache_control 두면
 //    그 앞 모든 system 블록 + tools 까지 함께 캐싱됨 (90% 비용 절감)
 const systemContent = [
@@ -62,12 +65,16 @@ const userMessage = `다음 입력 데이터로 매칭 평가를 수행하세요
 ## 프로젝트 유형
 ${projectType}
 
+## 선택 개수
+최종 추천할 트렌드 개수: **${SELECT_COUNT}개**
+(이 수만큼만 최종 \`matches\` 배열에 포함, 나머지는 제외)
+
 ## 브랜드 분석 결과
 \`\`\`json
 ${JSON.stringify(brandAnalysis, null, 2)}
 \`\`\`
 
-## 트렌드 분석 결과
+## 트렌드 분석 결과 (후보 ${trendAnalysis.data.trends.length}개 중 상위 ${SELECT_COUNT}개 선택)
 \`\`\`json
 ${JSON.stringify(trendAnalysis, null, 2)}
 \`\`\``;

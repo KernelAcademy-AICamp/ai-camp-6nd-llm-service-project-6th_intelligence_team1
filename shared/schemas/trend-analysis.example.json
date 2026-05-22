@@ -26,13 +26,6 @@
             "source": "tiktok",
             "url": "https://example.com/post1",
             "summary": "#Y2Kmakeup 챌린지 누적 1.2M 조회"
-          },
-          {
-            "type": "article",
-            "source": "Vogue Korea",
-            "title": "2026년 봄, Y2K가 돌아왔다",
-            "published_at": "2026-04-15",
-            "url": "https://example.com/article1"
           }
         ],
         "lifecycle_stage": "growth",
@@ -67,6 +60,122 @@
         "lifecycle_stage": "mature",
         "estimated_duration_months": 12,
         "associated_brands": ["라네즈", "이니스프리"]
+      },
+      {
+        "trend_id": "T-2026-05-003",
+        "name": "비건 뷰티 인증 확산",
+        "category": "스킨케어",
+        "summary": "동물성 원료·동물 실험 없는 비건 인증 화장품 수요 급증. 지속가능성과 윤리적 소비 가치관이 결합된 흐름.",
+        "key_attributes": ["윤리적 소비", "지속가능성", "동물 보호", "투명성", "건강"],
+        "audience_profile": {
+          "primary_demographics": ["20-35세 여성", "환경 의식 소비자"],
+          "psychographics": ["지속가능성 가치 중시", "성분 라벨 꼼꼼히 확인", "리뷰·인증 신뢰"]
+        },
+        "popularity_metrics": {
+          "social_volume_trend": "rising",
+          "search_growth_rate": "+170%",
+          "measurement_period": "최근 12개월",
+          "key_platforms": ["instagram", "youtube", "naver_blog"]
+        },
+        "supporting_evidence": [
+          {
+            "type": "article",
+            "source": "헬스조선",
+            "title": "비건 인증 화장품, 작년 대비 매출 3배 성장",
+            "published_at": "2026-04-02",
+            "url": "https://example.com/article3"
+          }
+        ],
+        "lifecycle_stage": "growth",
+        "estimated_duration_months": 24,
+        "associated_brands": ["멜릭서", "디어달리아"]
+      },
+      {
+        "trend_id": "T-2026-05-004",
+        "name": "라이브 커머스 뷰티 세일",
+        "category": "유통/마케팅",
+        "summary": "네이버 쇼핑라이브·카카오쇼핑톡 등 라이브 커머스에서 뷰티 카테고리 폭발 성장. 실시간 사용감 시연 + 한정 할인 조합.",
+        "key_attributes": ["실시간", "할인", "시연", "엔터테인먼트", "구매 전환"],
+        "audience_profile": {
+          "primary_demographics": ["25-45세 여성", "온라인 쇼핑 친숙층"],
+          "psychographics": ["가성비 추구", "즉시성 선호", "리뷰 의존도 높음"]
+        },
+        "popularity_metrics": {
+          "social_volume_trend": "stable_high",
+          "search_growth_rate": "+45%",
+          "measurement_period": "최근 6개월",
+          "key_platforms": ["naver_shopping_live", "kakao_shopping"]
+        },
+        "supporting_evidence": [
+          {
+            "type": "article",
+            "source": "전자신문",
+            "title": "라이브 커머스 뷰티 카테고리 거래액 1조 돌파",
+            "published_at": "2026-03-15",
+            "url": "https://example.com/article4"
+          }
+        ],
+        "lifecycle_stage": "mature",
+        "estimated_duration_months": 18,
+        "associated_brands": ["AHC", "닥터지"]
+      },
+      {
+        "trend_id": "T-2026-05-005",
+        "name": "수면 케어·슬립 뷰티",
+        "category": "스킨케어",
+        "summary": "수면 부족 사회 문제와 결합해 '잠자는 동안 회복' 컨셉 제품 확산. 슬리핑 마스크, 멜라토닌 함유 크림, 베드사이드 루틴 등.",
+        "key_attributes": ["회복", "야간", "스트레스 케어", "웰니스", "셀프케어"],
+        "audience_profile": {
+          "primary_demographics": ["28-45세 여성", "직장인·맞벌이"],
+          "psychographics": ["만성 피로", "수면 질 관심", "셀프케어 시간 부족"]
+        },
+        "popularity_metrics": {
+          "social_volume_trend": "rising",
+          "search_growth_rate": "+220%",
+          "measurement_period": "최근 9개월",
+          "key_platforms": ["instagram", "youtube"]
+        },
+        "supporting_evidence": [
+          {
+            "type": "article",
+            "source": "보그 코리아",
+            "title": "잠자는 동안 피부가 답한다: 슬립 뷰티의 부상",
+            "published_at": "2026-02-10",
+            "url": "https://example.com/article5"
+          }
+        ],
+        "lifecycle_stage": "growth",
+        "estimated_duration_months": 18,
+        "associated_brands": ["에스티로더", "키엘"]
+      },
+      {
+        "trend_id": "T-2026-05-006",
+        "name": "셀럽 협업 한정판 컬러 메이크업",
+        "category": "메이크업",
+        "summary": "K-팝 아이돌·배우와 협업한 한정판 립스틱·아이섀도 팔레트. 팬덤 구매력 + 콜렉터블 가치 결합.",
+        "key_attributes": ["셀럽", "한정판", "팬덤", "콜렉터블", "고가"],
+        "audience_profile": {
+          "primary_demographics": ["15-30세 여성", "팬덤 활동층"],
+          "psychographics": ["셀럽 추종", "수집 욕구", "프리미엄 가격 수용"]
+        },
+        "popularity_metrics": {
+          "social_volume_trend": "rising",
+          "search_growth_rate": "+95%",
+          "measurement_period": "최근 6개월",
+          "key_platforms": ["instagram", "tiktok", "twitter"]
+        },
+        "supporting_evidence": [
+          {
+            "type": "article",
+            "source": "헤럴드POP",
+            "title": "K-팝 협업 메이크업, 출시 3시간 만에 완판",
+            "published_at": "2026-04-22",
+            "url": "https://example.com/article6"
+          }
+        ],
+        "lifecycle_stage": "growth",
+        "estimated_duration_months": 12,
+        "associated_brands": ["입생로랑", "MAC"]
       }
     ]
   }
