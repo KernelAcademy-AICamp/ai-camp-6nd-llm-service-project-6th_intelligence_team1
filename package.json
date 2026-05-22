@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "hello": "node hello.js",
-    "chat": "node chat.js"
+    "hello": "node examples/hello.js",
+    "chat": "node examples/chat.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.1",
