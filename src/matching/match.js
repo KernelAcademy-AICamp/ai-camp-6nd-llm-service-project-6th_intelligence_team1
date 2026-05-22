@@ -1,8 +1,10 @@
 import "dotenv/config";
 import Anthropic from "@anthropic-ai/sdk";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { MatchResultSchema } from "./schemas.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, "../..");
@@ -34,7 +36,27 @@ const outputExample = readFileSync(
 // 3. 프로젝트 유형 (지금은 하드코딩, 나중에 인자로 받음)
 const projectType = "brand_awareness"; // "product_promotion" | "brand_awareness"
 
-// 4. 사용자 메시지 구성
+// 4. 시스템 컨텐츠 구성 — 안정적 컨텐츠 끝에 cache_control 두면
+//    그 앞 모든 system 블록 + tools 까지 함께 캐싱됨 (90% 비용 절감)
+const systemContent = [
+  {
+    type: "text",
+    text: systemPrompt,
+  },
+  {
+    type: "text",
+    text: `## 출력 JSON 형식 (반드시 이 구조 그대로 사용)
+
+\`\`\`json
+${outputExample}
+\`\`\`
+
+위 예시와 동일한 키 구조의 JSON 하나만 출력하세요. 코드 블록 표시(\`\`\`)나 부가 설명 없이 순수 JSON만.`,
+    cache_control: { type: "ephemeral" },
+  },
+];
+
+// 5. 사용자 메시지 — 매 호출마다 바뀌는 변동 컨텐츠만
 const userMessage = `다음 입력 데이터로 매칭 평가를 수행하세요.
 
 ## 프로젝트 유형
@@ -48,14 +70,7 @@ ${JSON.stringify(brandAnalysis, null, 2)}
 ## 트렌드 분석 결과
 \`\`\`json
 ${JSON.stringify(trendAnalysis, null, 2)}
-\`\`\`
-
-## 출력해야 할 JSON 형식 (이 구조를 정확히 따르세요)
-\`\`\`json
-${outputExample}
-\`\`\`
-
-위 예시와 동일한 키 구조를 사용해 JSON 하나만 출력하세요. 코드 블록 표시(\`\`\`)나 부가 설명 없이 JSON만.`;
+\`\`\``;
 
 // 5. Claude API 호출
 const client = new Anthropic();
@@ -63,35 +78,24 @@ const client = new Anthropic();
 console.log("매칭 평가 시작...\n");
 const startTime = Date.now();
 
-const response = await client.messages.create({
+const response = await client.messages.parse({
   model: "claude-haiku-4-5",
   max_tokens: 8192,
-  system: systemPrompt,
+  system: systemContent,
   messages: [{ role: "user", content: userMessage }],
+  output_config: {
+    format: zodOutputFormat(MatchResultSchema),
+  },
 });
 
 const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
-// 6. 응답에서 텍스트 추출
-const responseText =
-  response.content.find((b) => b.type === "text")?.text ?? "";
-
-// 7. JSON 파싱 (혹시 markdown 코드 블록으로 감싸져 있을 수 있어 안전 처리)
-const jsonText = responseText
-  .replace(/^```json\s*/, "")
-  .replace(/^```\s*/, "")
-  .replace(/```\s*$/, "")
-  .trim();
-
-let matchResult;
-try {
-  matchResult = JSON.parse(jsonText);
-} catch (e) {
-  console.error("❌ JSON 파싱 실패\n");
+// 6. 스키마로 자동 검증된 결과 (parsed_output)
+const matchResult = response.parsed_output;
+if (!matchResult) {
+  console.error("❌ 스키마 검증 실패");
   console.error("--- 응답 원문 ---");
-  console.error(responseText);
-  console.error("--- 에러 ---");
-  console.error(e.message);
+  console.error(response.content.find((b) => b.type === "text")?.text ?? "");
   process.exit(1);
 }
 
@@ -105,17 +109,28 @@ mkdirSync(outputDir, { recursive: true });
 const outputPath = resolve(outputDir, "match-result.json");
 writeFileSync(outputPath, JSON.stringify(matchResult, null, 2), "utf-8");
 
-// 10. 메타 정보 (비용/소요시간)
+// 10. 메타 정보 (비용/소요시간 + 캐시 통계)
+const usage = response.usage;
+const cacheWrite = usage.cache_creation_input_tokens ?? 0;
+const cacheRead = usage.cache_read_input_tokens ?? 0;
+
+// Haiku 4.5 가격 ($/1M tokens): input $1, output $5
+// 캐시 쓰기 = input × 1.25, 캐시 읽기 = input × 0.1
 const cost =
-  (response.usage.input_tokens * 1 + response.usage.output_tokens * 5) /
+  (usage.input_tokens * 1 +
+    cacheWrite * 1.25 +
+    cacheRead * 0.1 +
+    usage.output_tokens * 5) /
   1_000_000;
 
 console.log("\n=== 메타 ===");
-console.log(`모델       : ${response.model}`);
-console.log(`소요 시간  : ${elapsed}s`);
-console.log(`입력 토큰  : ${response.usage.input_tokens}`);
-console.log(`출력 토큰  : ${response.usage.output_tokens}`);
+console.log(`모델          : ${response.model}`);
+console.log(`소요 시간     : ${elapsed}s`);
+console.log(`입력 토큰     : ${usage.input_tokens}  (비캐시)`);
+console.log(`캐시 쓰기     : ${cacheWrite}  (이번에 캐시에 저장됨, 1.25x 비용)`);
+console.log(`캐시 읽기     : ${cacheRead}  (캐시에서 가져옴, 0.1x 비용)`);
+console.log(`출력 토큰     : ${usage.output_tokens}`);
 console.log(
-  `예상 비용  : $${cost.toFixed(6)} (≈ ${(cost * 1300).toFixed(2)}원)`,
+  `예상 비용     : $${cost.toFixed(6)} (≈ ${(cost * 1300).toFixed(2)}원)`,
 );
-console.log(`결과 저장  : ${outputPath}`);
+console.log(`결과 저장     : ${outputPath}`);
