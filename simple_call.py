@@ -5,7 +5,7 @@ import anthropic
 
 client = anthropic.Anthropic()
 
-MODEL = "claude-opus-4-5"
+MODEL = "claude-haiku-4-5"
 SYSTEM = "당신은 친절하고 도움이 되는 한국어 AI 어시스턴트입니다."
 
 messages = []

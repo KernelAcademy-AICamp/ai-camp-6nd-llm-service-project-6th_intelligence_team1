@@ -17,7 +17,7 @@ while True:
     messages.append({"role": "user", "content": user_input})
 
     response = client.messages.create(
-        model="claude-opus-4-7",
+        model="claude-haiku-4-5",
         max_tokens=1024,
         messages=messages,
     )
