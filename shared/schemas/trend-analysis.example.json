@@ -1,0 +1,73 @@
+{
+  "schema_version": "0.1",
+  "generated_at": "2026-05-22T14:35:00+09:00",
+  "status": "success",
+  "data": {
+    "trends": [
+      {
+        "trend_id": "T-2026-05-001",
+        "name": "Y2K 메이크업 부활",
+        "category": "메이크업",
+        "summary": "2000년대 초반 메이크업 스타일(글로시 립, 메탈릭 아이섀도, 블루 라이너 등)이 MZ 사이에서 재유행. 향수 마케팅과 결합되어 SNS 챌린지화.",
+        "key_attributes": ["복고", "글리터", "강렬한 컬러", "유머러스", "셀프 표현"],
+        "audience_profile": {
+          "primary_demographics": ["18-28세 여성", "Z세대 후반-밀레니얼 초반"],
+          "psychographics": ["트렌드 민감", "셀카·SNS 활발", "복고 향수"]
+        },
+        "popularity_metrics": {
+          "social_volume_trend": "rising",
+          "search_growth_rate": "+340%",
+          "measurement_period": "최근 3개월",
+          "key_platforms": ["tiktok", "instagram_reels"]
+        },
+        "supporting_evidence": [
+          {
+            "type": "social_post",
+            "source": "tiktok",
+            "url": "https://example.com/post1",
+            "summary": "#Y2Kmakeup 챌린지 누적 1.2M 조회"
+          },
+          {
+            "type": "article",
+            "source": "Vogue Korea",
+            "title": "2026년 봄, Y2K가 돌아왔다",
+            "published_at": "2026-04-15",
+            "url": "https://example.com/article1"
+          }
+        ],
+        "lifecycle_stage": "growth",
+        "estimated_duration_months": 6,
+        "associated_brands": ["MAC", "NARS"]
+      },
+      {
+        "trend_id": "T-2026-05-002",
+        "name": "스킨 미니멀리즘",
+        "category": "스킨케어",
+        "summary": "복잡한 10단계 루틴 대신 3-5단계 간소화. '덜어내기' 철학과 바쁜 일상 트렌드 결합. 멀티 기능 제품 선호.",
+        "key_attributes": ["간소화", "본질", "효율", "지속가능", "성분 투명성"],
+        "audience_profile": {
+          "primary_demographics": ["25-40세 여성", "도시 직장인"],
+          "psychographics": ["바쁜 라이프스타일", "성분 신뢰 중시", "장기 효능 추구"]
+        },
+        "popularity_metrics": {
+          "social_volume_trend": "stable_high",
+          "search_growth_rate": "+85%",
+          "measurement_period": "최근 6개월",
+          "key_platforms": ["instagram", "youtube", "naver_blog"]
+        },
+        "supporting_evidence": [
+          {
+            "type": "article",
+            "source": "올리브영 매거진",
+            "title": "스킨 다이어트, 비우는 것이 답이다",
+            "published_at": "2026-03-20",
+            "url": "https://example.com/article2"
+          }
+        ],
+        "lifecycle_stage": "mature",
+        "estimated_duration_months": 12,
+        "associated_brands": ["라네즈", "이니스프리"]
+      }
+    ]
+  }
+}

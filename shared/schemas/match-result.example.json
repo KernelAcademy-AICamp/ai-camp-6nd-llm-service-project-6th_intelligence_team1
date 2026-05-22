@@ -1,0 +1,91 @@
+{
+  "schema_version": "0.1",
+  "generated_at": "2026-05-22T14:40:00+09:00",
+  "status": "success",
+  "data": {
+    "brand_ref": "글로우랩",
+    "project_type": "brand_awareness",
+    "matches": [
+      {
+        "trend_id": "T-2026-05-002",
+        "trend_name": "스킨 미니멀리즘",
+        "match_score": 92,
+        "score_breakdown": {
+          "audience_fit": 95,
+          "tone_alignment": 95,
+          "media_compatibility": 90,
+          "executability": 90,
+          "freshness": 85
+        },
+        "rationale": "글로우랩의 '자연주의 + 임상 근거' 포지션과 '본질에 집중' 트렌드 정신이 완벽히 일치. 타겟 연령(20-30 여성)과 트렌드 향유층(25-40)이 강하게 겹침. 미니멀 비주얼 스타일도 호환 강함.",
+        "suggested_angles": [
+          {
+            "angle": "3-스텝 루틴 가이드",
+            "description": "기존 5-7개 제품 라인업을 '아침 3단계 / 저녁 3단계'로 큐레이션. 인스타 카드뉴스 시리즈로 노출.",
+            "primary_media": "instagram",
+            "estimated_effort": "low"
+          },
+          {
+            "angle": "성분 투명성 캠페인",
+            "description": "각 제품의 '필수 vs 비필수' 성분 분류 영상. 미니멀리즘과 신뢰의 시너지.",
+            "primary_media": "youtube",
+            "estimated_effort": "medium"
+          }
+        ],
+        "risks": [
+          {
+            "type": "category_overlap",
+            "description": "이미 라네즈/이니스프리가 비슷한 메시지 진행 중. 차별화 포인트 필요.",
+            "severity": "medium"
+          }
+        ],
+        "confidence": "high",
+        "priority": 1
+      },
+      {
+        "trend_id": "T-2026-05-001",
+        "trend_name": "Y2K 메이크업 부활",
+        "match_score": 42,
+        "score_breakdown": {
+          "audience_fit": 70,
+          "tone_alignment": 20,
+          "media_compatibility": 60,
+          "executability": 50,
+          "freshness": 80
+        },
+        "rationale": "타겟 연령은 일부 겹치지만, '강렬한 컬러·유머러스' 무드가 글로우랩의 '차분한·신뢰감' 톤과 강하게 충돌. 또한 글로우랩은 스킨케어 중심이라 메이크업 트렌드 직접 활용 어려움.",
+        "suggested_angles": [
+          {
+            "angle": "Y2K 후 진정 케어",
+            "description": "강한 메이크업 후 피부 진정에 글로우랩 제품을 추천하는 우회 활용. 직접 적용보다 보조 포지션.",
+            "primary_media": "instagram",
+            "estimated_effort": "medium"
+          }
+        ],
+        "risks": [
+          {
+            "type": "brand_dissonance",
+            "description": "직접 활용 시 브랜드 톤 손상 우려. 우회 활용도 어색할 수 있음.",
+            "severity": "high"
+          },
+          {
+            "type": "category_mismatch",
+            "description": "스킨케어 브랜드가 메이크업 트렌드를 다루는 것 자체에 한계.",
+            "severity": "high"
+          }
+        ],
+        "confidence": "medium",
+        "priority": 2
+      }
+    ],
+    "summary": {
+      "primary_recommendation": "트렌드 '스킨 미니멀리즘'을 주력 매칭으로 채택. 글로우랩의 정체성과 시너지 강함.",
+      "secondary_consideration": "Y2K 메이크업은 직접 매칭 부적합. 활용한다면 '진정 케어' 우회 각도만 가능.",
+      "overall_confidence": "high",
+      "next_steps": [
+        "스킨 미니멀리즘 기반 '3-스텝 루틴' 캠페인 컨셉을 작성가에게 전달",
+        "라네즈·이니스프리 차별화 포인트 추가 리서치 필요"
+      ]
+    }
+  }
+}

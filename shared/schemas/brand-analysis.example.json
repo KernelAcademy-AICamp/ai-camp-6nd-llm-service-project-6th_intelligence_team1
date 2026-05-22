@@ -1,0 +1,49 @@
+{
+  "schema_version": "0.1",
+  "generated_at": "2026-05-22T14:30:00+09:00",
+  "status": "success",
+  "data": {
+    "brand_name": "글로우랩",
+    "brand_summary": "민감성 피부를 위한 자연주의 스킨케어 브랜드. 임상 시험 기반 효능과 클린 뷰티 컨셉을 결합해 MZ 여성 사이에서 입소문 중.",
+    "target_audience": {
+      "primary": {
+        "age_range": "20-30",
+        "gender": "여성",
+        "psychographics": [
+          "민감성 피부 고민",
+          "성분에 민감",
+          "지속가능성 가치 중시"
+        ],
+        "lifestyle": ["미니멀리스트", "도시 직장인", "SNS 활발"]
+      }
+    },
+    "tone_and_manner": {
+      "personality": ["친근한", "신뢰감 있는", "차분한"],
+      "voice": "전문성과 따뜻함의 균형. 과장 없이 사실 기반.",
+      "visual_style": ["미니멀", "내추럴 컬러", "여백 강조"]
+    },
+    "active_media": {
+      "primary": ["instagram", "youtube"],
+      "secondary": ["tiktok", "naver_blog"]
+    },
+    "positioning": {
+      "category": "자연주의 스킨케어",
+      "differentiation": "임상 시험 + 자연주의의 결합",
+      "price_tier": "중가"
+    },
+    "competitors": ["A브랜드", "B브랜드", "C브랜드"],
+    "recent_activities": [
+      {
+        "type": "campaign",
+        "name": "민감해도 괜찮아",
+        "period": "2026-Q1",
+        "summary": "민감성 피부 사용자 인터뷰 시리즈를 인스타 릴스로 진행"
+      }
+    ],
+    "constraints_and_notes": [
+      "정치적/논쟁적 주제 회피",
+      "동물 실험 반대 메시지 유지",
+      "과도한 셀럽 의존 마케팅 지양"
+    ]
+  }
+}
