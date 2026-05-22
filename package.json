@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "hello": "node examples/hello.js",
-    "chat": "node examples/chat.js"
+    "chat": "node examples/chat.js",
+    "match": "node src/matching/match.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.1",
