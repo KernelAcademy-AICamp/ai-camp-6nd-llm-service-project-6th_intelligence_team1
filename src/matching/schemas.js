@@ -14,7 +14,6 @@ const Question1Schema = z.object({
     "1-A": ComparisonResultSchema,
     "1-B": ComparisonResultSchema,
   }),
-  raw_score: z.number().min(0).max(2),
   passes: z.union([z.literal(0), z.literal(1), z.literal(2)]),
 });
 
@@ -24,7 +23,6 @@ const Question2Schema = z.object({
     "2-A": ComparisonResultSchema,
     "2-B": ComparisonResultSchema,
   }),
-  raw_score: z.number().min(0).max(2),
   passes: z.union([z.literal(0), z.literal(1), z.literal(2)]),
 });
 
