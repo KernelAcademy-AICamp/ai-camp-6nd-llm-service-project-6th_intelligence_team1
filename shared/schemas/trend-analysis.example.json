@@ -1,181 +1,32 @@
 {
-  "schema_version": "0.1",
-  "generated_at": "2026-05-22T14:35:00+09:00",
+  "schema_version": "0.2",
+  "generated_at": "2026-05-26T10:05:00+09:00",
   "status": "success",
   "data": {
     "trends": [
       {
-        "trend_id": "T-2026-05-001",
-        "name": "Y2K 메이크업 부활",
-        "category": "메이크업",
-        "summary": "2000년대 초반 메이크업 스타일(글로시 립, 메탈릭 아이섀도, 블루 라이너 등)이 MZ 사이에서 재유행. 향수 마케팅과 결합되어 SNS 챌린지화.",
-        "key_attributes": ["복고", "글리터", "강렬한 컬러", "유머러스", "셀프 표현"],
-        "audience_profile": {
-          "primary_demographics": ["18-28세 여성", "Z세대 후반-밀레니얼 초반"],
-          "psychographics": ["트렌드 민감", "셀카·SNS 활발", "복고 향수"]
-        },
-        "popularity_metrics": {
-          "social_volume_trend": "rising",
-          "search_growth_rate": "+340%",
-          "measurement_period": "최근 3개월",
-          "key_platforms": ["tiktok", "instagram_reels"]
-        },
-        "supporting_evidence": [
-          {
-            "type": "social_post",
-            "source": "tiktok",
-            "url": "https://example.com/post1",
-            "summary": "#Y2Kmakeup 챌린지 누적 1.2M 조회"
-          }
-        ],
-        "lifecycle_stage": "growth",
-        "estimated_duration_months": 6,
-        "associated_brands": ["MAC", "NARS"]
+        "trend_name": "스킨 미니멀리즘",
+        "metrics": "검색량 +85% (전년 대비) / 연령 비중: 10대 3%, 20대 35%, 30대 40%, 40대 17%, 50대+ 5% / 성별 비중: 여성 82%, 남성 18% / 인스타 해시태그 누적 조회 4.8M",
+        "summary": "복잡한 루틴 대신 3-5단계 간소화. 본질·효율 추구.",
+        "channel_status": "Instagram·YouTube에서 안정적 상위 노출, 네이버 블로그 후기 활발",
+        "keywords": ["간소화", "본질", "성분 투명성", "효율", "지속가능", "미니멀"],
+        "period": "최근 6개월"
       },
       {
-        "trend_id": "T-2026-05-002",
-        "name": "스킨 미니멀리즘",
-        "category": "스킨케어",
-        "summary": "복잡한 10단계 루틴 대신 3-5단계 간소화. '덜어내기' 철학과 바쁜 일상 트렌드 결합. 멀티 기능 제품 선호.",
-        "key_attributes": ["간소화", "본질", "효율", "지속가능", "성분 투명성"],
-        "audience_profile": {
-          "primary_demographics": ["25-40세 여성", "도시 직장인"],
-          "psychographics": ["바쁜 라이프스타일", "성분 신뢰 중시", "장기 효능 추구"]
-        },
-        "popularity_metrics": {
-          "social_volume_trend": "stable_high",
-          "search_growth_rate": "+85%",
-          "measurement_period": "최근 6개월",
-          "key_platforms": ["instagram", "youtube", "naver_blog"]
-        },
-        "supporting_evidence": [
-          {
-            "type": "article",
-            "source": "올리브영 매거진",
-            "title": "스킨 다이어트, 비우는 것이 답이다",
-            "published_at": "2026-03-20",
-            "url": "https://example.com/article2"
-          }
-        ],
-        "lifecycle_stage": "mature",
-        "estimated_duration_months": 12,
-        "associated_brands": ["라네즈", "이니스프리"]
+        "trend_name": "Y2K 메이크업 부활",
+        "metrics": "검색량 +340% (최근 3개월) / 연령 비중: 10대 25%, 20대 45%, 30대 20%, 40대 8%, 50대+ 2% / 성별 비중: 여성 88%, 남성 12% / TikTok #Y2Kmakeup 누적 조회 1.2M",
+        "summary": "2000년대 글로시 립·메탈릭 아이섀도 재유행.",
+        "channel_status": "TikTok·Instagram Reels에서 챌린지 급상승, 셀럽 협업 활발",
+        "keywords": ["복고", "글리터", "강렬한 컬러", "유머러스", "셀프 표현", "메탈릭"],
+        "period": "최근 3개월"
       },
       {
-        "trend_id": "T-2026-05-003",
-        "name": "비건 뷰티 인증 확산",
-        "category": "스킨케어",
-        "summary": "동물성 원료·동물 실험 없는 비건 인증 화장품 수요 급증. 지속가능성과 윤리적 소비 가치관이 결합된 흐름.",
-        "key_attributes": ["윤리적 소비", "지속가능성", "동물 보호", "투명성", "건강"],
-        "audience_profile": {
-          "primary_demographics": ["20-35세 여성", "환경 의식 소비자"],
-          "psychographics": ["지속가능성 가치 중시", "성분 라벨 꼼꼼히 확인", "리뷰·인증 신뢰"]
-        },
-        "popularity_metrics": {
-          "social_volume_trend": "rising",
-          "search_growth_rate": "+170%",
-          "measurement_period": "최근 12개월",
-          "key_platforms": ["instagram", "youtube", "naver_blog"]
-        },
-        "supporting_evidence": [
-          {
-            "type": "article",
-            "source": "헬스조선",
-            "title": "비건 인증 화장품, 작년 대비 매출 3배 성장",
-            "published_at": "2026-04-02",
-            "url": "https://example.com/article3"
-          }
-        ],
-        "lifecycle_stage": "growth",
-        "estimated_duration_months": 24,
-        "associated_brands": ["멜릭서", "디어달리아"]
-      },
-      {
-        "trend_id": "T-2026-05-004",
-        "name": "라이브 커머스 뷰티 세일",
-        "category": "유통/마케팅",
-        "summary": "네이버 쇼핑라이브·카카오쇼핑톡 등 라이브 커머스에서 뷰티 카테고리 폭발 성장. 실시간 사용감 시연 + 한정 할인 조합.",
-        "key_attributes": ["실시간", "할인", "시연", "엔터테인먼트", "구매 전환"],
-        "audience_profile": {
-          "primary_demographics": ["25-45세 여성", "온라인 쇼핑 친숙층"],
-          "psychographics": ["가성비 추구", "즉시성 선호", "리뷰 의존도 높음"]
-        },
-        "popularity_metrics": {
-          "social_volume_trend": "stable_high",
-          "search_growth_rate": "+45%",
-          "measurement_period": "최근 6개월",
-          "key_platforms": ["naver_shopping_live", "kakao_shopping"]
-        },
-        "supporting_evidence": [
-          {
-            "type": "article",
-            "source": "전자신문",
-            "title": "라이브 커머스 뷰티 카테고리 거래액 1조 돌파",
-            "published_at": "2026-03-15",
-            "url": "https://example.com/article4"
-          }
-        ],
-        "lifecycle_stage": "mature",
-        "estimated_duration_months": 18,
-        "associated_brands": ["AHC", "닥터지"]
-      },
-      {
-        "trend_id": "T-2026-05-005",
-        "name": "수면 케어·슬립 뷰티",
-        "category": "스킨케어",
-        "summary": "수면 부족 사회 문제와 결합해 '잠자는 동안 회복' 컨셉 제품 확산. 슬리핑 마스크, 멜라토닌 함유 크림, 베드사이드 루틴 등.",
-        "key_attributes": ["회복", "야간", "스트레스 케어", "웰니스", "셀프케어"],
-        "audience_profile": {
-          "primary_demographics": ["28-45세 여성", "직장인·맞벌이"],
-          "psychographics": ["만성 피로", "수면 질 관심", "셀프케어 시간 부족"]
-        },
-        "popularity_metrics": {
-          "social_volume_trend": "rising",
-          "search_growth_rate": "+220%",
-          "measurement_period": "최근 9개월",
-          "key_platforms": ["instagram", "youtube"]
-        },
-        "supporting_evidence": [
-          {
-            "type": "article",
-            "source": "보그 코리아",
-            "title": "잠자는 동안 피부가 답한다: 슬립 뷰티의 부상",
-            "published_at": "2026-02-10",
-            "url": "https://example.com/article5"
-          }
-        ],
-        "lifecycle_stage": "growth",
-        "estimated_duration_months": 18,
-        "associated_brands": ["에스티로더", "키엘"]
-      },
-      {
-        "trend_id": "T-2026-05-006",
-        "name": "셀럽 협업 한정판 컬러 메이크업",
-        "category": "메이크업",
-        "summary": "K-팝 아이돌·배우와 협업한 한정판 립스틱·아이섀도 팔레트. 팬덤 구매력 + 콜렉터블 가치 결합.",
-        "key_attributes": ["셀럽", "한정판", "팬덤", "콜렉터블", "고가"],
-        "audience_profile": {
-          "primary_demographics": ["15-30세 여성", "팬덤 활동층"],
-          "psychographics": ["셀럽 추종", "수집 욕구", "프리미엄 가격 수용"]
-        },
-        "popularity_metrics": {
-          "social_volume_trend": "rising",
-          "search_growth_rate": "+95%",
-          "measurement_period": "최근 6개월",
-          "key_platforms": ["instagram", "tiktok", "twitter"]
-        },
-        "supporting_evidence": [
-          {
-            "type": "article",
-            "source": "헤럴드POP",
-            "title": "K-팝 협업 메이크업, 출시 3시간 만에 완판",
-            "published_at": "2026-04-22",
-            "url": "https://example.com/article6"
-          }
-        ],
-        "lifecycle_stage": "growth",
-        "estimated_duration_months": 12,
-        "associated_brands": ["입생로랑", "MAC"]
+        "trend_name": "비건 뷰티 인증 확산",
+        "metrics": "검색량 +170% (최근 12개월) / 연령 비중: 10대 4%, 20대 38%, 30대 35%, 40대 18%, 50대+ 5% / 성별 비중: 여성 78%, 남성 22% / 비건 인증 키워드 노출 +210%",
+        "summary": "동물성 원료·동물 실험 없는 비건 인증 화장품 수요 급증.",
+        "channel_status": "Instagram·YouTube·네이버 블로그에서 인증 마크 콘텐츠 활발",
+        "keywords": ["윤리적 소비", "지속가능성", "동물 보호", "투명성", "성분", "그린"],
+        "period": "최근 12개월"
       }
     ]
   }

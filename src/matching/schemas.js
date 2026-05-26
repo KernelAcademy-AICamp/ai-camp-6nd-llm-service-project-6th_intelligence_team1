@@ -1,53 +1,46 @@
 import { z } from "zod";
 
-// 매칭가 출력 스키마 (match-result.example.json과 동일 구조)
-// Anthropic structured outputs로 강제하기 위한 런타임 검증 + 타입 정의
+// 매칭가 출력 스키마 v0.2 (2질문 × 2비교 × ✅/⚠️/❌ 판정 방식)
+// match-result.example.json과 동일 구조
 
-const ScoreBreakdownSchema = z.object({
-  audience_fit: z.number().min(0).max(100),
-  tone_alignment: z.number().min(0).max(100),
-  media_compatibility: z.number().min(0).max(100),
-  executability: z.number().min(0).max(100),
-  freshness: z.number().min(0).max(100),
+const ComparisonResultSchema = z.object({
+  result: z.enum(["✅", "⚠️", "❌"]),
+  reason: z.string(),
 });
 
-const SuggestedAngleSchema = z.object({
-  angle: z.string(),
-  description: z.string(),
-  primary_media: z.string(),
-  estimated_effort: z.enum(["low", "medium", "high"]),
+const Question1Schema = z.object({
+  label: z.literal("브랜드 적합성"),
+  comparisons: z.object({
+    "1-A": ComparisonResultSchema,
+    "1-B": ComparisonResultSchema,
+  }),
+  raw_score: z.number().min(0).max(2),
+  passes: z.union([z.literal(0), z.literal(1), z.literal(2)]),
 });
 
-const RiskSchema = z.object({
-  type: z.string(),
-  description: z.string(),
-  severity: z.enum(["low", "medium", "high"]),
+const Question2Schema = z.object({
+  label: z.literal("타겟 적합성"),
+  comparisons: z.object({
+    "2-A": ComparisonResultSchema,
+    "2-B": ComparisonResultSchema,
+  }),
+  raw_score: z.number().min(0).max(2),
+  passes: z.union([z.literal(0), z.literal(1), z.literal(2)]),
 });
 
-const MatchSchema = z.object({
-  trend_id: z.string(),
+const EvaluationItemSchema = z.object({
   trend_name: z.string(),
-  match_score: z.number().min(0).max(100),
-  score_breakdown: ScoreBreakdownSchema,
-  rationale: z.string(),
-  suggested_angles: z.array(SuggestedAngleSchema),
-  risks: z.array(RiskSchema),
-  confidence: z.enum(["low", "medium", "high"]),
-  priority: z.number().int().positive(),
-});
-
-const SummarySchema = z.object({
-  primary_recommendation: z.string(),
-  secondary_consideration: z.string(),
-  overall_confidence: z.enum(["low", "medium", "high"]),
-  next_steps: z.array(z.string()),
+  evaluation: z.object({
+    question_1: Question1Schema,
+    question_2: Question2Schema,
+  }),
+  verdict: z.enum(["1순위", "2순위", "3순위", "제외"]),
+  summary_reasons: z.array(z.string()).min(1).max(3),
 });
 
 const DataSchema = z.object({
-  brand_ref: z.string(),
-  project_type: z.enum(["product_promotion", "brand_awareness"]),
-  matches: z.array(MatchSchema),
-  summary: SummarySchema,
+  brand_name: z.string(),
+  evaluations: z.array(EvaluationItemSchema),
 });
 
 export const MatchResultSchema = z.object({

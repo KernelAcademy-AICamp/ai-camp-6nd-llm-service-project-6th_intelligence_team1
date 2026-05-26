@@ -6,9 +6,9 @@
 
 | 파일 | 누가 만듦 | 누가 읽음 | 설명 |
 |---|---|---|---|
-| `brand-analysis.example.json` | 브랜드 분석가 | 매칭가 | 브랜드 분석 결과 |
-| `trend-analysis.example.json` | 트렌드 분석가 | 매칭가 | 트렌드 분석 결과 (배열, 보통 2개) |
-| `match-result.example.json` | 매칭가 | 작성가 | 매칭 적합도 + 활용 방안 |
+| `brand-analysis.example.json` | 마케터 입력 | 매칭가 | 브랜드 프로필 (brand_name·target·tone_and_manner) |
+| `trend-analysis.example.json` | 트렌드 분석가 | 매칭가 | 트렌드 데이터 배열 (가변 개수) |
+| `match-result.example.json` | 매칭가 | 작성가 | 트렌드별 4비교 평가 + 최종 verdict |
 
 ## 공통 규칙
 
@@ -31,12 +31,10 @@
 }
 ```
 
-## 상태: 초안 (v0.1)
+## 상태: v0.2 (MVP)
 
-매칭가 관점에서 작성된 초안. **다음 단계: 분석가들과 합의 후 v1.0 확정.**
+매칭가 v0.2 스펙(2질문 × 2비교) 기준으로 단순화한 입력 형식.
 
-협의 포인트:
-- 필드명 (예: `audience` vs `target_audience`)
-- 필수 vs 선택 필드 구분
-- 어디까지 분석가가 채우고, 어디부터 매칭가가 추론하는지
-- 트렌드 개수 (항상 2개? 가변?)
+- 브랜드 입력은 마케터가 직접 입력하는 최소 필드(brand_name·target·tone_and_manner)만 유지
+- 트렌드 metrics는 평문 텍스트 (연령 비중·성별 비중·검색량·조회수 자연어 포함)
+- 카테고리·lifecycle 필드 등 부가 정보는 후속 단계에서 추가 검토
