@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { envelopeSchema } from "../../shared/envelope.js";
 
 // 매칭가 출력 스키마 v0.2 (2질문 × 2비교 × ✅/⚠️/❌ 판정 방식)
-// match-result.example.json과 동일 구조
+// envelope(schema_version·generated_at·status)은 shared/envelope.js의 envelopeSchema로 자동 부여.
 
 const ComparisonResultSchema = z.object({
   result: z.enum(["✅", "⚠️", "❌"]),
@@ -36,14 +37,11 @@ const EvaluationItemSchema = z.object({
   summary_reasons: z.array(z.string()).min(1).max(3),
 });
 
-const DataSchema = z.object({
+// LLM이 직접 만드는 부분 (envelope 제외, data 본체만)
+export const MatchDataSchema = z.object({
   brand_name: z.string(),
   evaluations: z.array(EvaluationItemSchema),
 });
 
-export const MatchResultSchema = z.object({
-  schema_version: z.string(),
-  generated_at: z.string(),
-  status: z.enum(["success", "error"]),
-  data: DataSchema,
-});
+// 저장된 결과 전체를 검증할 때 사용 (envelope 포함)
+export const MatchResultSchema = envelopeSchema(MatchDataSchema);

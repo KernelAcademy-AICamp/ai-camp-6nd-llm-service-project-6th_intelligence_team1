@@ -147,35 +147,40 @@
 
 ## 출력 형식
 
-각 트렌드에 대해 다음 구조의 객체를 `data.evaluations[]` 배열에 담아 반환:
+`brand_name`과 `evaluations[]` 만 담은 **data 객체** 하나를 반환. envelope(`schema_version`·`generated_at`·`status`)은 매칭가 코드가 자동으로 추가하므로 LLM은 본체에만 집중.
 
 ```json
 {
-  "trend_name": "...",
-  "evaluation": {
-    "question_1": {
-      "label": "브랜드 적합성",
-      "comparisons": {
-        "1-A": { "result": "✅|⚠️|❌", "reason": "..." },
-        "1-B": { "result": "✅|⚠️|❌", "reason": "..." }
+  "brand_name": "...",
+  "evaluations": [
+    {
+      "trend_name": "...",
+      "evaluation": {
+        "question_1": {
+          "label": "브랜드 적합성",
+          "comparisons": {
+            "1-A": { "result": "✅|⚠️|❌", "reason": "..." },
+            "1-B": { "result": "✅|⚠️|❌", "reason": "..." }
+          },
+          "passes": 0|1|2
+        },
+        "question_2": {
+          "label": "타겟 적합성",
+          "comparisons": {
+            "2-A": { "result": "✅|⚠️|❌", "reason": "..." },
+            "2-B": { "result": "✅|⚠️|❌", "reason": "..." }
+          },
+          "passes": 0|1|2
+        }
       },
-      "passes": 0|1|2
-    },
-    "question_2": {
-      "label": "타겟 적합성",
-      "comparisons": {
-        "2-A": { "result": "✅|⚠️|❌", "reason": "..." },
-        "2-B": { "result": "✅|⚠️|❌", "reason": "..." }
-      },
-      "passes": 0|1|2
+      "verdict": "1순위|2순위|3순위|제외",
+      "summary_reasons": ["근거 1", "근거 2"]
     }
-  },
-  "verdict": "1순위|2순위|3순위|제외",
-  "summary_reasons": ["근거 1", "근거 2"]
+  ]
 }
 ```
 
-전체 구조는 `match-result.example.json` 참고.
+envelope 포함 전체 구조는 `match-result.example.json` 참고 (envelope은 매칭가가 채우므로 LLM 출력엔 포함하지 말 것).
 
 ---
 

@@ -4,7 +4,8 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MatchResultSchema } from "./schemas.js";
+import { MatchDataSchema } from "./schemas.js";
+import { wrap, wrapError } from "../../shared/envelope.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, "../..");
@@ -34,6 +35,9 @@ const outputExample = readFileSync(
 );
 
 // 3. 시스템 컨텐츠 — 안정적 컨텐츠 끝에 cache_control (90% 비용 절감)
+//    출력 예시에서 envelope 부분(schema_version·generated_at·status)을 제거하고
+//    LLM에게는 data 객체만 만들도록 안내. envelope은 wrap()이 추가.
+const exampleData = JSON.parse(outputExample).data;
 const systemContent = [
   {
     type: "text",
@@ -41,13 +45,15 @@ const systemContent = [
   },
   {
     type: "text",
-    text: `## 출력 JSON 형식 (반드시 이 구조 그대로 사용)
+    text: `## 출력 JSON 형식 (data 객체만 — envelope은 매칭가가 추가)
+
+다음 구조의 JSON 하나만 출력하세요. \`schema_version\`/\`generated_at\`/\`status\` 같은 envelope 필드는 매칭가 코드가 자동으로 채우므로 LLM은 \`data\`의 내용물(brand_name·evaluations 배열)만 만들면 됩니다.
 
 \`\`\`json
-${outputExample}
+${JSON.stringify(exampleData, null, 2)}
 \`\`\`
 
-위 예시와 동일한 키 구조의 JSON 하나만 출력하세요. 코드 블록 표시(\`\`\`)나 부가 설명 없이 순수 JSON만.`,
+코드 블록 표시(\`\`\`)나 부가 설명 없이 순수 JSON만.`,
     cache_control: { type: "ephemeral" },
   },
 ];
@@ -65,9 +71,9 @@ ${JSON.stringify(brandAnalysis, null, 2)}
 ${JSON.stringify(trendAnalysis, null, 2)}
 \`\`\`
 
-위 모든 트렌드에 대해 4개 비교(1-A, 1-B, 2-A, 2-B)를 수행하고, verdict까지 산출해 \`data.evaluations[]\`에 담아 반환하세요.`;
+위 모든 트렌드에 대해 4개 비교(1-A, 1-B, 2-A, 2-B)를 수행하고, verdict까지 산출해 \`evaluations[]\`에 담아 반환하세요. (envelope 제외, data 본체만)`;
 
-// 5. Claude API 호출
+// 5. Claude API 호출 — LLM은 data 본체만 생성
 const client = new Anthropic();
 
 console.log("매칭 평가 시작...\n");
@@ -79,20 +85,24 @@ const response = await client.messages.parse({
   system: systemContent,
   messages: [{ role: "user", content: userMessage }],
   output_config: {
-    format: zodOutputFormat(MatchResultSchema),
+    format: zodOutputFormat(MatchDataSchema),
   },
 });
 
 const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
-// 6. 스키마로 자동 검증된 결과
-const matchResult = response.parsed_output;
-if (!matchResult) {
+// 6. 스키마로 자동 검증된 data 본체. envelope은 매칭가가 추가.
+const data = response.parsed_output;
+if (!data) {
   console.error("❌ 스키마 검증 실패");
   console.error("--- 응답 원문 ---");
   console.error(response.content.find((b) => b.type === "text")?.text ?? "");
+  const errorResult = wrapError("매칭가 LLM 출력이 MatchDataSchema 검증에 실패함");
+  console.error(JSON.stringify(errorResult, null, 2));
   process.exit(1);
 }
+
+const matchResult = wrap(data);
 
 // 7. 결과 출력
 console.log("=== 매칭 결과 ===\n");
