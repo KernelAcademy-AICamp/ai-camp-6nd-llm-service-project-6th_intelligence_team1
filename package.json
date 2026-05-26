@@ -6,10 +6,13 @@
     "hello": "node examples/hello.js",
     "chat": "node examples/chat.js"
   },
+
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.97.1",
-    "@tavily/core": "^0.7.3",
-    "axios": "^1.16.1",
-    "dotenv": "^17.4.2"
-  }
+  "@anthropic-ai/sdk": "^0.97.1",
+  "@tavily/core": "^0.7.3",
+  "axios": "^1.16.1",
+  "dotenv": "^17.4.2",
+  "zod": "^4.4.3"
+}
+
 }

@@ -88,6 +88,7 @@ logs/
 *.safetensors
 data/raw/
 data/processed/
+shared/data/
 models/
 checkpoints/
 chroma_db/
