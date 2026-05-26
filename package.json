@@ -4,10 +4,12 @@
   "type": "module",
   "scripts": {
     "hello": "node examples/hello.js",
-    "chat": "node examples/chat.js"
+    "chat": "node examples/chat.js",
+    "match": "node src/matching/match.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.1",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3"
   }
 }
