@@ -16,11 +16,29 @@ const systemPrompt = readFileSync(
   "utf-8",
 );
 
-// 2. 입력 데이터 로드
-const brandAnalysis = JSON.parse(
-  readFileSync(
-    resolve(PROJECT_ROOT, "shared/schemas/brand-analysis.example.json"),
-    "utf-8",
+// 2. 입력 데이터 로드 + 분석가 형식 흡수
+//    브랜드 분석가가 target.age_groups: ["20대","30대"] 배열로 줄 수도 있어
+//    매칭가가 기대하는 target.age_range: "20-30" 문자열로 정규화한다.
+function normalizeBrandInput(brand) {
+  const target = brand?.data?.target;
+  if (target?.age_groups && !target.age_range) {
+    const nums = target.age_groups
+      .map((g) => parseInt(g, 10))
+      .filter((n) => !Number.isNaN(n))
+      .sort((a, b) => a - b);
+    if (nums.length === 1) target.age_range = `${nums[0]}`;
+    else if (nums.length >= 2)
+      target.age_range = `${nums[0]}-${nums[nums.length - 1]}`;
+  }
+  return brand;
+}
+
+const brandAnalysis = normalizeBrandInput(
+  JSON.parse(
+    readFileSync(
+      resolve(PROJECT_ROOT, "shared/schemas/brand-analysis.example.json"),
+      "utf-8",
+    ),
   ),
 );
 const trendAnalysis = JSON.parse(
