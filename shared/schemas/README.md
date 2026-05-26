@@ -63,6 +63,63 @@ const parsed = BrandSchema.parse(JSON.parse(file));
 
 Python 등 다른 언어 에이전트는 동일 구조를 직접 구현하되, `generated_at`은 ISO-8601 UTC(`datetime.now(timezone.utc).isoformat()`).
 
+## 매칭가 규약
+
+### 입력 요구사항 (분석가가 매칭가에게 줄 것)
+
+매칭가의 4비교(1-A, 1-B, 2-A, 2-B)가 동작하려면 다음 필드가 필수.
+
+**브랜드 분석가가 줄 brand-analysis.json**
+
+| 필드 | 형식 | 비고 |
+|---|---|---|
+| `data.brand_name` | string | 표시용 |
+| `data.target.gender` | `"여성"` / `"남성"` / `"여성·남성"` | 2-A 성별 오버랩 계산 |
+| `data.target.age_range` 또는 `target.age_groups` | `"20-30"` 문자열 또는 `["20대","30대"]` 배열 | 둘 중 하나, 매칭가가 흡수 |
+| `data.tone_and_manner` | 배열, 7종 enum 중 선택 | 1-A·1-B 친화/충돌 판정. `클린뷰티`/`로맨틱·감성`/`럭셔리·프리미엄`/`키치·플레이풀`/`더마·과학적`/`Z세대·트렌디`/`비건` |
+
+부가 필드(`category`, `match_keywords` 등)는 자유 — 매칭가는 패스스루.
+
+**트렌드 분석가가 줄 trend-analysis.json**
+
+| 필드 | 형식 | 비고 |
+|---|---|---|
+| `data.trends[].trend_name` | string | |
+| `data.trends[].summary` | string (~50자) | 1-A 무드 판정 |
+| `data.trends[].keywords` 또는 `core_keywords` | 배열 | 1-B 키워드 매칭 |
+| `data.trends[].audience_distribution` 또는 평문 `metrics` | 연령·성별 비중 | **2-A 필수**. 객체면 `age_ratio["20s"]: 0.39` / `gender_ratio.female: 0.87` 영문 비율, 평문이면 "20대 39%, 여성 87%" |
+| `data.trends[].channel_status` 또는 `media_channel_status` | 문자열 또는 배열 | 2-B 페르소나 보강용 |
+
+부가 필드(`meaning`, `status`, `evidence`, `headline_metric` 등)는 자유 — 매칭가가 reason 보강에 참고.
+
+### 출력 규약 (매칭가가 작성가에게 줄 것)
+
+**match-result.json**
+
+envelope `data` 안에:
+
+| 필드 | 형식 | 비고 |
+|---|---|---|
+| `brand_name` | string | 평가 대상 브랜드 |
+| `evaluations[]` | 배열 (입력 트렌드 수만큼) | 각 트렌드 평가 |
+
+각 evaluation 항목:
+
+| 필드 | 형식 | 비고 |
+|---|---|---|
+| `trend_name` | string | |
+| `evaluation.question_1` | `{label, comparisons{1-A, 1-B}, passes}` | 브랜드 적합성 |
+| `evaluation.question_2` | `{label, comparisons{2-A, 2-B}, passes}` | 타겟 적합성 |
+| `comparisons.X-Y` | `{result: "✅"|"⚠️"|"❌", reason: string}` | 각 비교 판정 + 근거 |
+| `passes` | `0` / `1` / `2` | 질문별 패스 등급 (조합 매핑 결과) |
+| `verdict` | `"1순위"` / `"2순위"` / `"3순위"` / `"제외"` | 최종 등급 |
+| `summary_reasons` | string[] (1-3개) | 핵심 근거 요약 |
+
+전체 구조 예시는 [`match-result.example.json`](match-result.example.json).
+Zod 스키마(코드 진실 공급원)는 [`src/matching/schemas.js`](../../src/matching/schemas.js)의 `MatchDataSchema`.
+
+평가 로직(4비교 기준, passes 산정, verdict 매트릭스)은 [`src/matching/README.md`](../../src/matching/README.md) 참고.
+
 ## 상태: v0.2 (MVP)
 
 매칭가 v0.2 스펙(2질문 × 2비교) 기준으로 단순화한 입력 형식.
