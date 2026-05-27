@@ -15,11 +15,18 @@ src/matching/
 
 ## 입출력
 
-| 종류 | 출처 | 형식 |
-|---|---|---|
-| 입력 1 | 마케터 (현재는 mock) | `shared/schemas/brand-analysis.example.json` |
-| 입력 2 | 정보수집가 (현재는 mock) | `shared/schemas/trend-analysis.example.json` |
-| 출력 | 작성가에게 전달 | `shared/schemas/match-result.example.json` |
+| 종류 | 출처 | 실제 파일 | 형식 예시 |
+|---|---|---|---|
+| 입력 1 | 브랜드 분석가 | `shared/data/brand-analysis.json` | `shared/schemas/brand-analysis.example.json` |
+| 입력 2 | 트렌드 분석가 | `shared/data/trend-analysis.json` | `shared/schemas/trend-analysis.example.json` |
+| 출력 | 작성가에게 전달 | `shared/data/match-result.json` | `shared/schemas/match-result.example.json` |
+
+`shared/data/`는 `.gitignore` 대상. 분석가들이 각자 산출한 실제 JSON을 거기 둠. 파일이 없으면 매칭가는 친절한 안내와 함께 종료한다. 더미로 빠르게 시험하려면 example을 `shared/data/`로 복사:
+
+```bash
+cp shared/schemas/brand-analysis.example.json shared/data/brand-analysis.json
+cp shared/schemas/trend-analysis.example.json shared/data/trend-analysis.json
+```
 
 ## 평가 로직 (2질문 × 2비교)
 
