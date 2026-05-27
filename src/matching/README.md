@@ -28,6 +28,15 @@ cp shared/schemas/brand-analysis.example.json shared/data/brand-analysis.json
 cp shared/schemas/trend-analysis.example.json shared/data/trend-analysis.json
 ```
 
+### 입력 유효성 검사
+
+LLM에 보내기 전, 4판정에 꼭 필요한 필드가 비어있지 않은지 확인. 하나라도 빈값이면 어느 필드가 어떤 평가를 못 하게 만드는지 한국어로 출력하고 즉시 종료(API 호출·결과 파일 모두 생략). **garbage-in으로 잘못된 1순위/2순위가 새어 나가는 사고를 막기 위함**.
+
+| 영역 | 필수 (비어있으면 종료) |
+|---|---|
+| brand | `brand_name`, `tone_and_manner`, `target.gender`, `target.age_groups` 또는 `age_range`, `target.motivation` 또는 `involvement` |
+| trend | `data.trends` 배열 비어있지 않음, 각 트렌드의 `trend_name`·`keywords`·`summary` |
+
 ## 평가 로직 (2질문 × 2비교)
 
 ### 질문 1: 브랜드 적합성 — "우리 브랜드가 이 트렌드를 말할 때 자연스러운가?"

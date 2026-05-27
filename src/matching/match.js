@@ -65,6 +65,69 @@ const outputExample = readFileSync(
   "utf-8",
 );
 
+// 2-1. 입력 유효성 검사 — 4판정에 필요한 필드가 비어있으면 LLM 호출 전에 종료.
+//      garbage-in으로 잘못된 1순위/2순위 결과가 나가는 사고 방지.
+function validateBrand(brand) {
+  const errors = [];
+  const d = brand?.data;
+  if (!d) return ["data 객체 자체가 없음"];
+  if (!d.brand_name?.trim()) errors.push("data.brand_name 비어있음");
+  if (!Array.isArray(d.tone_and_manner) || d.tone_and_manner.length === 0)
+    errors.push("data.tone_and_manner 비어있음 (1-A·1-B 평가 불가)");
+  const t = d.target;
+  if (!t) errors.push("data.target 누락");
+  else {
+    if (!t.gender?.trim())
+      errors.push("data.target.gender 비어있음 (2-A 평가 불가)");
+    const hasAge =
+      (Array.isArray(t.age_groups) && t.age_groups.length > 0) ||
+      t.age_range?.trim();
+    if (!hasAge)
+      errors.push("data.target.age_groups 또는 age_range 비어있음 (2-A 평가 불가)");
+    const hasPersona =
+      (Array.isArray(t.motivation) && t.motivation.length > 0) ||
+      t.involvement?.trim();
+    if (!hasPersona)
+      errors.push("data.target.motivation 또는 involvement 비어있음 (2-B 평가 불가)");
+  }
+  return errors;
+}
+
+function validateTrend(trend) {
+  const errors = [];
+  const d = trend?.data;
+  if (!d) return ["data 객체 자체가 없음"];
+  if (!Array.isArray(d.trends) || d.trends.length === 0)
+    return ["data.trends 배열 비어있음 (평가할 트렌드 없음)"];
+  d.trends.forEach((t, i) => {
+    const tag = `data.trends[${i}]`;
+    if (!t.trend_name?.trim()) errors.push(`${tag}.trend_name 비어있음`);
+    if (!Array.isArray(t.keywords) || t.keywords.length === 0)
+      errors.push(`${tag}.keywords 비어있음 (1-B 평가 불가)`);
+    if (!t.summary?.trim())
+      errors.push(`${tag}.summary 비어있음 (1-A 평가 불가)`);
+  });
+  return errors;
+}
+
+const brandErrors = validateBrand(brandAnalysis);
+const trendErrors = validateTrend(trendAnalysis);
+if (brandErrors.length || trendErrors.length) {
+  console.error("❌ 입력 유효성 검사 실패 — 매칭 평가를 진행하지 않습니다.");
+  if (brandErrors.length) {
+    console.error("\n[브랜드 분석가 산출 문제]");
+    brandErrors.forEach((e) => console.error(`  - ${e}`));
+  }
+  if (trendErrors.length) {
+    console.error("\n[트렌드 분석가 산출 문제]");
+    trendErrors.forEach((e) => console.error(`  - ${e}`));
+  }
+  console.error(
+    "\n해당 분석가의 산출을 채운 뒤 다시 실행하세요. (LLM 호출·결과 파일 모두 생략됨)",
+  );
+  process.exit(1);
+}
+
 // 3. 시스템 컨텐츠 — 안정적 컨텐츠 끝에 cache_control (90% 비용 절감)
 //    출력 예시에서 envelope 부분(schema_version·generated_at·status)을 제거하고
 //    LLM에게는 data 객체만 만들도록 안내. envelope은 wrap()이 추가.
