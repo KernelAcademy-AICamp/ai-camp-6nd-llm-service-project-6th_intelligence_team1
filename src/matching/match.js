@@ -4,7 +4,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MatchDataSchema } from "./schemas.js";
+import { MatchDataSchema, InputBrandSchema, InputTrendSchema } from "./schemas.js";
 import { wrap, wrapError } from "../../shared/envelope.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -48,14 +48,14 @@ function readAgentOutput(dataRelPath, exampleRelPath, agentLabel) {
   }
 }
 
-const brandAnalysis = normalizeBrandInput(
-  readAgentOutput(
-    "shared/data/brand-analysis.json",
-    "shared/schemas/brand-analysis.example.json",
-    "브랜드 분석가",
-  ),
+// 산출 파일을 원본 그대로 로드. normalize는 검증 후로 미룬다 — 잘못된 타입(예:
+// age_groups가 문자열)이 normalize의 .map() 호출에서 크래시하는 걸 방지.
+const brandRaw = readAgentOutput(
+  "shared/data/brand-analysis.json",
+  "shared/schemas/brand-analysis.example.json",
+  "브랜드 분석가",
 );
-const trendAnalysis = readAgentOutput(
+const trendRaw = readAgentOutput(
   "shared/data/trend-analysis.json",
   "shared/schemas/trend-analysis.example.json",
   "트렌드 분석가",
@@ -65,68 +65,40 @@ const outputExample = readFileSync(
   "utf-8",
 );
 
-// 2-1. 입력 유효성 검사 — 4판정에 필요한 필드가 비어있으면 LLM 호출 전에 종료.
-//      garbage-in으로 잘못된 1순위/2순위 결과가 나가는 사고 방지.
-function validateBrand(brand) {
-  const errors = [];
-  const d = brand?.data;
-  if (!d) return ["data 객체 자체가 없음"];
-  if (!d.brand_name?.trim()) errors.push("data.brand_name 비어있음");
-  if (!Array.isArray(d.tone_and_manner) || d.tone_and_manner.length === 0)
-    errors.push("data.tone_and_manner 비어있음 (1-A·1-B 평가 불가)");
-  const t = d.target;
-  if (!t) errors.push("data.target 누락");
-  else {
-    if (!t.gender?.trim())
-      errors.push("data.target.gender 비어있음 (2-A 평가 불가)");
-    const hasAge =
-      (Array.isArray(t.age_groups) && t.age_groups.length > 0) ||
-      t.age_range?.trim();
-    if (!hasAge)
-      errors.push("data.target.age_groups 또는 age_range 비어있음 (2-A 평가 불가)");
-    const hasPersona =
-      (Array.isArray(t.motivation) && t.motivation.length > 0) ||
-      t.involvement?.trim();
-    if (!hasPersona)
-      errors.push("data.target.motivation 또는 involvement 비어있음 (2-B 평가 불가)");
-  }
-  return errors;
-}
-
-function validateTrend(trend) {
-  const errors = [];
-  const d = trend?.data;
-  if (!d) return ["data 객체 자체가 없음"];
-  if (!Array.isArray(d.trends) || d.trends.length === 0)
-    return ["data.trends 배열 비어있음 (평가할 트렌드 없음)"];
-  d.trends.forEach((t, i) => {
-    const tag = `data.trends[${i}]`;
-    if (!t.trend_name?.trim()) errors.push(`${tag}.trend_name 비어있음`);
-    if (!Array.isArray(t.keywords) || t.keywords.length === 0)
-      errors.push(`${tag}.keywords 비어있음 (1-B 평가 불가)`);
-    if (!t.summary?.trim())
-      errors.push(`${tag}.summary 비어있음 (1-A 평가 불가)`);
+// 2-1. 입력 유효성 검사 — Zod 스키마로 형식·타입·enum·필수값 위반을 모두 잡는다.
+//      LLM 호출 전 종료. garbage-in으로 잘못된 1순위/2순위가 새어나가는 사고 방지.
+function formatZodIssues(issues) {
+  return issues.map((iss) => {
+    const path = iss.path.length ? iss.path.join(".") : "(root)";
+    return `  - ${path}: ${iss.message}`;
   });
-  return errors;
 }
 
-const brandErrors = validateBrand(brandAnalysis);
-const trendErrors = validateTrend(trendAnalysis);
-if (brandErrors.length || trendErrors.length) {
+const brandResult = InputBrandSchema.safeParse(brandRaw);
+const trendResult = InputTrendSchema.safeParse(trendRaw);
+if (!brandResult.success || !trendResult.success) {
   console.error("❌ 입력 유효성 검사 실패 — 매칭 평가를 진행하지 않습니다.");
-  if (brandErrors.length) {
+  if (!brandResult.success) {
     console.error("\n[브랜드 분석가 산출 문제]");
-    brandErrors.forEach((e) => console.error(`  - ${e}`));
+    formatZodIssues(brandResult.error.issues).forEach((line) =>
+      console.error(line),
+    );
   }
-  if (trendErrors.length) {
+  if (!trendResult.success) {
     console.error("\n[트렌드 분석가 산출 문제]");
-    trendErrors.forEach((e) => console.error(`  - ${e}`));
+    formatZodIssues(trendResult.error.issues).forEach((line) =>
+      console.error(line),
+    );
   }
   console.error(
-    "\n해당 분석가의 산출을 채운 뒤 다시 실행하세요. (LLM 호출·결과 파일 모두 생략됨)",
+    "\n해당 분석가의 산출을 고친 뒤 다시 실행하세요. (LLM 호출·결과 파일 모두 생략됨)",
   );
   process.exit(1);
 }
+
+// 검증 통과 후 정규화 — analyzer v1(age_groups 배열) → v2(age_range 문자열) 흡수.
+const brandAnalysis = normalizeBrandInput(brandRaw);
+const trendAnalysis = trendRaw;
 
 // 3. 시스템 컨텐츠 — 안정적 컨텐츠 끝에 cache_control (90% 비용 절감)
 //    출력 예시에서 envelope 부분(schema_version·generated_at·status)을 제거하고
