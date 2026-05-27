@@ -7,10 +7,6 @@
 # 예시 데이터는 shared/schemas/에 따로 있음
 shared/data/
 
-# 다른 브랜치(trend-main)에서 임시로 복사해 둔 트렌드 코드 — matching에 커밋 금지
-/trend/
-/src/trend/
-
 # Python
 __pycache__/
 *.py[cod]
@@ -96,7 +92,6 @@ logs/
 *.safetensors
 data/raw/
 data/processed/
-shared/data/
 models/
 checkpoints/
 chroma_db/
