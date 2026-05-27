@@ -34,7 +34,7 @@ function normalizeBrandInput(brand) {
 }
 
 // 분석가들의 실제 산출물을 읽음. 파일이 없으면 친절한 안내와 함께 종료.
-function readAgentOutput(dataRelPath, exampleRelPath, agentLabel) {
+function readAgentOutput(dataRelPath, agentLabel, runHint) {
   const dataPath = resolve(PROJECT_ROOT, dataRelPath);
   try {
     return JSON.parse(readFileSync(dataPath, "utf-8"));
@@ -42,8 +42,10 @@ function readAgentOutput(dataRelPath, exampleRelPath, agentLabel) {
     if (err.code !== "ENOENT") throw err;
     console.error(`❌ ${agentLabel} 산출 파일이 없습니다: ${dataRelPath}`);
     console.error(`   ${agentLabel}를 먼저 실행해서 위 파일을 생성하세요.`);
-    console.error(`   더미로 빠르게 시험하려면:`);
-    console.error(`     cp ${exampleRelPath} ${dataRelPath}`);
+    console.error(`     ${runHint}`);
+    console.error(
+      `   파일 형식은 shared/schemas/ 의 example 참고 (값은 비어있는 모양만 표시).`,
+    );
     process.exit(1);
   }
 }
@@ -52,13 +54,13 @@ function readAgentOutput(dataRelPath, exampleRelPath, agentLabel) {
 // age_groups가 문자열)이 normalize의 .map() 호출에서 크래시하는 걸 방지.
 const brandRaw = readAgentOutput(
   "shared/data/brand-analysis.json",
-  "shared/schemas/brand-analysis.example.json",
   "브랜드 분석가",
+  "node src/brand/analyze.js",
 );
 const trendRaw = readAgentOutput(
   "shared/data/trend-analysis.json",
-  "shared/schemas/trend-analysis.example.json",
   "트렌드 분석가",
+  "node src/trend/analyze.js",
 );
 const outputExample = readFileSync(
   resolve(PROJECT_ROOT, "shared/schemas/match-result.example.json"),

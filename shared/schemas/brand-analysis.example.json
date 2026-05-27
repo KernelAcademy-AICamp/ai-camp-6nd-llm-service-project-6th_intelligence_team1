@@ -1,25 +1,25 @@
 {
   "schema_version": "0.2",
-  "generated_at": "2026-05-26T10:00:00+09:00",
+  "generated_at": "",
   "status": "success",
   "data": {
     "source": "브랜드 분석",
-    "brand_name": "힌스 (hince)",
-    "category": "베이스",
-    "tone_and_manner": ["로맨틱·감성"],
-    "texture_keywords": ["글로우", "매트"],
+    "brand_name": "",
+    "category": "",
+    "tone_and_manner": [],
+    "texture_keywords": [],
     "target": {
-      "gender": "여성",
-      "age_groups": ["20대", "30대"],
-      "involvement": "마니아·얼리어답터",
-      "motivation": ["자기표현"]
+      "gender": "",
+      "age_groups": [],
+      "involvement": "",
+      "motivation": []
     },
-    "campaign_kpi": "시즌 프로모션",
-    "media_channels": ["인스타그램", "유튜브"],
+    "campaign_kpi": "",
+    "media_channels": [],
     "match_keywords": {
-      "character": ["로맨틱·감성"],
-      "benefit_texture": ["베이스", "글로우", "매트"],
-      "target": ["여성", "20대", "30대", "얼리어답터", "자기표현"]
+      "character": [],
+      "benefit_texture": [],
+      "target": []
     }
   }
 }

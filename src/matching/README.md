@@ -15,18 +15,15 @@ src/matching/
 
 ## 입출력
 
-| 종류 | 출처 | 실제 파일 | 형식 예시 |
+| 종류 | 출처 | 실제 파일 | 형식 정의 |
 |---|---|---|---|
-| 입력 1 | 브랜드 분석가 | `shared/data/brand-analysis.json` | `shared/schemas/brand-analysis.example.json` |
-| 입력 2 | 트렌드 분석가 | `shared/data/trend-analysis.json` | `shared/schemas/trend-analysis.example.json` |
+| 입력 1 | 브랜드 분석가 (`node src/brand/analyze.js`) | `shared/data/brand-analysis.json` | `shared/schemas/brand-analysis.example.json` (shape only) |
+| 입력 2 | 트렌드 분석가 (`node src/trend/analyze.js`) | `shared/data/trend-analysis.json` | `shared/schemas/trend-analysis.example.json` (shape only) |
 | 출력 | 작성가에게 전달 | `shared/data/match-result.json` | `shared/schemas/match-result.example.json` |
 
-`shared/data/`는 `.gitignore` 대상. 분석가들이 각자 산출한 실제 JSON을 거기 둠. 파일이 없으면 매칭가는 친절한 안내와 함께 종료한다. 더미로 빠르게 시험하려면 example을 `shared/data/`로 복사:
+`shared/data/`는 `.gitignore` 대상. **분석가들이 각자 실제로 산출한 JSON만** 이 폴더에 놓는다. 파일이 없으면 매칭가는 친절한 안내와 함께 종료한다.
 
-```bash
-cp shared/schemas/brand-analysis.example.json shared/data/brand-analysis.json
-cp shared/schemas/trend-analysis.example.json shared/data/trend-analysis.json
-```
+`shared/schemas/*.example.json`은 **모양(shape)만 보여주는 템플릿** — 값은 모두 빈 문자열/빈 배열/0. 가짜 브랜드 데이터를 박아두지 않는다. 실제 시험 입력은 분석가를 돌려서 만들거나 직접 fixture를 작성한다. (단, `match-result.example.json`은 LLM 프롬프트에 박혀 출력 형식을 학습시키므로 채워진 값 유지)
 
 ### 입력 유효성 검사 (Zod)
 
