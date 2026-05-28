@@ -15,11 +15,14 @@
       "motivation": []
     },
     "campaign_kpi": "",
+    "campaign_period": "",
+    "campaign_budget": "",
     "media_channels": [],
     "match_keywords": {
       "character": [],
       "benefit_texture": [],
-      "target": []
+      "target": [],
+      "campaign": []
     }
   }
 }

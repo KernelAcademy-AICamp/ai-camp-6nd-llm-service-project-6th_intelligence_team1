@@ -9,6 +9,7 @@
       {
         "trend_id": "",
         "trend_name": "",
+        "category": "",
         "keywords": [],
         "summary": "",
         "headline_metric": {
