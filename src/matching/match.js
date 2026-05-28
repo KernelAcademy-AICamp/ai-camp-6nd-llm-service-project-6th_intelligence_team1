@@ -358,7 +358,6 @@ const recommendations = allEvaluations
   .map((ev, i) => ({
     rank: i + 1,
     trend_name: ev.trend_name,
-    verdict: ev.verdict,
     summary_reasons: ev.summary_reasons,
   }));
 

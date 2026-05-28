@@ -101,8 +101,8 @@ envelope `data` 안에:
 | 필드 | 형식 | 비고 |
 |---|---|---|
 | `brand_name` | string | 평가 대상 브랜드 |
-| `recommendations[]` | 배열 (최대 3개) | **브랜드와 맞는 상위 3개 추천.** 제외 트렌드는 빠짐. `{ rank, trend_name, verdict, summary_reasons }` |
-| `evaluations[]` | 배열 (입력 트렌드 수만큼) | 각 트렌드 평가 전체 (제외 포함, 추천순 → 제외순 정렬) |
+| `recommendations[]` | 배열 (최대 3개) | **브랜드와 맞는 상위 3개 추천.** 제외 트렌드는 빠짐. `{ rank, trend_name, summary_reasons }` — verdict 등급은 노출하지 않음(rank·근거만) |
+| `evaluations[]` | 배열 (입력 트렌드 수만큼) | 각 트렌드 평가 전체 (verdict 등급 포함, 추천순 → 제외순 정렬) |
 
 **선별·랭킹** (코드가 수행): 입력 트렌드 전체를 평가한 뒤 — ① 제외(verdict="제외")를 뺀 후 ② verdict 순위(1순위>2순위>3순위) → passes 합 → 트렌드 `metrics.score` 순으로 정렬해 ③ 상위 3개를 `recommendations`로 추림. 맞는 트렌드가 3개 미만이면 있는 만큼만.
 
