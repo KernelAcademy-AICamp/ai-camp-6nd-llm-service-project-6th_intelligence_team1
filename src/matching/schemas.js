@@ -162,9 +162,20 @@ const EvaluationItemSchema = z.object({
   summary_reasons: z.array(z.string()).min(1).max(3),
 });
 
+// 추천 트렌드 (제외 아닌 것 중 상위 N개). 코드가 정렬·선별해 생성.
+const RecommendationSchema = z.object({
+  rank: z.number().int().positive(),
+  trend_name: z.string(),
+  verdict: z.enum(["1순위", "2순위", "3순위"]),
+  summary_reasons: z.array(z.string()),
+});
+
 // 최종 저장 구조 (코드가 LLM 정성 판정 + 코드 계산[2-A·passes·verdict]을 조립한 결과)
+//   - recommendations: 브랜드와 맞는 상위 3개 추천 (제외 트렌드는 빠짐)
+//   - evaluations: 입력 트렌드 전체 평가 (제외 포함, 추천순 → 제외순 정렬)
 export const MatchDataSchema = z.object({
   brand_name: z.string(),
+  recommendations: z.array(RecommendationSchema),
   evaluations: z.array(EvaluationItemSchema),
 });
 
