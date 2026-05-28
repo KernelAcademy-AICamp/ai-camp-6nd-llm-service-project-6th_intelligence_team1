@@ -15,11 +15,33 @@ src/matching/
 
 ## 입출력
 
-| 종류 | 출처 | 형식 |
-|---|---|---|
-| 입력 1 | 마케터 (현재는 mock) | `shared/schemas/brand-analysis.example.json` |
-| 입력 2 | 정보수집가 (현재는 mock) | `shared/schemas/trend-analysis.example.json` |
-| 출력 | 작성가에게 전달 | `shared/schemas/match-result.example.json` |
+| 종류 | 출처 | 실제 파일 | 형식 정의 |
+|---|---|---|---|
+| 입력 1 | 브랜드 분석가 (`node src/brand/analyze.js`) | `shared/data/brand-analysis.json` | `shared/schemas/brand-analysis.example.json` (shape only) |
+| 입력 2 | 트렌드 분석가 (`node src/trend/analyze.js`) | `shared/data/trend-analysis.json` | `shared/schemas/trend-analysis.example.json` (shape only) |
+| 출력 | 작성가에게 전달 | `shared/data/match-result.json` | `shared/schemas/match-result.example.json` |
+
+`shared/data/`는 `.gitignore` 대상. **분석가들이 각자 실제로 산출한 JSON만** 이 폴더에 놓는다. 파일이 없으면 매칭가는 친절한 안내와 함께 종료한다.
+
+`shared/schemas/*.example.json`은 **모양(shape)만 보여주는 템플릿** — 값은 모두 빈 문자열/빈 배열/0. 가짜 브랜드 데이터를 박아두지 않는다. 실제 시험 입력은 분석가를 돌려서 만들거나 직접 fixture를 작성한다. (단, `match-result.example.json`은 LLM 프롬프트에 박혀 출력 형식을 학습시키므로 채워진 값 유지)
+
+### 입력 유효성 검사 (Zod)
+
+LLM에 보내기 전, 분석가 산출이 약속된 형식인지 [schemas.js](schemas.js)의 `InputBrandSchema`/`InputTrendSchema`로 검증. 위반 시 어떤 경로의 어떤 규칙이 깨졌는지 한국어로 출력하고 즉시 종료(API 호출·결과 파일 모두 생략). **garbage-in으로 잘못된 1순위/2순위가 새어 나가는 사고를 막기 위함**.
+
+| 영역 | 검증 항목 |
+|---|---|
+| brand | `brand_name` 비어있지 않음, `category` 비어있지 않음(카테고리 게이트용), `tone_and_manner`는 7종 enum(`클린뷰티` / `로맨틱·감성` / `럭셔리·프리미엄` / `키치·플레이풀` / `더마·과학적` / `Z세대·트렌디` / `비건`) 중 1개 이상, `target.gender ∈ {여성, 남성, 공용}`, `target.age_groups`(정규식 `\d+대` 또는 세대 표현 `Z세대`/`MZ세대`/`밀레니얼`) 또는 `target.age_range`(정규식 `\d+(-\d+)?`, 시작 ≤ 종료) 중 하나, `target.motivation` 또는 `target.involvement` 중 하나 |
+| trend | `data.trends` 배열 1개 이상, 각 트렌드 `trend_name`·`category`·`summary` 필수, `keywords` 또는 `core_keywords` 중 하나, `audience_distribution`(2-A 코드 계산용 — `gender_ratio`·`age_ratio` 각 합이 1±0.02) |
+
+검증되는 오류 유형:
+- **누락**: 비어있는 문자열, 빈 배열, `null`/`undefined`
+- **형식**: 배열이어야 하는데 문자열, 객체여야 하는데 배열 등 타입 오류
+- **enum**: gender가 "고양이", tone이 "사이버펑크" 등 정의 외 값
+- **정규식**: age_groups가 "삼십대"(`\d+대`·세대표현 불일치), age_range가 "30-20"(시작>종료) 등
+- **합계**: `audience_distribution`의 비중 합이 1을 크게 벗어남 (2-A 계산 왜곡 방지)
+
+> 시맨틱 부적합(예: 자동차 브랜드 × 뷰티 트렌드)은 코드 단계가 아니라 LLM이 평가 과정에서 "제외" verdict로 처리. 코드는 형식·필수·enum까지 책임짐.
 
 ## 평가 로직 (2질문 × 2비교)
 
