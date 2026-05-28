@@ -327,11 +327,46 @@ if (passedTrends.length > 0) {
   console.log("카테고리 게이트 통과 트렌드 0개 — LLM 호출 생략, 전부 제외 처리.\n");
 }
 
-// 6. LLM 평가분(통과) + 코드 생성분(카테고리 제외)을 합쳐 최종 결과 구성.
-//    envelope은 매칭가가 wrap()으로 추가. brand_name은 입력값을 신뢰(LLM 오타 방지).
+// 6. LLM 평가분(통과) + 코드 생성분(카테고리 제외)을 합쳐 정렬·선별.
+//    매칭가의 목적: 여러 트렌드 중 브랜드와 맞는 상위 3개를 골라 추천.
+const allEvaluations = [...llmEvaluations, ...gatedEvaluations];
+const allTrendByName = new Map(
+  trendAnalysis.data.trends.map((t) => [t.trend_name, t]),
+);
+
+// 정렬: verdict 순위(1순위>2순위>3순위>제외) → passes 합 내림 → 트렌드 score 내림.
+const VERDICT_RANK = { "1순위": 1, "2순위": 2, "3순위": 3, 제외: 99 };
+function sortTuple(ev) {
+  const vr = VERDICT_RANK[ev.verdict] ?? 99;
+  const passSum =
+    ev.evaluation.question_1.passes + ev.evaluation.question_2.passes;
+  const score = allTrendByName.get(ev.trend_name)?.metrics?.score ?? 0;
+  return [vr, -passSum, -score]; // vr 오름차순, passSum·score 내림차순
+}
+allEvaluations.sort((a, b) => {
+  const ka = sortTuple(a);
+  const kb = sortTuple(b);
+  for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return ka[i] - kb[i];
+  return 0;
+});
+
+// 추천: 제외가 아닌 것 중 상위 3개 (맞는 게 3개 미만이면 있는 만큼만).
+const RECOMMEND_COUNT = 3;
+const recommendations = allEvaluations
+  .filter((ev) => ev.verdict !== "제외")
+  .slice(0, RECOMMEND_COUNT)
+  .map((ev, i) => ({
+    rank: i + 1,
+    trend_name: ev.trend_name,
+    verdict: ev.verdict,
+    summary_reasons: ev.summary_reasons,
+  }));
+
+// envelope은 매칭가가 wrap()으로 추가. brand_name은 입력값을 신뢰(LLM 오타 방지).
 const finalData = {
   brand_name: brandAnalysis.data.brand_name,
-  evaluations: [...llmEvaluations, ...gatedEvaluations],
+  recommendations,
+  evaluations: allEvaluations,
 };
 const matchResult = wrap(finalData);
 
