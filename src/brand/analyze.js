@@ -6,22 +6,22 @@ import { dirname, resolve } from "node:path";
 // 브랜드 분석가 산출 데이터
 const data = {
   source: "브랜드 분석",
-  brand_name: "",
+  brand_name: "hince",
   category: "",
-  tone_and_manner: [],
+  tone_and_manner: ["Z세대·트렌디"],
   texture_keywords: [],
   target: {
-    gender: "",
-    age_groups: [],
+    gender: "여성",
+    age_groups: ["20대", "30대"],
     involvement: "",
     motivation: [],
   },
   campaign_kpi: "",
   media_channels: [],
   match_keywords: {
-    character: [],
+    character: ["Z세대·트렌디"],
     benefit_texture: [],
-    target: [],
+    target: ["여성", "20대", "30대"],
   },
 };
 
