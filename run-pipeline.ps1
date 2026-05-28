@@ -16,7 +16,11 @@ Write-Host "`n=== 4. 트렌드 분석가 ===" -ForegroundColor Cyan
 node src/trend/analyze.js
 if (-not $?) { Write-Host "trend/analyze.js 실패. 중단." -ForegroundColor Red; exit 1 }
 
-Write-Host "`n=== 5. 매칭가 ===" -ForegroundColor Cyan
+Write-Host "`n=== 5. 브랜드 분석가 ===" -ForegroundColor Cyan
+node src/brand/analyze.js
+if (-not $?) { Write-Host "brand/analyze.js 실패. 중단." -ForegroundColor Red; exit 1 }
+
+Write-Host "`n=== 6. 매칭가 ===" -ForegroundColor Cyan
 node src/matching/match.js
 if (-not $?) { Write-Host "match.js 실패." -ForegroundColor Red; exit 1 }
 
