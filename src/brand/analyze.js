@@ -7,10 +7,10 @@ import { dirname, resolve } from "node:path";
 const data = {
   source: "브랜드 분석",
   brand_name: "힌스 (hince)",
-  product_name: "로 글로우 젤 틴트 미니",
-  category: "메이크업 > 립",
+  product_name: "커버 마스터 핑크 쿠션",
+  category: "메이크업 > 베이스",
   tone_and_manner: ["Z세대·트렌디"],
-  texture_keywords: ["글로우"],
+  texture_keywords: ["커버", "핑크 톤업", "글로우"],
   target: {
     gender: "여성",
     age_groups: ["Z세대"],
@@ -23,7 +23,7 @@ const data = {
   media_channels: ["유튜브"],
   match_keywords: {
     character: ["Z세대·트렌디"],
-    benefit_texture: ["립", "메이크업", "글로우"],
+    benefit_texture: ["베이스", "쿠션", "커버", "핑크 톤업", "글로우"],
     target: ["여성", "Z세대", "일상사용자", "자기표현"],
     campaign: ["재구매 유도", "한달", "200~500만원", "유튜브"],
   },
