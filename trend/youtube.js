@@ -30,12 +30,13 @@ async function fetchTrendingVideos(query) {
     }
   });
 
-  return response.data.items.map(item => ({
-    query: query,
-    source: "youtube",
-    title: item.snippet.title,
-    description: item.snippet.description,
-  }));
+ return response.data.items.map(item => ({
+  query: query,
+  source: "youtube",
+  title: item.snippet.title,
+  description: item.snippet.description,
+  url: null  // YouTube는 URL 없음을 명시적으로 표현
+}));
 }
 
 async function main() {

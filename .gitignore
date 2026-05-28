@@ -3,6 +3,10 @@
 .env.*
 !.env.example
 
+# Generated agent outputs (실제 분석/매칭 결과물)
+# 예시 데이터는 shared/schemas/에 따로 있음
+shared/data/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -88,7 +92,6 @@ logs/
 *.safetensors
 data/raw/
 data/processed/
-shared/data/
 models/
 checkpoints/
 chroma_db/
@@ -110,3 +113,6 @@ build/
 *.key
 credentials.json
 secrets.json
+
+# API 실행 결과물 (런타임 데이터, Git 관리 불필요)
+trend/data/

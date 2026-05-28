@@ -1,0 +1,62 @@
+{
+  "schema_version": "0.2",
+  "generated_at": "2026-05-26T10:05:00+09:00",
+  "status": "success",
+  "data": {
+    "analyzed_at": "",
+    "trend_count": 0,
+    "trends": [
+      {
+        "trend_id": "",
+        "trend_name": "",
+        "category": "",
+        "keywords": [],
+        "summary": "",
+        "headline_metric": {
+          "metric": "",
+          "value": "",
+          "delta": ""
+        },
+        "meaning": "",
+        "status": "",
+        "metrics": {
+          "score": 0,
+          "growth_rate": 0,
+          "period": ""
+        },
+        "evidence": [
+          {
+            "source": "",
+            "source_type": "",
+            "metric": "",
+            "value": "",
+            "raw_value": 0,
+            "period": ""
+          }
+        ],
+        "audience_distribution": {
+          "primary_gender": "",
+          "primary_age": [],
+          "gender_ratio": {
+            "female": 0,
+            "male": 0
+          },
+          "age_ratio": {
+            "10s": 0,
+            "20s": 0,
+            "30s": 0,
+            "40s": 0,
+            "50s+": 0
+          },
+          "source": ""
+        },
+        "media_channel_status": [
+          {
+            "media_channel": "",
+            "status": ""
+          }
+        ]
+      }
+    ]
+  }
+}
