@@ -264,7 +264,7 @@ ${JSON.stringify(brandAnalysis, null, 2)}
 ${JSON.stringify(passedTrendInput, null, 2)}
 \`\`\`
 
-위 모든 트렌드에 대해 4개 비교(1-A, 1-B, 2-A, 2-B)를 수행하고, verdict까지 산출해 \`evaluations[]\`에 담아 반환하세요. (envelope 제외, data 본체만)`;
+위 모든 트렌드에 대해 **정성 판정 3개(1-A, 1-B, 2-B)의 result+reason과 summary_reasons만** \`evaluations[]\`에 담아 반환하세요. 2-A·passes·verdict·envelope은 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
 
 // 5. Claude API 호출 — 통과 트렌드가 있을 때만. LLM은 data 본체만 생성.
 let llmEvaluations = [];
@@ -299,15 +299,28 @@ if (passedTrends.length > 0) {
     process.exit(1);
   }
 
+  // LLM 응답 trend_name 집합이 입력(통과 트렌드)과 정확히 일치하는지 검증.
+  //   - 입력에 없는 이름 반환 → 환각/오염
+  //   - 입력에 있는데 응답에서 누락 → 평가 누락
+  // 둘 다 결과 무결성을 깨므로 즉시 실패시킨다 (잘못된 매칭이 새어나가는 사고 방지).
+  const inputNames = new Set(passedTrends.map((t) => t.trend_name));
+  const responseNames = new Set(data.evaluations.map((le) => le.trend_name));
+  const extra = [...responseNames].filter((n) => !inputNames.has(n));
+  const missing = [...inputNames].filter((n) => !responseNames.has(n));
+  if (extra.length || missing.length) {
+    console.error("❌ LLM 응답의 트렌드 집합이 입력과 불일치 — 결과 무결성 보장 불가.");
+    if (extra.length) console.error(`   입력에 없는 트렌드(환각): ${extra.join(", ")}`);
+    if (missing.length) console.error(`   응답에서 누락된 트렌드: ${missing.join(", ")}`);
+    const errorResult = wrapError("LLM 응답 trend_name 집합이 입력과 불일치");
+    console.error(JSON.stringify(errorResult, null, 2));
+    process.exit(1);
+  }
+
   // LLM 정성 판정 + 코드 계산(2-A·passes·verdict)을 조립. trend_name으로 트렌드 매칭.
   const trendByName = new Map(passedTrends.map((t) => [t.trend_name, t]));
-  llmEvaluations = data.evaluations.map((le) => {
-    const trend = trendByName.get(le.trend_name);
-    if (!trend) {
-      console.warn(`⚠️ LLM이 반환한 trend_name '${le.trend_name}'을 입력에서 못 찾음 — audience_distribution 없이 2-A 계산.`);
-    }
-    return assembleEvaluation(le, trend, brandAnalysis.data.target);
-  });
+  llmEvaluations = data.evaluations.map((le) =>
+    assembleEvaluation(le, trendByName.get(le.trend_name), brandAnalysis.data.target),
+  );
   usage = response.usage;
   modelName = response.model;
 } else {

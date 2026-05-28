@@ -31,7 +31,17 @@ const BrandTargetSchema = z
     age_groups: z
       .array(z.string().regex(AGE_GROUP_RE, "age_groups 원소는 '20대' 또는 'Z세대/MZ세대/밀레니얼' 형식"))
       .optional(),
-    age_range: z.string().regex(/^\d+(-\d+)?$/, "age_range는 '20-30' 형식").optional(),
+    age_range: z
+      .string()
+      .regex(/^\d+(-\d+)?$/, "age_range는 '20-30' 형식")
+      .refine(
+        (s) => {
+          const [lo, hi] = s.split("-").map(Number);
+          return hi === undefined || lo <= hi;
+        },
+        { message: "age_range 시작이 종료보다 큼 (예: '30-20' 불가)" },
+      )
+      .optional(),
     involvement: z.string().optional(),
     motivation: z.array(z.string()).optional(),
   })
@@ -68,12 +78,26 @@ export const InputBrandSchema = z
   .passthrough();
 
 // 2-A를 코드가 계산하려면 트렌드에 연령·성별 비중이 구조화돼 있어야 함.
+// 합계는 1에 수렴해야 함 — 1을 넘으면 2-A 연령·성별 오버랩이 부풀려져 판정이 왜곡됨.
+// 소수점 반올림 오차를 감안해 ±0.02 허용.
+const RATIO_SUM_TOLERANCE = 0.02;
+const sumsToOne = (nums) =>
+  Math.abs(nums.reduce((s, v) => s + v, 0) - 1) <= RATIO_SUM_TOLERANCE;
+
 const AudienceDistributionSchema = z.object({
-  gender_ratio: z.object({
-    female: z.number().min(0).max(1),
-    male: z.number().min(0).max(1),
-  }),
-  age_ratio: z.record(z.string(), z.number().min(0).max(1)),
+  gender_ratio: z
+    .object({
+      female: z.number().min(0).max(1),
+      male: z.number().min(0).max(1),
+    })
+    .refine((g) => sumsToOne([g.female, g.male]), {
+      message: "gender_ratio 합(female+male)이 1±0.02를 벗어남 (2-A 계산 왜곡 방지)",
+    }),
+  age_ratio: z
+    .record(z.string(), z.number().min(0).max(1))
+    .refine((a) => sumsToOne(Object.values(a)), {
+      message: "age_ratio 전체 합이 1±0.02를 벗어남 (2-A 계산 왜곡 방지)",
+    }),
 }).passthrough();
 
 const TrendItemSchema = z

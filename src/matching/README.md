@@ -31,14 +31,15 @@ LLM에 보내기 전, 분석가 산출이 약속된 형식인지 [schemas.js](sc
 
 | 영역 | 검증 항목 |
 |---|---|
-| brand | `brand_name` 비어있지 않음, `tone_and_manner`는 7종 enum(클린뷰티·로맨틱·감성·럭셔리·프리미엄·키치·플레이풀·더마·과학적·Z세대·트렌디·비건) 중 1개 이상, `target.gender ∈ {여성, 남성, 공용}`, `target.age_groups`(정규식 `\d+대`) 또는 `target.age_range`(정규식 `\d+(-\d+)?`) 중 하나, `target.motivation` 또는 `target.involvement` 중 하나 |
-| trend | `data.trends` 배열 1개 이상, 각 트렌드 `trend_name`·`summary` 필수, `keywords` 또는 `core_keywords` 중 하나 |
+| brand | `brand_name` 비어있지 않음, `category` 비어있지 않음(카테고리 게이트용), `tone_and_manner`는 7종 enum(`클린뷰티` / `로맨틱·감성` / `럭셔리·프리미엄` / `키치·플레이풀` / `더마·과학적` / `Z세대·트렌디` / `비건`) 중 1개 이상, `target.gender ∈ {여성, 남성, 공용}`, `target.age_groups`(정규식 `\d+대` 또는 세대 표현 `Z세대`/`MZ세대`/`밀레니얼`) 또는 `target.age_range`(정규식 `\d+(-\d+)?`, 시작 ≤ 종료) 중 하나, `target.motivation` 또는 `target.involvement` 중 하나 |
+| trend | `data.trends` 배열 1개 이상, 각 트렌드 `trend_name`·`category`·`summary` 필수, `keywords` 또는 `core_keywords` 중 하나, `audience_distribution`(2-A 코드 계산용 — `gender_ratio`·`age_ratio` 각 합이 1±0.02) |
 
 검증되는 오류 유형:
 - **누락**: 비어있는 문자열, 빈 배열, `null`/`undefined`
 - **형식**: 배열이어야 하는데 문자열, 객체여야 하는데 배열 등 타입 오류
 - **enum**: gender가 "고양이", tone이 "사이버펑크" 등 정의 외 값
-- **정규식**: age_groups가 "삼십대" (`\d+대` 불일치) 등
+- **정규식**: age_groups가 "삼십대"(`\d+대`·세대표현 불일치), age_range가 "30-20"(시작>종료) 등
+- **합계**: `audience_distribution`의 비중 합이 1을 크게 벗어남 (2-A 계산 왜곡 방지)
 
 > 시맨틱 부적합(예: 자동차 브랜드 × 뷰티 트렌드)은 코드 단계가 아니라 LLM이 평가 과정에서 "제외" verdict로 처리. 코드는 형식·필수·enum까지 책임짐.
 
