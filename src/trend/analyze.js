@@ -1,107 +1,182 @@
-import { wrap } from "../../shared/envelope.js";
-import { writeFileSync, mkdirSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import "dotenv/config";
+import Anthropic from "@anthropic-ai/sdk";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-
-// 트렌드 분석가 산출 데이터
-const data = {
-  // ========== 메타 정보 ==========
-  source: "트렌드 분석", // 산출 라벨 (브랜드 분석가의 source 필드와 대응)
-  analyzed_at: "2026-05-26T10:00:00+09:00", // 분석 시점 (ISO 8601)
-  trend_count: 1, // 트렌드 개수
-
-  trends: [
-    {
-      // ========== A. 식별·메타 블록 ==========
-      trend_id: "T001",
-      trend_name: "글로우 누드립",
-      category: "메이크업 > 립", // 매칭가 카테고리 게이트용. 브랜드와 "대분류 > 소분류" 표기 동일
-      keywords: ["글로우립", "물광 틴트", "촉촉 누드", "젤 텍스처"],
-
-      // ========== B. 요약 블록 ==========
-      summary: "20-30대 여성 글로우 누드립 검색 38% 상승", // 50자 이내
-      headline_metric: {
-        metric: "검색량 지수",
-        value: "84",
-        delta: "+38% vs 전월",
-      },
-
-      // ========== C. 심층 분석 블록 ==========
-      meaning:
-        "글로우 누드립은 단순 컬러 트렌드를 넘어 '입술 본연의 톤에 윤기를 더한다'는 Z세대 자기표현 코드와 연결되어, 데일리 메이크업의 마무리 한 끗을 책임지는 립 카테고리의 코어 코드로 자리잡고 있습니다.",
-      status:
-        "Naver 검색 지수가 전월 대비 38% 상승했고, YouTube 립 튜토리얼·틴트 비교 영상은 평균 11만 조회수를 기록 중입니다. 캐릿·대학내일 등 정성 매체에서도 글로우 누드립을 2026 상반기 립 코어 키워드로 명시하고 있습니다.",
-      metrics: {
-        score: 84,
-        growth_rate: 0.38,
-        period: "2026-04 ~ 2026-05",
-      },
-      evidence: [
-        {
-          source: "Naver DataLab",
-          source_type: "search_api",
-          metric: "검색량 지수",
-          value: "84 (전월 대비 +38%)",
-          raw_value: 84,
-          period: "2026-04 ~ 2026-05",
-        },
-        {
-          source: "YouTube Data API",
-          source_type: "sns_api",
-          metric: "립 튜토리얼·틴트 비교 영상 평균 조회수",
-          value: "110,000회",
-          raw_value: 110000,
-          period: "최근 30일",
-        },
-        {
-          source: "캐릿",
-          source_type: "rag",
-          metric: "트렌드 해설 인용",
-          value: "2026 상반기 립 코어 키워드로 '글로우 누드립' 부상",
-        },
-      ],
-
-      // ========== (매칭가 2-A 입력) audience_distribution ==========
-      audience_distribution: {
-        primary_gender: "female",
-        primary_age: ["20s", "30s"],
-        gender_ratio: { female: 0.91, male: 0.09 },
-        age_ratio: {
-          "10s": 0.13,
-          "20s": 0.45,
-          "30s": 0.28,
-          "40s": 0.1,
-          "50s+": 0.04,
-        },
-        source: "Naver DataLab 성별·연령 분해 + YouTube Audience",
-      },
-
-      // ========== D. 주요 채널 현황 (주력채널 유튜브 최상단) ==========
-      media_channel_status: [
-        {
-          media_channel: "YouTube",
-          status: "글로우 틴트 비교·누드립 튜토리얼 영상 급증",
-        },
-        {
-          media_channel: "Instagram",
-          status: "젤 틴트 스와치 카드뉴스·립 클로즈업 릴스 인게이지먼트 상승",
-        },
-        {
-          media_channel: "TikTok",
-          status: "#글로우누드립 해시태그 누적 조회 3.5억회",
-        },
-      ],
-    },
-  ],
-};
-
-// envelope으로 감싸 매칭가에게 전달
-const output = wrap(data);
+import { fileURLToPath } from "node:url";
+import { wrap, wrapError } from "../../shared/envelope.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const outPath = resolve(__dirname, "../../shared/data/trend-analysis.json");
+const PROJECT_ROOT = resolve(__dirname, "../..");
 
-mkdirSync(dirname(outPath), { recursive: true });
-writeFileSync(outPath, JSON.stringify(output, null, 2));
+// envelope을 매칭가가 읽는 표준 경로(shared/data/trend-analysis.json)에 기록
+function writeOutput(obj) {
+  const outputDir = resolve(PROJECT_ROOT, "shared/data");
+  mkdirSync(outputDir, { recursive: true });
+  const outPath = resolve(outputDir, "trend-analysis.json");
+  writeFileSync(outPath, JSON.stringify(obj, null, 2), "utf-8");
+  return outPath;
+}
+
+// 1. 분석가1이 수집한 raw 데이터 로드 (trend/data/trend_raw.json)
+const rawPath = resolve(PROJECT_ROOT, "trend/data/trend_raw.json");
+let raw;
+try {
+  raw = JSON.parse(readFileSync(rawPath, "utf-8"));
+} catch (err) {
+  console.error("❌ raw 데이터 파일을 읽을 수 없습니다: trend/data/trend_raw.json");
+  console.error("   분석가1의 수집기를 먼저 실행하세요: node trend/merge.js");
+  process.exit(1);
+}
+
+const brandContext = raw.brand_context ?? {};
+const rawData = raw.raw_data ?? [];
+if (rawData.length === 0) {
+  console.error("❌ raw_data가 비어있습니다. 수집기 실행을 확인하세요.");
+  process.exit(1);
+}
+
+// 2. 시스템 프롬프트 — LLM이 따라야 할 출력 형식·규칙 (트렌드 분석가의 두뇌)
+const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
+수집된 raw 검색 데이터(YouTube·Tavily)를 분석해, 매칭가에게 넘길 트렌드 분석 JSON을 생성합니다.
+
+## 작업
+1. raw_data 배열(검색 결과 제목·설명)을 읽고, 의미가 비슷한 것끼리 묶어 **3~6개의 뚜렷한 트렌드**로 정제합니다.
+2. 각 트렌드마다 아래 구조의 객체를 만듭니다.
+3. raw 데이터에 실제 근거가 있는 트렌드만 만듭니다. 없는 내용을 지어내지 마세요.
+
+## 출력 형식 (이 구조를 정확히 따르세요)
+\`\`\`json
+{
+  "trends": [
+    {
+      "trend_id": "T001",
+      "trend_name": "트렌드 이름",
+      "category": "메이크업 > 베이스",
+      "keywords": ["키워드1", "키워드2"],
+      "summary": "한 줄 요약 (50자 이내, 수치 포함 권장)",
+      "headline_metric": { "metric": "검색량 지수", "value": "89", "delta": "+45% vs 전월" },
+      "meaning": "트렌드의 의미 (2~3문장)",
+      "status": "현황 (2~3문장, 수치 포함)",
+      "metrics": { "score": 89, "growth_rate": 0.45, "period": "2026-04 ~ 2026-05" },
+      "evidence": [
+        { "source": "YouTube", "source_type": "sns_api", "metric": "관련 영상 다수", "value": "무드 메이크업 튜토리얼 다수 관측", "period": "최근 30일" }
+      ],
+      "audience_distribution": {
+        "primary_gender": "female",
+        "primary_age": ["20s", "30s"],
+        "gender_ratio": { "female": 0.88, "male": 0.12 },
+        "age_ratio": { "10s": 0.07, "20s": 0.42, "30s": 0.31, "40s": 0.14, "50s+": 0.06 },
+        "source": "brand_context 기반 추정"
+      },
+      "media_channel_status": [
+        { "media_channel": "YouTube", "status": "관련 튜토리얼 콘텐츠 다수" }
+      ]
+    }
+  ]
+}
+\`\`\`
+
+## 규칙 (반드시 준수)
+- **category**: "대분류 > 소분류" 형식. 대분류는 클렌징/스킨케어/메이크업 중 하나, 소분류는 하위 (예: "메이크업 > 베이스", "메이크업 > 립", "스킨케어 > 토너")
+- **keywords**: 최소 1개
+- **summary**: 50자 이내
+- **gender_ratio**: female + male 합이 정확히 1.0
+- **age_ratio**: 모든 값 합이 정확히 1.0. 키는 "10s","20s","30s","40s","50s+"만 사용
+- **primary_gender**: female / male / all 중 하나
+- **primary_age**: "10s","20s","30s","40s","50s+" 중 비중 높은 것
+- **metrics.score**: 0~100 정수, **metrics.growth_rate**: 소수(0.45 = 45% 상승)
+- 모든 자연어는 한국어
+- 검색·조회수 등 수치는 raw 데이터로 직접 관측되지 않으면 brand_context 기반으로 합리적 추정하되, source에 "추정" 명시
+- **출력은 순수 JSON 하나만.** 코드 블록 표시나 설명 텍스트 없이 JSON만.`;
+
+// 3. 사용자 메시지 — 브랜드 컨텍스트 + raw 데이터
+const userMessage = `다음 수집 데이터를 분석해서 트렌드를 산출하세요.
+
+## 브랜드 컨텍스트 (이 타겟·톤 기준으로 수집됨)
+\`\`\`json
+${JSON.stringify(brandContext, null, 2)}
+\`\`\`
+
+## 수집된 raw 데이터 (${rawData.length}개)
+\`\`\`json
+${JSON.stringify(rawData, null, 2)}
+\`\`\`
+
+위 데이터에서 3~6개의 뚜렷한 트렌드를 정제해 출력 형식대로 JSON으로 반환하세요.`;
+
+// 4. Claude API 호출 (시스템 프롬프트 끝에 cache_control로 비용 절감)
+const client = new Anthropic();
+console.log(`트렌드 분석 시작... (raw ${rawData.length}개 → 트렌드 정제)\n`);
+const startTime = Date.now();
+
+const response = await client.messages.create({
+  model: "claude-haiku-4-5",
+  max_tokens: 8192,
+  system: [
+    { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
+  ],
+  messages: [{ role: "user", content: userMessage }],
+});
+
+const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+// 5. 응답에서 JSON 추출 (LLM이 코드블록으로 감싸도 제거)
+const rawText = response.content.find((b) => b.type === "text")?.text ?? "";
+const jsonText = rawText.replace(/```json\s*/g, "").replace(/```/g, "").trim();
+
+let parsed;
+try {
+  parsed = JSON.parse(jsonText);
+} catch (err) {
+  console.error("❌ LLM 응답을 JSON으로 파싱하지 못했습니다.");
+  console.error("--- 응답 원문 ---");
+  console.error(rawText);
+  writeOutput(wrapError("트렌드 분석가 LLM 출력 JSON 파싱 실패"));
+  process.exit(1);
+}
+
+// 6. 기본 검증 — trends 배열이 비어있지 않은지
+if (!Array.isArray(parsed.trends) || parsed.trends.length === 0) {
+  console.error("❌ trends 배열이 비어있거나 형식이 잘못되었습니다.");
+  writeOutput(wrapError("트렌드 분석가 LLM 출력에 trends 배열 없음"));
+  process.exit(1);
+}
+
+// 7. 메타데이터 추가 + envelope wrap (source·analyzed_at·trend_count는 코드가 부여)
+const data = {
+  source: "트렌드 분석",
+  analyzed_at: new Date().toISOString(),
+  trend_count: parsed.trends.length,
+  trends: parsed.trends,
+};
+const output = wrap(data);
+
+// 8. 표준 경로에 저장
+const outPath = writeOutput(output);
+
+// 9. 결과·메타 로그
+console.log("=== 트렌드 분석 결과 ===\n");
+console.log(JSON.stringify(output, null, 2));
+
+console.log("\n=== 메타 ===");
+console.log(`모델          : ${response.model}`);
+console.log(`소요 시간     : ${elapsed}s`);
+console.log(`산출 트렌드   : ${data.trend_count}개`);
+const usage = response.usage;
+if (usage) {
+  const cacheWrite = usage.cache_creation_input_tokens ?? 0;
+  const cacheRead = usage.cache_read_input_tokens ?? 0;
+  // Haiku 4.5 가격 ($/1M): input $1, output $5
+  const cost =
+    (usage.input_tokens * 1 +
+      cacheWrite * 1.25 +
+      cacheRead * 0.1 +
+      usage.output_tokens * 5) /
+    1_000_000;
+  console.log(`입력 토큰     : ${usage.input_tokens}`);
+  console.log(`출력 토큰     : ${usage.output_tokens}`);
+  console.log(`예상 비용     : $${cost.toFixed(6)} (≈ ${(cost * 1300).toFixed(2)}원)`);
+}
+console.log(`결과 저장     : ${outPath}`);
 
 export default output;
