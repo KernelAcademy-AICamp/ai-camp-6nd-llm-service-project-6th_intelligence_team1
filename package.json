@@ -4,15 +4,18 @@
   "type": "module",
   "scripts": {
     "hello": "node examples/hello.js",
-    "chat": "node examples/chat.js"
+    "chat": "node examples/chat.js",
+    "match": "node src/matching/match.js",
+    "trend:collect": "node trend/youtube.js && node trend/tavily.js && node trend/merge.js",
+    "trend": "npm run trend:collect && node src/trend/analyze.js",
+    "brand": "node src/brand/analyze.js",
+    "pipeline": "npm run trend && npm run brand && npm run match"
   },
-
   "dependencies": {
-  "@anthropic-ai/sdk": "^0.97.1",
-  "@tavily/core": "^0.7.3",
-  "axios": "^1.16.1",
-  "dotenv": "^17.4.2",
-  "zod": "^4.4.3"
-}
-
+    "@anthropic-ai/sdk": "^0.97.1",
+    "@tavily/core": "^0.7.3",
+    "axios": "^1.16.1",
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3"
+  }
 }

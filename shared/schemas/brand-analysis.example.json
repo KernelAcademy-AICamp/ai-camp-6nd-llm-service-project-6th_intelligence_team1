@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.2",
+  "generated_at": "2026-05-26T10:00:00+09:00",
+  "status": "success",
+  "data": {
+    "source": "브랜드 분석",
+    "brand_name": "",
+    "category": "",
+    "tone_and_manner": [],
+    "texture_keywords": [],
+    "target": {
+      "gender": "",
+      "age_groups": [],
+      "involvement": "",
+      "motivation": []
+    },
+    "campaign_kpi": "",
+    "campaign_period": "",
+    "campaign_budget": "",
+    "media_channels": [],
+    "match_keywords": {
+      "character": [],
+      "benefit_texture": [],
+      "target": [],
+      "campaign": []
+    }
+  }
+}
