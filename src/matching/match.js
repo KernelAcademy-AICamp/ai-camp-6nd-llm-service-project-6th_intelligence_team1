@@ -234,9 +234,27 @@ function makeExcludedByCategory(trend, brandCategory) {
 }
 
 const brandCategory = brandAnalysis.data.category;
+
+// 입력 트렌드 중복 제거 — 트렌드 분석가가 같은 trend_name을 두 번 산출하면
+// evaluations·recommendations에 동일 트렌드가 중복되므로, 첫 번째만 남기고 거른다.
+const seenTrendNames = new Set();
+const uniqueTrends = [];
+let dupCount = 0;
+for (const t of trendAnalysis.data.trends) {
+  if (seenTrendNames.has(t.trend_name)) {
+    dupCount++;
+    continue;
+  }
+  seenTrendNames.add(t.trend_name);
+  uniqueTrends.push(t);
+}
+if (dupCount > 0) {
+  console.log(`중복 트렌드 ${dupCount}개 제거 (trend_name 기준)`);
+}
+
 const passedTrends = [];
 const gatedEvaluations = [];
-for (const t of trendAnalysis.data.trends) {
+for (const t of uniqueTrends) {
   if (categoryMatches(brandCategory, t.category)) passedTrends.push(t);
   else gatedEvaluations.push(makeExcludedByCategory(t, brandCategory));
 }
