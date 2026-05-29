@@ -55,7 +55,7 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
 수집된 raw 검색 데이터(YouTube·Tavily)를 분석해, 매칭가에게 넘길 트렌드 분석 JSON을 생성합니다.
 
 ## 작업
-1. raw_data 배열(검색 결과 제목·설명)을 읽고, 의미가 비슷한 것끼리 묶어 **3~6개의 뚜렷한 트렌드**로 정제합니다.
+1. raw_data 배열(검색 결과 제목·설명)을 읽고, 의미가 비슷한 것끼리 묶어 **근거가 뚜렷하고 서로 구별되는 트렌드를 최대한 많이** 정제합니다. (개수를 억지로 채우려 비슷한 트렌드를 쪼개거나 근거 없는 트렌드를 만들지 마세요.)
 2. 각 트렌드마다 아래 구조의 객체를 만듭니다.
 3. raw 데이터에 실제 근거가 있는 트렌드만 만듭니다. 없는 내용을 지어내지 마세요.
 
@@ -133,7 +133,7 @@ ${JSON.stringify(brandContext, null, 2)}
 ${JSON.stringify(rawData, null, 2)}
 \`\`\`
 
-위 데이터에서 3~6개의 뚜렷한 트렌드를 정제해 출력 형식대로 JSON으로 반환하세요.${
+위 데이터에서 근거가 뚜렷하고 서로 구별되는 트렌드를 최대한 많이 정제해 출력 형식대로 JSON으로 반환하세요.${
   targetCategory
     ? `\n\n**카테고리 정렬 (중요)**: 이 브랜드의 카테고리는 "${targetCategory}"입니다. 트렌드의 category 대분류·소분류가 이와 명백히 다르면(예: 베이스 브랜드 × 립 트렌드) 생성하지 마세요. 제품 카테고리와 제형(${targetTexture || "미상"})에 직접 관련된 트렌드를 우선합니다.`
     : ""
@@ -146,7 +146,7 @@ const startTime = Date.now();
 
 const response = await client.messages.create({
   model: "claude-haiku-4-5",
-  max_tokens: 8192,
+  max_tokens: 16384, // 트렌드를 "최대한 많이" 뽑으므로 출력 잘림 방지로 상향
   system: [
     { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
   ],

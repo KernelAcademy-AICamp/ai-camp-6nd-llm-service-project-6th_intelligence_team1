@@ -97,6 +97,22 @@ function computeVerdict(q1, q2) {
 }
 
 // LLM 정성 판정(1-A·1-B·2-B) + 코드 계산(2-A·passes·verdict)을 최종 구조로 조립.
+// summary_reasons에서 모호한 정량 표현(수치·비교군 없는 표현)이 든 항목을 제거.
+// LLM이 system.md 규칙을 어기고 "다수·확산·활발" 등을 넣는 경우의 안전망(코드 강제).
+const VAGUE_TERMS = ["다수", "확산", "활발", "급증", "다양", "여럿", "증가 추세", "인기", "주목"];
+function filterVagueReasons(reasons) {
+  if (!Array.isArray(reasons)) return reasons;
+  // 모호어가 들어간 항목 제거. 단 숫자(%, 지수, 증감)가 함께 있으면 구체적이므로 유지.
+  const kept = reasons.filter((r) => {
+    const fact = r?.fact ?? "";
+    const hasNumber = /\d/.test(fact);
+    const hasVague = VAGUE_TERMS.some((t) => fact.includes(t));
+    return hasNumber || !hasVague;
+  });
+  // 전부 걸러져 빈 배열이 되면 원본 유지 (근거 0개 방지) — 최소 1개는 남긴다.
+  return kept.length > 0 ? kept : reasons;
+}
+
 function assembleEvaluation(llmEval, trend, brandTarget) {
   const c = llmEval.comparisons;
   const a2 = compute2A(brandTarget, trend?.audience_distribution);
@@ -117,7 +133,7 @@ function assembleEvaluation(llmEval, trend, brandTarget) {
       },
     },
     verdict: computeVerdict(q1passes, q2passes),
-    summary_reasons: llmEval.summary_reasons,
+    summary_reasons: filterVagueReasons(llmEval.summary_reasons),
   };
 }
 
@@ -229,7 +245,13 @@ function makeExcludedByCategory(trend, brandCategory) {
       question_2: { label: "타겟 적합성", comparisons: { "2-A": skip, "2-B": skip }, passes: 0 },
     },
     verdict: "제외",
-    summary_reasons: [`${reason} → 카테고리 게이트에서 사전 제외 (LLM 평가 생략)`],
+    summary_reasons: [
+      {
+        category: "카테고리 적합성",
+        fact: reason,
+        source: "브랜드·트렌드 category (입력)",
+      },
+    ],
   };
 }
 
@@ -311,6 +333,7 @@ if (passedTrends.length > 0) {
   const response = await client.messages.parse({
     model: "claude-haiku-4-5",
     max_tokens: 8192,
+    temperature: 0, // 정성 판정(1-A·1-B·2-B) 흔들림 최소화 — 경계선 트렌드 순위 안정화
     system: systemContent,
     messages: [{ role: "user", content: userMessage }],
     output_config: {
