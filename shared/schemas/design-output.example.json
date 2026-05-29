@@ -1,0 +1,30 @@
+{
+  "schema_version": "0.2",
+  "generated_at": "2026-05-28T12:10:00+09:00",
+  "status": "success",
+  "data": {
+    "brand_name": "힌스 (hince)",
+    "visuals": [
+      {
+        "content_id": "C001",
+        "trend_name": "글로우 누드립",
+        "format": "video",
+        "concept": "맑은 윤기의 데일리 글로우 누드립 착장 시연",
+        "visual_direction": "자연광이 들어오는 화이트 톤 공간, 20대 여성 모델의 입술 클로즈업 중심. 촉촉한 윤기가 도드라지는 dewy 질감 강조, 청량하고 맑은 분위기.",
+        "generation_prompt": "Close-up beauty video of a young Korean woman applying a glossy nude lip tint, dewy glowing lips, soft natural daylight, clean white minimal background, fresh and airy mood, vertical format, cosmetic commercial style",
+        "aspect_ratio": "9:16",
+        "duration": "15초",
+        "scene_flow": ["제품 클로즈업", "입술 발색 시연", "자연광 데일리 착장 컷"]
+      },
+      {
+        "content_id": "C002",
+        "trend_name": "MLBB 무드 틴트",
+        "format": "image",
+        "concept": "세련된 데일리 MLBB 컬러 스와치 비주얼",
+        "visual_direction": "차분한 베이지 배경에 제품과 입술 스와치를 나란히. 자연스러운 MLBB 컬러감, 세련되고 정돈된 무드.",
+        "generation_prompt": "Flat lay beauty image of an MLBB lip tint with lip swatches on a beige background, natural muted rosy-brown color, elegant minimal styling, soft studio lighting, square format",
+        "aspect_ratio": "1:1"
+      }
+    ]
+  }
+}
