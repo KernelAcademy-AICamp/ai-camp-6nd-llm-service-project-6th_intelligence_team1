@@ -1,41 +1,152 @@
+import "dotenv/config";
+import Anthropic from "@anthropic-ai/sdk";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { wrap } from "../../shared/envelope.js";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { BrandInputSchema, SearchKeywordsLlmSchema } from "./schemas.js";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
-// 브랜드 분석가 산출 데이터 (cycle 2)
-const data = {
-  source: "브랜드 분석",
-  brand_name: "힌스 (hince)",
-  product_name: "커버 마스터 핑크 쿠션",
-  category: "메이크업 > 베이스",
-  tone_and_manner: ["Z세대·트렌디"],
-  texture_keywords: ["매트"],
-  target: {
-    gender: "여성",
-    age_groups: ["20대"],
-    involvement: "일상사용자",
-    motivation: ["자기표현"],
-  },
-  campaign_kpi: "재구매 유도",
-  campaign_period: "한달",
-  campaign_budget: "200~500만원",
-  media_channels: ["유튜브"],
-  match_keywords: {
-    character: ["Z세대·트렌디"],
-    benefit_texture: ["베이스", "메이크업", "매트"],
-    target: ["여성", "20대", "일상사용자", "자기표현"],
-    campaign: ["재구매 유도", "한달", "200~500만원", "유튜브"],
-  },
-};
+// 브랜드 분석가 — 마케터 입력(JSON)을 받아 매칭가에 넘길 envelope을 만든다.
+// 추가로 트렌드 수집가가 쓸 검색 키워드(search_keywords)를 LLM으로 생성.
+//
+// 사용법 1: 함수로 호출 (웹 UI·테스트용)
+//   import { analyzeBrand } from "./analyze.js";
+//   const output = await analyzeBrand(userInput);
+//
+// 사용법 2: 스크립트로 실행 (현재 파이프라인용)
+//   node src/brand/analyze.js
+//   → inputs/brand-input.json 읽어서 shared/data/brand-analysis.json 저장
 
-// envelope으로 감싸 매칭가에게 전달
-const output = wrap(data);
-
-// 파일 기준 절대경로로 저장 (실행 위치 무관)
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const outPath = resolve(__dirname, "../../shared/data/brand-analysis.json");
-mkdirSync(dirname(outPath), { recursive: true });
-writeFileSync(outPath, JSON.stringify(output, null, 2));
 
-export default output;
+// 시스템 프롬프트 — 검색 키워드 생성 가이드
+const searchKeywordsPrompt = readFileSync(
+  resolve(__dirname, "prompts/search-keywords.md"),
+  "utf-8",
+);
+
+// match_keywords는 입력 필드에서 자동 유도 — 마케터가 별도로 채울 필요 없음.
+function buildMatchKeywords(input) {
+  // category "메이크업 > 베이스" → ["메이크업", "베이스"]
+  const categoryParts = input.category.split(">").map((s) => s.trim()).filter(Boolean);
+
+  return {
+    character: [...input.tone_and_manner],
+    benefit_texture: [...categoryParts, ...input.texture_keywords],
+    target: [
+      input.target.gender,
+      ...input.target.age_groups,
+      input.target.involvement,
+      ...input.target.motivation,
+    ],
+    campaign: [
+      input.campaign_kpi,
+      input.campaign_period,
+      input.campaign_budget,
+      ...input.media_channels,
+    ],
+  };
+}
+
+// LLM 호출 — 브랜드 정보로부터 트렌드 검색 키워드 5~6개 생성
+async function generateSearchKeywords(input) {
+  const client = new Anthropic();
+
+  // 시스템 컨텐츠 끝에 cache_control — 시스템 프롬프트는 안정적이라 캐싱 효과 큼
+  const systemContent = [
+    {
+      type: "text",
+      text: searchKeywordsPrompt,
+      cache_control: { type: "ephemeral" },
+    },
+  ];
+
+  const userMessage = `다음 브랜드·제품 정보로 트렌드 수집용 검색 키워드 5~6개를 생성하세요.
+
+## 입력
+- 브랜드명: ${input.brand_name}
+- 제품명: ${input.product_name}
+- 카테고리: ${input.category}
+- 제형(텍스처): ${input.texture_keywords.join(", ")}
+- 톤앤매너: ${input.tone_and_manner.join(", ")}
+- 타겟 성별: ${input.target.gender}
+- 타겟 연령: ${input.target.age_groups.join(", ")}
+- 뷰티관여도: ${input.target.involvement}
+- 소비동기: ${input.target.motivation.join(", ")}
+
+JSON 배열만 반환 (부가 설명 없이): \`{ "search_keywords": [...] }\``;
+
+  const response = await client.messages.parse({
+    model: "claude-haiku-4-5",
+    max_tokens: 512,
+    system: systemContent,
+    messages: [{ role: "user", content: userMessage }],
+    output_config: {
+      format: zodOutputFormat(SearchKeywordsLlmSchema),
+    },
+  });
+
+  const parsed = response.parsed_output;
+  if (!parsed) {
+    console.error("LLM 응답 파싱 실패:");
+    console.error(response.content.find((b) => b.type === "text")?.text ?? "");
+    throw new Error("search_keywords 생성 실패");
+  }
+
+  return {
+    keywords: parsed.search_keywords,
+    usage: response.usage,
+  };
+}
+
+export async function analyzeBrand(userInput) {
+  // 1) 입력 검증 — 잘못된 값이면 여기서 즉시 ZodError
+  const validated = BrandInputSchema.parse(userInput);
+
+  // 2) match_keywords 자동 생성 (LLM 호출 없음)
+  const match_keywords = buildMatchKeywords(validated);
+
+  // 3) LLM으로 트렌드 검색 키워드 생성
+  const { keywords: search_keywords, usage } = await generateSearchKeywords(validated);
+
+  // 4) envelope으로 감싸 반환
+  const output = wrap({
+    source: "브랜드 분석",
+    ...validated,
+    match_keywords,
+    search_keywords,
+  });
+
+  return { output, usage };
+}
+
+// ─── 스크립트 진입점 (CLI 실행 시) ──────────────────────────────────
+const isDirectRun = process.argv[1] === fileURLToPath(import.meta.url);
+
+if (isDirectRun) {
+  const inputPath = resolve(__dirname, "../../inputs/brand-input.json");
+  const outPath = resolve(__dirname, "../../shared/data/brand-analysis.json");
+
+  const userInput = JSON.parse(readFileSync(inputPath, "utf-8"));
+
+  const startTime = Date.now();
+  const { output, usage } = await analyzeBrand(userInput);
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, JSON.stringify(output, null, 2));
+
+  console.log(`✅ 브랜드 분석 완료: ${output.data.brand_name} (${output.data.product_name})`);
+  console.log(`   검색 키워드: ${output.data.search_keywords.length}개`);
+  output.data.search_keywords.forEach((k, i) => console.log(`     ${i + 1}. ${k}`));
+  console.log(`   소요 시간: ${elapsed}s`);
+  if (usage) {
+    const cacheRead = usage.cache_read_input_tokens ?? 0;
+    const cacheWrite = usage.cache_creation_input_tokens ?? 0;
+    console.log(
+      `   토큰: 입력 ${usage.input_tokens} / 캐시 읽기 ${cacheRead} / 캐시 쓰기 ${cacheWrite} / 출력 ${usage.output_tokens}`,
+    );
+  }
+  console.log(`   저장: ${outPath}`);
+}
