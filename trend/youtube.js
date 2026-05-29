@@ -8,11 +8,11 @@ const API_KEY = process.env.YOUTUBE_API_KEY;
 const BASE_URL = "https://www.googleapis.com/youtube/v3";
 
 const QUERIES = [
-  "로맨틱 메이크업 트렌드",
-  "감성 뷰티 룩",
-  "무드 메이크업",
-  "20대 여자 메이크업",
-  "여자 뷰티 추천 2026"
+  "매트 쿠션 추천 2026",
+  "커버 쿠션 추천",
+  "20대 베이스 메이크업",
+  "매트 베이스 메이크업",
+  "데일리 쿠션 추천"
 ];
 
 async function fetchTrendingVideos(query) {
@@ -83,11 +83,11 @@ async function main() {
 
   const output = {
     collected_at: new Date().toISOString(),
-    brand_context: {
-      target_gender: "여성",
-      target_age: "20대",
-      tone: "로맨틱·감성"
-    },
+brand_context: {
+  target_gender: "여성",
+  target_age: "20대",
+  tone: "Z세대·트렌디"
+},
     raw_data: results
   };
 

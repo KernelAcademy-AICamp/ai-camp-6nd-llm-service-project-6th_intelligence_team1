@@ -10,9 +10,9 @@ const client = tavily({ apiKey: process.env.TAVILY_API_KEY });
 // 입력값: 성별(여자) / 나이(20대) / 톤앤매너(로맨틱, 감성)
 // YouTube가 영상 기반 트렌드를 수집한다면, Tavily는 텍스트 기반 기사를 수집하는 역할이야
 const QUERIES = [
-  "로맨틱 메이크업 트렌드 2026",   // 톤앤매너(로맨틱) 기반
-  "감성 뷰티 트렌드",              // 톤앤매너(감성) 기반
-  "20대 여성 메이크업 트렌드"       // 타겟(20대 여자) 기반
+  "매트 쿠션 트렌드 2026",
+  "커버 베이스 메이크업 트렌드",
+  "20대 베이스 메이크업 트렌드"
 ];
 
 async function fetchTrendArticles(query) {
@@ -43,18 +43,16 @@ async function main() {
     results.push(...articles);
   }
 
-  // 트렌드 분석가 B에게 넘길 형태로 포맷 구성
-  // YouTube raw 데이터와 동일한 구조로 맞춰서 나중에 합치기 쉽게 해둔 거야
-  const output = {
+ const output = {
     collected_at: new Date().toISOString(),
     brand_context: {
       target_gender: "여성",
       target_age: "20대",
-      tone: "로맨틱·감성"
+      tone: "Z세대·트렌디"
     },
     raw_data: results
   };
-
+  
   // 결과를 JSON 파일로 저장
   fs.writeFileSync("trend/data/tavily_raw.json", JSON.stringify(output, null, 2), "utf-8");
 
