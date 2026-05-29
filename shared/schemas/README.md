@@ -74,23 +74,32 @@ Python 등 다른 언어 에이전트는 동일 구조를 직접 구현하되, `
 | 필드 | 형식 | 비고 |
 |---|---|---|
 | `data.brand_name` | string | 표시용 |
+| `data.category` | `"대분류 > 소분류"` (예: `"메이크업 > 립"`) | **카테고리 게이트 필수.** 트렌드와 대분류 일치 + 소분류 포함 관계일 때만 평가 진행 |
 | `data.target.gender` | `"여성"` / `"남성"` / `"여성·남성"` | 2-A 성별 오버랩 계산 |
 | `data.target.age_range` 또는 `target.age_groups` | `"20-30"` 문자열 또는 `["20대","30대"]` 배열 | 둘 중 하나, 매칭가가 흡수 |
 | `data.tone_and_manner` | 배열, 7종 enum 중 선택 | 1-A·1-B 친화/충돌 판정. `클린뷰티`/`로맨틱·감성`/`럭셔리·프리미엄`/`키치·플레이풀`/`더마·과학적`/`Z세대·트렌디`/`비건` |
 
-부가 필드(`category`, `match_keywords` 등)는 자유 — 매칭가는 패스스루.
+부가 필드(`match_keywords` 등)는 자유 — 매칭가는 패스스루.
 
 **트렌드 분석가가 줄 trend-analysis.json**
 
 | 필드 | 형식 | 비고 |
 |---|---|---|
 | `data.trends[].trend_name` | string | |
+| `data.trends[].category` | `"대분류 > 소분류"` (예: `"메이크업 > 아이&립"`) | **카테고리 게이트 필수.** 브랜드 소분류를 포함하면 통과 (대분류는 일치해야 함) |
 | `data.trends[].summary` | string (~50자) | 1-A 무드 판정 |
 | `data.trends[].keywords` 또는 `core_keywords` | 배열 | 1-B 키워드 매칭 |
 | `data.trends[].audience_distribution` 또는 평문 `metrics` | 연령·성별 비중 | **2-A 필수**. 객체면 `age_ratio["20s"]: 0.39` / `gender_ratio.female: 0.87` 영문 비율, 평문이면 "20대 39%, 여성 87%" |
 | `data.trends[].channel_status` 또는 `media_channel_status` | 문자열 또는 배열 | 2-B 페르소나 보강용 |
 
 부가 필드(`meaning`, `status`, `evidence`, `headline_metric` 등)는 자유 — 매칭가가 reason 보강에 참고.
+
+### 카테고리 게이트 (포함 관계)
+
+매칭가는 브랜드·트렌드 `category`를 `"대분류 > 소분류"`로 보고 **포함 관계**로 비교한다:
+- **대분류 일치** AND **브랜드 소분류가 트렌드 소분류 문자열에 포함** → 통과
+- 예: 브랜드 `"메이크업 > 립"` → 트렌드 `"메이크업 > 아이&립"`·`"메이크업 > 립&컬러"` 통과 / `"메이크업 > 베이스"`·`"스킨케어 > 토너"` 제외
+- 통과한 트렌드만 4비교 평가, 제외 트렌드는 LLM 호출 없이 verdict="제외"로 결과에 포함
 
 ### 출력 규약 (매칭가가 작성가에게 줄 것)
 
@@ -101,8 +110,8 @@ envelope `data` 안에:
 | 필드 | 형식 | 비고 |
 |---|---|---|
 | `brand_name` | string | 평가 대상 브랜드 |
-| `recommendations[]` | 배열 (최대 3개) | **브랜드와 맞는 상위 3개 추천.** 제외 트렌드는 빠짐. `{ rank, trend_name, verdict, summary_reasons }` |
-| `evaluations[]` | 배열 (입력 트렌드 수만큼) | 각 트렌드 평가 전체 (제외 포함, 추천순 → 제외순 정렬) |
+| `recommendations[]` | 배열 (최대 3개) | **브랜드와 맞는 상위 3개 추천.** 제외 트렌드는 빠짐. `{ rank, trend_name, summary_reasons }` — verdict 등급은 노출하지 않음(rank·근거만) |
+| `evaluations[]` | 배열 (입력 트렌드 수만큼) | 각 트렌드 평가 전체 (verdict 등급 포함, 추천순 → 제외순 정렬) |
 
 **선별·랭킹** (코드가 수행): 입력 트렌드 전체를 평가한 뒤 — ① 제외(verdict="제외")를 뺀 후 ② verdict 순위(1순위>2순위>3순위) → passes 합 → 트렌드 `metrics.score` 순으로 정렬해 ③ 상위 3개를 `recommendations`로 추림. 맞는 트렌드가 3개 미만이면 있는 만큼만.
 

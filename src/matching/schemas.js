@@ -163,10 +163,10 @@ const EvaluationItemSchema = z.object({
 });
 
 // 추천 트렌드 (제외 아닌 것 중 상위 N개). 코드가 정렬·선별해 생성.
+// verdict 등급은 출력에 노출하지 않음 — rank(추천 순서)와 근거만. 등급은 evaluations에 내부 보존.
 const RecommendationSchema = z.object({
   rank: z.number().int().positive(),
   trend_name: z.string(),
-  verdict: z.enum(["1순위", "2순위", "3순위"]),
   summary_reasons: z.array(z.string()),
 });
 

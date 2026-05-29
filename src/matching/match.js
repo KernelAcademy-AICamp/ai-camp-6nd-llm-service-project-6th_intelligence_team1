@@ -203,11 +203,24 @@ if (!brandResult.success || !trendResult.success) {
 const brandAnalysis = normalizeBrandInput(brandRaw);
 const trendAnalysis = trendRaw;
 
-// 2-2. 카테고리 게이트 — 브랜드 category와 "대분류 > 소분류" 표기가 정확히 같은
-//      트렌드만 LLM 평가 대상. 불일치 트렌드는 코드가 "제외" verdict로 직접 만들어
-//      결과에 포함(작성가가 제외 사유를 알 수 있게)하고 LLM 호출은 생략(비용 절약).
+// 2-2. 카테고리 게이트 — 포함 관계 방식.
+//      "대분류 > 소분류"에서 ① 대분류가 같고 ② 브랜드 소분류가 트렌드 소분류 문자열에
+//      포함되면 통과. 예: 브랜드 "메이크업 > 립" → 트렌드 "메이크업 > 아이&립"(립 포함) 통과,
+//      "메이크업 > 베이스"(립 없음)·"스킨케어 > 토너"(대분류 다름) 제외.
+//      불일치 트렌드는 코드가 "제외" verdict로 만들어 결과에 포함하고 LLM 호출은 생략.
+function parseCategory(c) {
+  const [major, minor = ""] = String(c ?? "").split(">").map((s) => s.trim());
+  return { major, minor };
+}
+function categoryMatches(brandCat, trendCat) {
+  const b = parseCategory(brandCat);
+  const t = parseCategory(trendCat);
+  // 대분류 일치 + 브랜드 소분류가 트렌드 소분류에 포함 (브랜드 소분류 없으면 대분류만 비교)
+  return b.major === t.major && t.minor.includes(b.minor);
+}
+
 function makeExcludedByCategory(trend, brandCategory) {
-  const reason = `카테고리 불일치: 브랜드 '${brandCategory}' ≠ 트렌드 '${trend.category}'`;
+  const reason = `카테고리 불일치: 브랜드 '${brandCategory}'와 트렌드 '${trend.category}'가 대분류·소분류 포함 관계 아님`;
   const skip = { result: "❌", reason };
   return {
     trend_name: trend.trend_name,
@@ -221,10 +234,28 @@ function makeExcludedByCategory(trend, brandCategory) {
 }
 
 const brandCategory = brandAnalysis.data.category;
+
+// 입력 트렌드 중복 제거 — 트렌드 분석가가 같은 trend_name을 두 번 산출하면
+// evaluations·recommendations에 동일 트렌드가 중복되므로, 첫 번째만 남기고 거른다.
+const seenTrendNames = new Set();
+const uniqueTrends = [];
+let dupCount = 0;
+for (const t of trendAnalysis.data.trends) {
+  if (seenTrendNames.has(t.trend_name)) {
+    dupCount++;
+    continue;
+  }
+  seenTrendNames.add(t.trend_name);
+  uniqueTrends.push(t);
+}
+if (dupCount > 0) {
+  console.log(`중복 트렌드 ${dupCount}개 제거 (trend_name 기준)`);
+}
+
 const passedTrends = [];
 const gatedEvaluations = [];
-for (const t of trendAnalysis.data.trends) {
-  if (t.category === brandCategory) passedTrends.push(t);
+for (const t of uniqueTrends) {
+  if (categoryMatches(brandCategory, t.category)) passedTrends.push(t);
   else gatedEvaluations.push(makeExcludedByCategory(t, brandCategory));
 }
 console.log(
@@ -358,7 +389,6 @@ const recommendations = allEvaluations
   .map((ev, i) => ({
     rank: i + 1,
     trend_name: ev.trend_name,
-    verdict: ev.verdict,
     summary_reasons: ev.summary_reasons,
   }));
 
