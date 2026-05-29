@@ -134,6 +134,13 @@ const ComparisonResultSchema = z.object({
   reason: z.string(),
 });
 
+// 데이터 근거 — 입력 데이터에서 직접 확인 가능한 사실 + 출처만. 정성 판단(톤 부합 등)은 제외.
+const EvidenceReasonSchema = z.object({
+  category: z.string(), // 분류 (예: "제형 적합성", "시장 성장성", "색상 적합성")
+  fact: z.string(), // 입력에서 직접 확인 가능한 사실 (수치 또는 키워드 일치)
+  source: z.string(), // 출처 (예: "네이버 데이터랩, 2026-01~05", "트렌드 키워드", "audience_distribution")
+});
+
 const Question1Schema = z.object({
   label: z.literal("브랜드 적합성"),
   comparisons: z.object({
@@ -159,7 +166,7 @@ const EvaluationItemSchema = z.object({
     question_2: Question2Schema,
   }),
   verdict: z.enum(["1순위", "2순위", "3순위", "제외"]),
-  summary_reasons: z.array(z.string()).min(1).max(3),
+  summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
 });
 
 // 추천 트렌드 (제외 아닌 것 중 상위 N개). 코드가 정렬·선별해 생성.
@@ -167,7 +174,7 @@ const EvaluationItemSchema = z.object({
 const RecommendationSchema = z.object({
   rank: z.number().int().positive(),
   trend_name: z.string(),
-  summary_reasons: z.array(z.string()),
+  summary_reasons: z.array(EvidenceReasonSchema),
 });
 
 // 최종 저장 구조 (코드가 LLM 정성 판정 + 코드 계산[2-A·passes·verdict]을 조립한 결과)
@@ -192,7 +199,7 @@ const LlmEvaluationItemSchema = z.object({
     "1-B": ComparisonResultSchema,
     "2-B": ComparisonResultSchema,
   }),
-  summary_reasons: z.array(z.string()).min(1).max(3),
+  summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
 });
 
 export const LlmMatchDataSchema = z.object({
