@@ -7,18 +7,24 @@ dotenv.config();
 const API_KEY = process.env.YOUTUBE_API_KEY;
 const BASE_URL = "https://www.googleapis.com/youtube/v3";
 
-const QUERIES = [
-  "매트 쿠션 추천 2026",
-  "커버 쿠션 추천",
-  "20대 베이스 메이크업",
-  "매트 베이스 메이크업",
-  "데일리 쿠션 추천"
-];
+// 브랜드 분석가가 만든 brand-analysis.json을 읽어옴
+// 여기에 search_keywords(LLM이 생성한 검색어)와 brand_context가 들어있음
+const brandAnalysis = JSON.parse(
+  fs.readFileSync("shared/data/brand-analysis.json", "utf-8")
+);
+
+// search_keywords를 검색어로 사용 (하드코딩 대신 동적으로)
+const QUERIES = brandAnalysis.data.short_keywords;
+
+// brand_context도 brand-analysis.json에서 가져옴
+const brandContext = {
+  target_gender: brandAnalysis.data.target.gender,
+  target_age: brandAnalysis.data.target.age_groups.join(", "),
+  tone: brandAnalysis.data.tone_and_manner.join(", ")
+};
 
 async function fetchTrendingVideos(query) {
   // 1단계: search.list로 영상 ID 수집
-  // search.list는 검색 결과를 가져오는 엔드포인트인데,
-  // 조회수 같은 통계 정보는 포함하지 않아서 video ID만 뽑아내는 용도로 씀
   const searchResponse = await axios.get(`${BASE_URL}/search`, {
     params: {
       key: API_KEY,
@@ -28,21 +34,16 @@ async function fetchTrendingVideos(query) {
       order: "viewCount",
       maxResults: 5,
       relevanceLanguage: "ko",
-      publishedAfter: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+      publishedAfter: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
     }
   });
 
   const items = searchResponse.data.items;
-  
-  // 검색 결과가 없으면 빈 배열 반환
   if (!items || items.length === 0) return [];
 
-  // video ID 목록 추출
   const videoIds = items.map(item => item.id.videoId).join(",");
 
   // 2단계: videos.list로 실제 조회수 수집
-  // search.list로 가져온 ID를 한 번에 묶어서 statistics 엔드포인트에 던지면
-  // 조회수, 좋아요 수 등 실제 수치를 가져올 수 있어
   const statsResponse = await axios.get(`${BASE_URL}/videos`, {
     params: {
       key: API_KEY,
@@ -51,30 +52,27 @@ async function fetchTrendingVideos(query) {
     }
   });
 
-  // statistics 결과를 video ID 기준으로 매핑해두면
-  // 나중에 검색 결과랑 조회수를 쉽게 합칠 수 있어
   const statsMap = {};
   statsResponse.data.items.forEach(item => {
     statsMap[item.id] = item.statistics;
   });
 
-  // 검색 결과(제목, 설명)와 조회수를 하나의 객체로 합치기
   return items.map(item => ({
     query: query,
     source: "youtube",
     title: item.snippet.title,
     description: item.snippet.description,
-    view_count: parseInt(statsMap[item.id.videoId]?.viewCount || 0), // 실제 조회수
-    like_count: parseInt(statsMap[item.id.videoId]?.likeCount || 0), // 좋아요 수
+    view_count: parseInt(statsMap[item.id.videoId]?.viewCount || 0),
+    like_count: parseInt(statsMap[item.id.videoId]?.likeCount || 0),
     url: null
   }));
 }
 
 async function main() {
   console.log("YouTube 트렌드 수집 시작...\n");
+  console.log(`검색어 ${QUERIES.length}개를 brand-analysis.json에서 읽어왔어!\n`);
 
   const results = [];
-
   for (const query of QUERIES) {
     console.log(`"${query}" 검색 중...`);
     const videos = await fetchTrendingVideos(query);
@@ -83,11 +81,7 @@ async function main() {
 
   const output = {
     collected_at: new Date().toISOString(),
-brand_context: {
-  target_gender: "여성",
-  target_age: "20대",
-  tone: "Z세대·트렌디"
-},
+    brand_context: brandContext,
     raw_data: results
   };
 
@@ -95,7 +89,6 @@ brand_context: {
 
   console.log("\n=== 수집 완료 ===");
   console.log(`총 ${results.length}개 영상 수집됨`);
-  // 실제 조회수가 들어오는지 확인하기 위해 상위 3개를 출력해봄
   results.slice(0, 3).forEach(v => {
     console.log(`"${v.title.slice(0, 30)}..." 조회수: ${v.view_count.toLocaleString()}회`);
   });
