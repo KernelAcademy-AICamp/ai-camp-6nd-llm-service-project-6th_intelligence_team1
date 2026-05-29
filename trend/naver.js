@@ -9,16 +9,16 @@ const BASE_URL = "https://openapi.naver.com/v1/datalab/search";
 
 const KEYWORD_GROUPS = [
   {
-    groupName: "무드 메이크업",
-    keywords: ["무드립", "누드립", "MLBB", "벨벳틴트"]
+    groupName: "매트 쿠션",
+    keywords: ["매트쿠션", "커버쿠션", "세미매트쿠션"]
   },
   {
-    groupName: "로맨틱 뷰티",
-    keywords: ["로맨틱 메이크업", "감성 메이크업", "뱀파이어 메이크업"]
+    groupName: "베이스 메이크업",
+    keywords: ["쿠션추천", "데일리쿠션", "20대쿠션"]
   },
   {
-    groupName: "20대 뷰티 트렌드",
-    keywords: ["20대 메이크업", "글로우 메이크업", "무드 뷰티"]
+    groupName: "커버 베이스 트렌드",
+    keywords: ["커버력쿠션", "지속력쿠션", "모공커버"]
   }
 ];
 
@@ -53,7 +53,7 @@ async function main() {
     brand_context: {
       target_gender: "여성",
       target_age: "20대",
-      tone: "로맨틱·감성"
+      tone: "Z세대·트렌디"
     },
     raw_data: result.results.map(group => ({
       query: group.title,
