@@ -2,7 +2,7 @@ import "dotenv/config";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { wrap } from "../../shared/envelope.js";
-import { BrandInputSchema, SearchKeywordsLlmSchema } from "./schemas.js";
+import { BrandInputSchema, BrandKeywordsLlmSchema } from "./schemas.js";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
@@ -49,8 +49,10 @@ function buildMatchKeywords(input) {
   };
 }
 
-// LLM 호출 — 브랜드 정보로부터 트렌드 검색 키워드 5~6개 생성
-async function generateSearchKeywords(input) {
+// LLM 호출 — 브랜드 정보로부터 트렌드 수집용 키워드 두 종류 생성:
+//   1) search_keywords: YouTube·Tavily용 자연 문장형 5~6개
+//   2) datalab_keywords: Naver DataLab용 짧은 단어형 2~3 그룹
+async function generateTrendKeywords(input) {
   const client = new Anthropic();
 
   // 시스템 컨텐츠 끝에 cache_control — 시스템 프롬프트는 안정적이라 캐싱 효과 큼
@@ -62,7 +64,7 @@ async function generateSearchKeywords(input) {
     },
   ];
 
-  const userMessage = `다음 브랜드·제품 정보로 트렌드 수집용 검색 키워드 5~6개를 생성하세요.
+  const userMessage = `다음 브랜드·제품 정보로 트렌드 수집용 키워드 세 종류를 모두 생성하세요.
 
 ## 입력
 - 브랜드명: ${input.brand_name}
@@ -75,15 +77,15 @@ async function generateSearchKeywords(input) {
 - 뷰티관여도: ${input.target.involvement}
 - 소비동기: ${input.target.motivation.join(", ")}
 
-JSON 배열만 반환 (부가 설명 없이): \`{ "search_keywords": [...] }\``;
+\`search_keywords\`(Tavily용 자연 문장형 5~6개), \`short_keywords\`(YouTube용 짧은 평면 배열 4~6개), \`datalab_keywords\`(Naver용 짧은 단어 그룹 2~3개) 모두 채워서 JSON으로만 반환.`;
 
   const response = await client.messages.parse({
     model: "claude-haiku-4-5",
-    max_tokens: 512,
+    max_tokens: 1024,
     system: systemContent,
     messages: [{ role: "user", content: userMessage }],
     output_config: {
-      format: zodOutputFormat(SearchKeywordsLlmSchema),
+      format: zodOutputFormat(BrandKeywordsLlmSchema),
     },
   });
 
@@ -91,11 +93,13 @@ JSON 배열만 반환 (부가 설명 없이): \`{ "search_keywords": [...] }\``;
   if (!parsed) {
     console.error("LLM 응답 파싱 실패:");
     console.error(response.content.find((b) => b.type === "text")?.text ?? "");
-    throw new Error("search_keywords 생성 실패");
+    throw new Error("키워드 생성 실패");
   }
 
   return {
-    keywords: parsed.search_keywords,
+    search_keywords: parsed.search_keywords,
+    short_keywords: parsed.short_keywords,
+    datalab_keywords: parsed.datalab_keywords,
     usage: response.usage,
   };
 }
@@ -107,8 +111,9 @@ export async function analyzeBrand(userInput) {
   // 2) match_keywords 자동 생성 (LLM 호출 없음)
   const match_keywords = buildMatchKeywords(validated);
 
-  // 3) LLM으로 트렌드 검색 키워드 생성
-  const { keywords: search_keywords, usage } = await generateSearchKeywords(validated);
+  // 3) LLM으로 트렌드 수집용 키워드 세 종류 생성
+  const { search_keywords, short_keywords, datalab_keywords, usage } =
+    await generateTrendKeywords(validated);
 
   // 4) envelope으로 감싸 반환
   const output = wrap({
@@ -116,6 +121,8 @@ export async function analyzeBrand(userInput) {
     ...validated,
     match_keywords,
     search_keywords,
+    short_keywords,
+    datalab_keywords,
   });
 
   return { output, usage };
@@ -138,8 +145,14 @@ if (isDirectRun) {
   writeFileSync(outPath, JSON.stringify(output, null, 2));
 
   console.log(`✅ 브랜드 분석 완료: ${output.data.brand_name} (${output.data.product_name})`);
-  console.log(`   검색 키워드: ${output.data.search_keywords.length}개`);
+  console.log(`   search_keywords (Tavily용): ${output.data.search_keywords.length}개`);
   output.data.search_keywords.forEach((k, i) => console.log(`     ${i + 1}. ${k}`));
+  console.log(`   short_keywords (YouTube용): ${output.data.short_keywords.length}개`);
+  output.data.short_keywords.forEach((k, i) => console.log(`     ${i + 1}. ${k}`));
+  console.log(`   datalab_keywords (Naver용): ${output.data.datalab_keywords.length} 그룹`);
+  output.data.datalab_keywords.forEach((g) =>
+    console.log(`     [${g.groupName}] ${g.keywords.join(", ")}`),
+  );
   console.log(`   소요 시간: ${elapsed}s`);
   if (usage) {
     const cacheRead = usage.cache_read_input_tokens ?? 0;
