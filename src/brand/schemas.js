@@ -152,11 +152,29 @@ export const BrandInputSchema = z
     }),
   );
 
-// ─── LLM 출력 스키마 (search_keywords) ──────────────────────────
-// 트렌드 수집가가 YouTube·Naver·Tavily에 던질 검색 쿼리 5~6개.
-export const SearchKeywordsLlmSchema = z.object({
+// ─── LLM 출력 스키마 (search_keywords + datalab_keywords) ──────
+// 트렌드 수집가가 두 가지 형식으로 받음:
+//   1) search_keywords: YouTube·Tavily용 자연 문장형 쿼리 5~6개
+//   2) datalab_keywords: Naver DataLab용 짧은 단어 키워드 2~3 그룹
+//      (네이버는 OR 합산해서 시계열 보여주므로 그룹 구조 필수)
+const DatalabGroupSchema = z.object({
+  groupName: z.string().min(2, "groupName은 2글자 이상"),
+  keywords: z
+    .array(z.string().min(2, "키워드 2글자 이상").max(20, "키워드 20글자 이하"))
+    .min(2, "그룹당 키워드 최소 2개")
+    .max(5, "그룹당 키워드 최대 5개"),
+});
+
+export const BrandKeywordsLlmSchema = z.object({
   search_keywords: z
     .array(z.string().min(2, "검색 쿼리는 2글자 이상").max(50, "검색 쿼리는 50글자 이하"))
     .min(5, "최소 5개")
     .max(6, "최대 6개"),
+  datalab_keywords: z
+    .array(DatalabGroupSchema)
+    .min(2, "Naver DataLab 그룹 최소 2개")
+    .max(3, "Naver DataLab 그룹 최대 3개"),
 });
+
+// 하위 호환 alias (이름만 바꾼 거)
+export const SearchKeywordsLlmSchema = BrandKeywordsLlmSchema;
