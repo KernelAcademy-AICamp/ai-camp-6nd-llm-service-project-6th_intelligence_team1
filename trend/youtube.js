@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import axios from "axios";
 import fs from "fs";
+fs.mkdirSync("trend/data", { recursive: true });
 dotenv.config();
 
 const API_KEY = process.env.YOUTUBE_API_KEY;
