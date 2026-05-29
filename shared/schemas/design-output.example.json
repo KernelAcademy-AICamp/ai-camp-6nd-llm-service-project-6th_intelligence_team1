@@ -11,10 +11,11 @@
         "format": "video",
         "concept": "맑은 윤기의 데일리 글로우 누드립 착장 시연",
         "visual_direction": "자연광이 들어오는 화이트 톤 공간, 20대 여성 모델의 입술 클로즈업 중심. 촉촉한 윤기가 도드라지는 dewy 질감 강조, 청량하고 맑은 분위기.",
-        "generation_prompt": "Close-up beauty video of a young Korean woman applying a glossy nude lip tint, dewy glowing lips, soft natural daylight, clean white minimal background, fresh and airy mood, vertical format, cosmetic commercial style",
+        "generation_prompt": "Extreme close-up beauty video of a young Korean woman applying glossy nude lip tint (subject), tight macro framing on lips (composition), soft natural daylight (lighting), warm nude rosy tones (color), dewy glossy glowing juicy finish, cosmetic commercial photography (texture/style), fresh airy clean mood (mood), slow push-in and soft cut transitions, 30fps",
+        "negative_prompt": "matte dry cakey lips, distorted lips, asymmetric face, extra fingers, deformed hands, text, watermark, low quality, blurry",
         "aspect_ratio": "9:16",
         "duration": "15초",
-        "scene_flow": ["제품 클로즈업", "입술 발색 시연", "자연광 데일리 착장 컷"]
+        "scene_flow": ["제품 클로즈업 (macro)", "입술에 발색하는 손동작 (slow motion)", "물광 윤기 강조 클로즈업", "자연광 데일리 착장 풀샷"]
       },
       {
         "content_id": "C002",
@@ -22,7 +23,8 @@
         "format": "image",
         "concept": "세련된 데일리 MLBB 컬러 스와치 비주얼",
         "visual_direction": "차분한 베이지 배경에 제품과 입술 스와치를 나란히. 자연스러운 MLBB 컬러감, 세련되고 정돈된 무드.",
-        "generation_prompt": "Flat lay beauty image of an MLBB lip tint with lip swatches on a beige background, natural muted rosy-brown color, elegant minimal styling, soft studio lighting, square format",
+        "generation_prompt": "Flat lay beauty image of an MLBB lip tint with lip swatches (subject), centered top-down 90° flat lay (composition), soft diffused studio softbox (lighting), muted rosy-brown beige tones (color), elegant minimal cosmetic product photography (texture/style), refined calm daily mood (mood)",
+        "negative_prompt": "glossy wet look, cluttered background, distorted product, text, watermark, low quality, blurry",
         "aspect_ratio": "1:1"
       }
     ]

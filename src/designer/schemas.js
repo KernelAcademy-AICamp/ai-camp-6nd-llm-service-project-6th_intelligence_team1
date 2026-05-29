@@ -32,7 +32,8 @@ const VisualSchema = z.object({
   format: z.enum(["image", "video"]),
   concept: z.string(), // 시안 한 줄 컨셉
   visual_direction: z.string(), // 구도·색감·분위기·피사체 방향
-  generation_prompt: z.string(), // 이미지/영상 생성 도구용 프롬프트 (영문)
+  generation_prompt: z.string(), // 이미지/영상 생성 도구용 프롬프트 (영문, 6요소)
+  negative_prompt: z.string(), // 생성에서 피할 요소 (영문) — 왜곡·텍스트·제형 반대 등
   aspect_ratio: z.string(), // 예: "9:16", "1:1", "16:9"
   duration: z.string().optional(), // video일 때 길이 (예: "15초")
   scene_flow: z.array(z.string()).optional(), // video일 때 장면 흐름
