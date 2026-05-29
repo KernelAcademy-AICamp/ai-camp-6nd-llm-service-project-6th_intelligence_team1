@@ -9,7 +9,7 @@
     "trend:collect": "node trend/youtube.js && node trend/tavily.js && node trend/naver.js && node trend/merge.js",
     "trend": "npm run trend:collect && node src/trend/analyze.js",
     "brand": "node src/brand/analyze.js",
-    "pipeline": "npm run trend && npm run brand && npm run match"
+    "pipeline": "npm run brand && npm run trend && npm run match"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.1",
