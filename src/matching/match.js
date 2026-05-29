@@ -78,7 +78,11 @@ function compute2A(brandTarget, audience) {
   const ageOk = agePct >= 60;
   const genderOk = genderPct >= 60;
   const result = ageOk && genderOk ? "✅" : ageOk || genderOk ? "⚠️" : "❌";
-  const reason = `[코드 계산] 연령 오버랩 ${agePct}% (${ageOk ? "≥" : "<"}60), 성별 오버랩 ${genderPct}% (${genderOk ? "≥" : "<"}60) → ${result}`;
+  // 인구 분포는 네이버 데이터랩 실측 % 가 아니라 추정값이므로, 구체 수치는 노출하지 않는다.
+  // 판정에는 계속 쓰되(코드 내부), reason에는 방향성(부합/부분/미흡)만 정성 표기.
+  const ageWord = ageOk ? "타겟 연령대와 부합" : "타겟 연령대와 부분 부합";
+  const genderWord = genderOk ? "타겟 성별 우세" : "타겟 성별 비우세";
+  const reason = `[코드 판정] ${ageWord}, ${genderWord} → ${result} (인구 분포 추정 기반, 구체 수치 비공개)`;
   return { result, reason };
 }
 
@@ -97,13 +101,17 @@ function computeVerdict(q1, q2) {
 }
 
 // LLM 정성 판정(1-A·1-B·2-B) + 코드 계산(2-A·passes·verdict)을 최종 구조로 조립.
-// summary_reasons에서 모호한 정량 표현(수치·비교군 없는 표현)이 든 항목을 제거.
-// LLM이 system.md 규칙을 어기고 "다수·확산·활발" 등을 넣는 경우의 안전망(코드 강제).
+// summary_reasons에서 신뢰할 수 없는 근거 항목을 제거 (코드 안전망).
 const VAGUE_TERMS = ["다수", "확산", "활발", "급증", "다양", "여럿", "증가 추세", "인기", "주목"];
+// 인구통계 수치(추정값이라 부정확) 인용 차단용 패턴. LLM이 규칙 어기고 넣어도 코드가 제거.
+const DEMOGRAPHIC_RE = /(여성|남성)\s*\d|\d+\s*(대|세)\s*\d*\s*%|성별\s*(비중|오버랩)|연령\s*(비중|오버랩)/;
 function filterVagueReasons(reasons) {
   if (!Array.isArray(reasons)) return reasons;
-  // 모호어가 들어간 항목 제거. 단 숫자(%, 지수, 증감)가 함께 있으면 구체적이므로 유지.
   const kept = reasons.filter((r) => {
+    const text = `${r?.category ?? ""} ${r?.fact ?? ""}`;
+    // ① 인구통계 수치 인용 항목 제거 (추정값 — 근거로 쓰지 않음)
+    if (DEMOGRAPHIC_RE.test(text)) return false;
+    // ② 모호어가 들었는데 숫자가 없으면 제거 (숫자 있으면 구체적이므로 유지)
     const fact = r?.fact ?? "";
     const hasNumber = /\d/.test(fact);
     const hasVague = VAGUE_TERMS.some((t) => fact.includes(t));
