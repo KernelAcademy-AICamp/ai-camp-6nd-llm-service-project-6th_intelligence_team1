@@ -64,7 +64,7 @@ async function generateTrendKeywords(input) {
     },
   ];
 
-  const userMessage = `다음 브랜드·제품 정보로 트렌드 수집용 키워드 두 종류를 모두 생성하세요.
+  const userMessage = `다음 브랜드·제품 정보로 트렌드 수집용 키워드 세 종류를 모두 생성하세요.
 
 ## 입력
 - 브랜드명: ${input.brand_name}
@@ -77,7 +77,7 @@ async function generateTrendKeywords(input) {
 - 뷰티관여도: ${input.target.involvement}
 - 소비동기: ${input.target.motivation.join(", ")}
 
-\`search_keywords\`(자연 문장형 5~6개)와 \`datalab_keywords\`(짧은 단어형 2~3 그룹) 둘 다 채워서 JSON으로만 반환.`;
+\`search_keywords\`(Tavily용 자연 문장형 5~6개), \`short_keywords\`(YouTube용 짧은 평면 배열 4~6개), \`datalab_keywords\`(Naver용 짧은 단어 그룹 2~3개) 모두 채워서 JSON으로만 반환.`;
 
   const response = await client.messages.parse({
     model: "claude-haiku-4-5",
@@ -98,6 +98,7 @@ async function generateTrendKeywords(input) {
 
   return {
     search_keywords: parsed.search_keywords,
+    short_keywords: parsed.short_keywords,
     datalab_keywords: parsed.datalab_keywords,
     usage: response.usage,
   };
@@ -110,8 +111,8 @@ export async function analyzeBrand(userInput) {
   // 2) match_keywords 자동 생성 (LLM 호출 없음)
   const match_keywords = buildMatchKeywords(validated);
 
-  // 3) LLM으로 트렌드 수집용 키워드 두 종류 생성
-  const { search_keywords, datalab_keywords, usage } =
+  // 3) LLM으로 트렌드 수집용 키워드 세 종류 생성
+  const { search_keywords, short_keywords, datalab_keywords, usage } =
     await generateTrendKeywords(validated);
 
   // 4) envelope으로 감싸 반환
@@ -120,6 +121,7 @@ export async function analyzeBrand(userInput) {
     ...validated,
     match_keywords,
     search_keywords,
+    short_keywords,
     datalab_keywords,
   });
 
@@ -143,8 +145,10 @@ if (isDirectRun) {
   writeFileSync(outPath, JSON.stringify(output, null, 2));
 
   console.log(`✅ 브랜드 분석 완료: ${output.data.brand_name} (${output.data.product_name})`);
-  console.log(`   search_keywords (YouTube·Tavily용): ${output.data.search_keywords.length}개`);
+  console.log(`   search_keywords (Tavily용): ${output.data.search_keywords.length}개`);
   output.data.search_keywords.forEach((k, i) => console.log(`     ${i + 1}. ${k}`));
+  console.log(`   short_keywords (YouTube용): ${output.data.short_keywords.length}개`);
+  output.data.short_keywords.forEach((k, i) => console.log(`     ${i + 1}. ${k}`));
   console.log(`   datalab_keywords (Naver용): ${output.data.datalab_keywords.length} 그룹`);
   output.data.datalab_keywords.forEach((g) =>
     console.log(`     [${g.groupName}] ${g.keywords.join(", ")}`),
