@@ -3,6 +3,8 @@ import { tavily } from "@tavily/core";
 import fs from "fs";
 dotenv.config();
 
+fs.mkdirSync("trend/data", { recursive: true });
+
 // Tavily 클라이언트 초기화
 const client = tavily({ apiKey: process.env.TAVILY_API_KEY });
 

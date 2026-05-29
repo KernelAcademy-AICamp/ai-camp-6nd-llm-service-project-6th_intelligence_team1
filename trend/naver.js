@@ -3,6 +3,8 @@ import axios from "axios";
 import fs from "fs";
 dotenv.config();
 
+fs.mkdirSync("trend/data", { recursive: true });
+
 const CLIENT_ID = process.env.NAVER_CLIENT_ID;
 const CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET;
 const BASE_URL = "https://openapi.naver.com/v1/datalab/search";
