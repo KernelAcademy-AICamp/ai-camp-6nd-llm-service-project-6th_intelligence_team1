@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>힌스 (hince) — 캠페인 트렌드 매칭 리포트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #F4F4FA;
+    --surface: #FFFFFF;
+    --border: #ECECF3;
+    --text: #1B1B26;
+    --text-sub: #5F6172;
+    --text-mute: #9396A6;
+    --primary: #6C5BFF;
+    --primary-soft: #EDEAFF;
+    --primary-deep: #4B3CDB;
+    --accent-pink: #FF7AB6;
+    --accent-pink-soft: #FFE6F0;
+    --warn: #F0A04B;
+    --warn-soft: #FFF1E0;
+    --rank1: #6C5BFF;
+    --rank2: #8A7BFF;
+    --rank3: #BDB6E6;
+    --chip-naver: #03C75A;
+    --chip-insta: #E1306C;
+    --chip-tavily: #4A90E2;
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow-card: 0 1px 2px rgba(20, 22, 50, 0.04), 0 4px 16px rgba(20, 22, 50, 0.04);
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 40px 80px;
+  }
+
+  /* ===== Top App Bar ===== */
+  .appbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .appbar-left { display: flex; align-items: center; gap: 14px; }
+  .brand-mark {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-pink) 100%);
+    display: grid; place-items: center;
+    color: #fff; font-weight: 800; font-size: 16px; letter-spacing: -0.02em;
+  }
+  .brand-name { font-weight: 700; font-size: 15px; }
+  .brand-name span { color: var(--text-mute); font-weight: 500; margin-left: 6px; }
+  .appbar-right { display: flex; gap: 8px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 34px; padding: 0 14px;
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--text);
+  }
+  .btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn.ghost { background: #fff; }
+
+  /* ===== Report Header (Brand info) ===== */
+  .report-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-card);
+  }
+  .report-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; color: var(--primary);
+    background: var(--primary-soft);
+    padding: 5px 10px; border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .report-title {
+    font-size: 28px; font-weight: 800; letter-spacing: -0.02em;
+    margin: 0 0 6px;
+  }
+  .report-sub { color: var(--text-sub); font-size: 14px; margin: 0 0 18px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .meta-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #F7F7FB; border: 1px solid var(--border);
+    padding: 8px 12px; border-radius: 10px;
+    font-size: 13px; color: var(--text-sub);
+  }
+  .meta-chip strong { color: var(--text); font-weight: 600; }
+  .meta-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+
+  /* ===== Section Header ===== */
+  .section-head {
+    display: flex; align-items: center; gap: 12px;
+    margin: 32px 0 14px;
+  }
+  .section-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 12px; font-weight: 700;
+    padding: 6px 12px; border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .section-title {
+    font-size: 20px; font-weight: 800; margin: 0; letter-spacing: -0.01em;
+  }
+  .section-desc { color: var(--text-mute); font-size: 13px; margin-left: auto; }
+
+  /* ===== Part I — Trend Summary ===== */
+  .summary-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    padding: 24px 28px;
+    box-shadow: var(--shadow-card);
+  }
+  .summary-list { display: flex; flex-direction: column; gap: 16px; }
+  .summary-item {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 16px;
+    padding: 16px 18px;
+    border-radius: var(--radius-md);
+    background: #FAFAFE;
+    border: 1px solid var(--border);
+  }
+  .summary-letter {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--primary-soft); color: var(--primary-deep);
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 18px;
+  }
+  .summary-text .summary-title {
+    font-size: 15px; font-weight: 700; margin: 0 0 4px;
+  }
+  .summary-text .summary-body {
+    font-size: 13.5px; color: var(--text-sub); margin: 0;
+  }
+
+  /* ===== Part II — Trend Cards (3 columns) ===== */
+  .trend-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  .trend-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+  .trend-card .card-top {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #FAFAFE 0%, #FFFFFF 100%);
+  }
+  .rank-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .rank-badge {
+    font-size: 11px; font-weight: 800;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--primary); color: #fff;
+    letter-spacing: 0.04em;
+  }
+  .rank-badge.r2 { background: var(--rank2); }
+  .rank-badge.r3 { background: #fff; color: var(--warn); border: 1px solid var(--warn); }
+  .group-letter {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: var(--primary-soft); color: var(--primary-deep);
+    display: inline-grid; place-items: center;
+    font-weight: 800; font-size: 12px;
+  }
+  .trend-card h3 {
+    font-size: 16px; font-weight: 800; line-height: 1.35;
+    margin: 0; letter-spacing: -0.01em;
+  }
+  .trend-card .card-body {
+    padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .block-label {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; color: var(--text-sub);
+    margin-bottom: 8px;
+  }
+  .block-label .ico { font-size: 14px; }
+  .block p { margin: 0 0 8px; font-size: 13px; color: var(--text); line-height: 1.6; }
+  .block p:last-child { margin-bottom: 0; }
+
+  /* metric strip */
+  .metric-strip {
+    display: flex; gap: 10px;
+    margin-bottom: 12px;
+  }
+  .metric {
+    flex: 1;
+    background: #FAFAFE;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .metric .m-label { font-size: 11px; color: var(--text-mute); font-weight: 600; margin-bottom: 2px; }
+  .metric .m-value { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+  .metric .m-delta { font-size: 11px; font-weight: 700; color: #1FAF6A; margin-left: 4px; }
+
+  /* sources */
+  .src-list { display: flex; flex-direction: column; gap: 8px; }
+  .src-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    background: #FAFAFE;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 12.5px;
+    color: var(--text-sub);
+    line-height: 1.55;
+  }
+  .src-chip {
+    display: inline-flex; align-items: center;
+    height: 22px; padding: 0 8px;
+    border-radius: 6px;
+    font-size: 11px; font-weight: 700; color: #fff;
+    white-space: nowrap;
+    align-self: flex-start;
+  }
+  .src-chip.naver { background: var(--chip-naver); }
+  .src-chip.insta { background: var(--chip-insta); }
+  .src-chip.tavily { background: var(--chip-tavily); }
+
+  /* matching reason list */
+  .reason-list {
+    margin: 0; padding: 0; list-style: none;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .reason-list li {
+    position: relative;
+    padding-left: 22px;
+    font-size: 13px; line-height: 1.6;
+  }
+  .reason-list li::before {
+    content: '';
+    position: absolute; left: 4px; top: 9px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--primary);
+  }
+  .trend-card.warn .reason-list li::before { background: var(--warn); }
+
+  /* warn variant for 3rd card */
+  .trend-card.warn .card-top { background: linear-gradient(180deg, var(--warn-soft) 0%, #FFFFFF 100%); }
+  .warn-note {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11.5px; font-weight: 700; color: var(--warn);
+    background: var(--warn-soft);
+    padding: 4px 10px; border-radius: 999px;
+    margin-left: 6px;
+  }
+
+  /* ===== Part III — Reference ===== */
+  .reference-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+    box-shadow: var(--shadow-card);
+  }
+  .ref-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .ref-slot {
+    aspect-ratio: 4 / 5;
+    border-radius: var(--radius-md);
+    border: 1.5px dashed #D6D5E6;
+    background:
+      linear-gradient(135deg, #FAFAFE 25%, transparent 25%) -10px 0/20px 20px,
+      linear-gradient(225deg, #FAFAFE 25%, transparent 25%) -10px 0/20px 20px,
+      linear-gradient(315deg, #FAFAFE 25%, #FFFFFF 25%) 0 0/20px 20px,
+      linear-gradient(45deg,  #FAFAFE 25%, #FFFFFF 25%) 0 0/20px 20px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px;
+    color: var(--text-mute);
+  }
+  .ref-slot .ref-tag {
+    background: var(--primary-soft); color: var(--primary-deep);
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+  }
+  .ref-slot .ref-label { font-size: 13px; font-weight: 600; color: var(--text-sub); }
+  .ref-slot .ref-hint { font-size: 11.5px; color: var(--text-mute); }
+
+  /* ===== Footer ===== */
+  .footer {
+    margin-top: 32px;
+    text-align: center;
+    font-size: 12px; color: var(--text-mute);
+  }
+
+  /* ===== Data Insight (between Part I and Part II) ===== */
+  .section-badge.data {
+    background: var(--primary-soft);
+    color: var(--primary-deep);
+  }
+  .g-tag {
+    font-size: 10px; font-weight: 700;
+    color: var(--primary-deep);
+    background: var(--primary-soft);
+    padding: 3px 7px; border-radius: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  /* Graph 3 — Trend score comparison (full-width) */
+  .compare-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 18px;
+  }
+  .compare-card .db-head {
+    font-size: 14px; font-weight: 700;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .compare-list { display: flex; flex-direction: column; gap: 12px; }
+  .compare-row {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    align-items: center;
+    gap: 16px;
+  }
+  .compare-label {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px;
+  }
+  .compare-label .compare-name {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .compare-bar-track {
+    height: 28px; border-radius: 8px;
+    background: #F2F1FA;
+    position: relative; overflow: hidden;
+  }
+  .compare-bar-fill {
+    height: 100%;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 12px;
+    font-weight: 800; font-size: 13px; color: #fff;
+  }
+  .compare-bar-fill.r1 { background: linear-gradient(90deg, #6C5BFF 0%, #8A7BFF 100%); }
+  .compare-bar-fill.r2 { background: linear-gradient(90deg, #8A7BFF 0%, #ADA1FF 100%); }
+  .compare-bar-fill.r3 { background: linear-gradient(90deg, #F0A04B 0%, #FFB970 100%); }
+
+  /* Per-trend data cards grid */
+  .data-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  .data-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-card);
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .data-card-head {
+    display: flex; align-items: center; gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-card-head .data-card-name {
+    flex: 1;
+    font-size: 14px; font-weight: 700;
+    color: var(--text);
+  }
+  .data-block .db-label {
+    font-size: 12px; font-weight: 700; color: var(--text-sub);
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* Graph 2 — Score + Growth combo */
+  .score-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px;
+  }
+  .big-score { flex: 1; }
+  .big-score .m-label { font-size: 11px; color: var(--text-mute); font-weight: 600; margin-bottom: 2px; }
+  .m-value-xl {
+    font-size: 32px; font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--text);
+  }
+  .growth-pill {
+    display: flex; flex-direction: column; align-items: flex-end;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-weight: 800; font-size: 14px;
+    line-height: 1.2;
+  }
+  .growth-pill.up { color: #1FAF6A; background: #E6F7EE; }
+  .growth-pill.down { color: #E04848; background: #FCE8E8; }
+  .growth-pill .arrow { font-size: 10px; margin-right: 2px; }
+  .growth-pill .growth-sub { font-size: 10px; font-weight: 600; color: var(--text-mute); margin-top: 2px; }
+  .mini-bar {
+    height: 6px; border-radius: 4px;
+    background: #F2F1FA; overflow: hidden;
+  }
+  .mini-bar-fill { height: 100%; border-radius: 4px; }
+  .mini-bar-fill.r1 { background: var(--primary); }
+  .mini-bar-fill.r2 { background: var(--rank2); }
+  .mini-bar-fill.r3 { background: var(--warn); }
+
+  /* Graph 1 — Age/Gender stacked bars */
+  .stack-row {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    align-items: center; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .stack-name { font-size: 11px; font-weight: 700; color: var(--text-mute); }
+  .stack-bar {
+    height: 14px; border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    background: #F2F1FA;
+  }
+  .seg { height: 100%; }
+  .seg-age1 { background: #E8E4FB; }
+  .seg-age2 { background: #6C5BFF; }
+  .seg-age3 { background: #BDB6E6; }
+  .seg-age4 { background: #8C86B5; }
+  .seg-f { background: #FF7AB6; }
+  .seg-m { background: #4A90E2; }
+  .stack-legend {
+    display: flex; flex-wrap: wrap; gap: 6px 12px;
+    margin-top: 10px;
+    font-size: 10.5px; color: var(--text-sub);
+  }
+  .stack-legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .stack-legend .dot {
+    width: 8px; height: 8px; border-radius: 2px;
+    display: inline-block;
+  }
+
+  /* Graph 5 — Target overlap gauges */
+  .gauge-row {
+    display: grid;
+    grid-template-columns: 36px 1fr 50px;
+    align-items: center; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .gauge-name { font-size: 11px; font-weight: 700; color: var(--text-mute); }
+  .gauge-track {
+    height: 12px; border-radius: 4px;
+    background: #F2F1FA;
+    position: relative; overflow: hidden;
+  }
+  .gauge-fill { height: 100%; border-radius: 4px; }
+  .gauge-fill.pass { background: linear-gradient(90deg, #1FAF6A 0%, #38C481 100%); }
+  .gauge-fill.warn { background: linear-gradient(90deg, #F0A04B 0%, #FFB970 100%); }
+  .gauge-track .threshold {
+    position: absolute; top: -2px; bottom: -2px;
+    width: 0;
+    border-left: 2px dashed #FF5C5C;
+    z-index: 2;
+  }
+  .gauge-val {
+    text-align: right;
+    font-size: 13px; font-weight: 800;
+  }
+  .gauge-val.pass { color: #1FAF6A; }
+  .gauge-val.warn { color: var(--warn); }
+  .threshold-note {
+    font-size: 10.5px; color: var(--text-mute);
+    margin-top: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .threshold-note::before {
+    content: '';
+    display: inline-block;
+    width: 14px; height: 0;
+    border-top: 2px dashed #FF5C5C;
+  }
+
+  /* Print */
+  @media print {
+    body { background: #fff; }
+    .page { padding: 0; }
+    .appbar { display: none; }
+    .trend-card, .summary-card, .reference-card, .report-header { box-shadow: none; }
+  }
+
+  @media (max-width: 1024px) {
+    .trend-grid, .ref-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- ====== App Bar (Sometrend-like) ====== -->
+    <div class="appbar">
+      <div class="appbar-left">
+        <div class="brand-mark">h</div>
+        <div>
+          <div class="brand-name">Match Report <span>· v0.2</span></div>
+        </div>
+      </div>
+      <div class="appbar-right">
+        <button class="btn ghost">자료 내보내기</button>
+        <button class="btn primary">분석 새로 시작하기</button>
+      </div>
+    </div>
+
+    <!-- ====== Report Header ====== -->
+    <div class="report-header">
+      <span class="report-eyebrow">● Beauty × Trend Matching</span>
+      <h1 class="report-title">힌스 (hince) — 캠페인 트렌드 매칭 리포트</h1>
+      <p class="report-sub">브랜드 톤·타겟과 2026년 베이스 메이크업 트렌드의 적합도를 분석했습니다.</p>
+      <div class="meta-row">
+        <div class="meta-chip"><span class="dot"></span><strong>제품</strong> 커버 마스터 핑크 쿠션</div>
+        <div class="meta-chip"><span class="dot" style="background:var(--accent-pink)"></span><strong>카테고리</strong> 메이크업 &gt; 베이스</div>
+        <div class="meta-chip"><span class="dot" style="background:#1FAF6A"></span><strong>타겟</strong> 20대 여성 · Z세대·트렌디</div>
+      </div>
+    </div>
+
+    <!-- ====== Part I — Trend Summary ====== -->
+    <div class="section-head">
+      <span class="section-badge">PART I</span>
+      <h2 class="section-title">Trend Summary</h2>
+      <span class="section-desc">3개월 / Naver · Instagram · Tavily 기반</span>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-list">
+
+        <div class="summary-item">
+          <div class="summary-letter">A</div>
+          <div class="summary-text">
+            <p class="summary-title">매트 쿠션의 부상</p>
+            <p class="summary-body">매트 쿠션 검색량 지수 47.4, 3개월 전비 +22% 증가</p>
+          </div>
+        </div>
+
+        <div class="summary-item">
+          <div class="summary-letter">B</div>
+          <div class="summary-text">
+            <p class="summary-title">최소 레이어 베이스의 '얇고 정밀한' 철학</p>
+            <p class="summary-body">완벽한 커버보다 피붓결만 정리한 얇은 레이어 기준 정착</p>
+          </div>
+        </div>
+
+        <div class="summary-item">
+          <div class="summary-letter">C</div>
+          <div class="summary-text">
+            <p class="summary-title">웰니스 뷰티 기반의 스킨케어형 베이스</p>
+            <p class="summary-body">파운데이션·쿠션에 PDRN·펩타이드 등 기능성 성분 함유 제품 확산</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ====== Data Insight (between Part I and Part II) ====== -->
+    <div class="section-head">
+      <span class="section-badge data">📊 DATA</span>
+      <h2 class="section-title">정량 분석</h2>
+      <span class="section-desc">점수 · 성장률 · 고객층 · 타겟 일치도</span>
+    </div>
+
+    <!-- Graph 3 — Trend score comparison -->
+    <div class="compare-card">
+      <div class="db-head">
+        트렌드 점수 비교
+        <span class="g-tag">G3</span>
+      </div>
+      <div class="compare-list">
+        <div class="compare-row">
+          <div class="compare-label">
+            <span class="group-letter">A</span>
+            <span class="compare-name">매트 쿠션의 부상</span>
+          </div>
+          <div class="compare-bar-track">
+            <div class="compare-bar-fill r1" style="width: 92%;"><span>92</span></div>
+          </div>
+        </div>
+        <div class="compare-row">
+          <div class="compare-label">
+            <span class="group-letter">B</span>
+            <span class="compare-name">최소 레이어 베이스</span>
+          </div>
+          <div class="compare-bar-track">
+            <div class="compare-bar-fill r2" style="width: 78%;"><span>78</span></div>
+          </div>
+        </div>
+        <div class="compare-row">
+          <div class="compare-label">
+            <span class="group-letter">C</span>
+            <span class="compare-name">스킨케어형 베이스</span>
+          </div>
+          <div class="compare-bar-track">
+            <div class="compare-bar-fill r3" style="width: 54%;"><span>54</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Per-trend metric cards (Graphs 2, 1, 5) -->
+    <div class="data-grid">
+
+      <!-- Data Card A -->
+      <div class="data-card">
+        <div class="data-card-head">
+          <span class="group-letter">A</span>
+          <span class="data-card-name">매트 쿠션의 부상</span>
+          <span class="rank-badge">1순위</span>
+        </div>
+
+        <div class="data-block">
+          <div class="db-label">점수 · 성장률 <span class="g-tag">G2</span></div>
+          <div class="score-row">
+            <div class="big-score">
+              <div class="m-label">매칭 점수</div>
+              <div class="m-value-xl">92</div>
+            </div>
+            <div class="growth-pill up">
+              <span><span class="arrow">▲</span>+22%</span>
+              <span class="growth-sub">3개월</span>
+            </div>
+          </div>
+          <div class="mini-bar"><div class="mini-bar-fill r1" style="width:92%"></div></div>
+        </div>
+
+        <div class="data-block">
+          <div class="db-label">고객층 분포 <span class="g-tag">G1</span></div>
+          <div class="stack-row">
+            <span class="stack-name">연령</span>
+            <div class="stack-bar">
+              <div class="seg seg-age1" style="width:5%"  title="10대 5%"></div>
+              <div class="seg seg-age2" style="width:62%" title="20대 62%"></div>
+              <div class="seg seg-age3" style="width:24%" title="30대 24%"></div>
+              <div class="seg seg-age4" style="width:9%"  title="40+ 9%"></div>
+            </div>
+          </div>
+          <div class="stack-row">
+            <span class="stack-name">성별</span>
+            <div class="stack-bar">
+              <div class="seg seg-f" style="width:82%" title="여 82%"></div>
+              <div class="seg seg-m" style="width:18%" title="남 18%"></div>
+            </div>
+          </div>
+          <div class="stack-legend">
+            <span><i class="dot seg-age1"></i>10대</span>
+            <span><i class="dot seg-age2"></i>20대</span>
+            <span><i class="dot seg-age3"></i>30대</span>
+            <span><i class="dot seg-age4"></i>40+</span>
+            <span><i class="dot seg-f"></i>여</span>
+            <span><i class="dot seg-m"></i>남</span>
+          </div>
+        </div>
+
+        <div class="data-block">
+          <div class="db-label">타겟 오버랩 <span class="g-tag">G5</span></div>
+          <div class="gauge-row">
+            <span class="gauge-name">연령</span>
+            <div class="gauge-track">
+              <div class="threshold" style="left:60%"></div>
+              <div class="gauge-fill pass" style="width:87%"></div>
+            </div>
+            <span class="gauge-val pass">87%</span>
+          </div>
+          <div class="gauge-row">
+            <span class="gauge-name">성별</span>
+            <div class="gauge-track">
+              <div class="threshold" style="left:60%"></div>
+              <div class="gauge-fill pass" style="width:82%"></div>
+            </div>
+            <span class="gauge-val pass">82%</span>
+          </div>
+          <div class="threshold-note">60% 매칭 임계선</div>
+        </div>
+      </div>
+
+      <!-- Data Card B -->
+      <div class="data-card">
+        <div class="data-card-head">
+          <span class="group-letter">B</span>
+          <span class="data-card-name">최소 레이어 베이스</span>
+          <span class="rank-badge r2">2순위</span>
+        </div>
+
+        <div class="data-block">
+          <div class="db-label">점수 · 성장률 <span class="g-tag">G2</span></div>
+          <div class="score-row">
+            <div class="big-score">
+              <div class="m-label">매칭 점수</div>
+              <div class="m-value-xl">78</div>
+            </div>
+            <div class="growth-pill up">
+              <span><span class="arrow">▲</span>+14%</span>
+              <span class="growth-sub">3개월</span>
+            </div>
+          </div>
+          <div class="mini-bar"><div class="mini-bar-fill r2" style="width:78%"></div></div>
+        </div>
+
+        <div class="data-block">
+          <div class="db-label">고객층 분포 <span class="g-tag">G1</span></div>
+          <div class="stack-row">
+            <span class="stack-name">연령</span>
+            <div class="stack-bar">
+              <div class="seg seg-age1" style="width:8%"  title="10대 8%"></div>
+              <div class="seg seg-age2" style="width:55%" title="20대 55%"></div>
+              <div class="seg seg-age3" style="width:27%" title="30대 27%"></div>
+              <div class="seg seg-age4" style="width:10%" title="40+ 10%"></div>
+            </div>
+          </div>
+          <div class="stack-row">
+            <span class="stack-name">성별</span>
+            <div class="stack-bar">
+              <div class="seg seg-f" style="width:76%" title="여 76%"></div>
+              <div class="seg seg-m" style="width:24%" title="남 24%"></div>
+            </div>
+          </div>
+          <div class="stack-legend">
+            <span><i class="dot seg-age1"></i>10대</span>
+            <span><i class="dot seg-age2"></i>20대</span>
+            <span><i class="dot seg-age3"></i>30대</span>
+            <span><i class="dot seg-age4"></i>40+</span>
+            <span><i class="dot seg-f"></i>여</span>
+            <span><i class="dot seg-m"></i>남</span>
+          </div>
+        </div>
+
+        <div class="data-block">
+          <div class="db-label">타겟 오버랩 <span class="g-tag">G5</span></div>
+          <div class="gauge-row">
+            <span class="gauge-name">연령</span>
+            <div class="gauge-track">
+              <div class="threshold" style="left:60%"></div>
+              <div class="gauge-fill pass" style="width:76%"></div>
+            </div>
+            <span class="gauge-val pass">76%</span>
+          </div>
+          <div class="gauge-row">
+            <span class="gauge-name">성별</span>
+            <div class="gauge-track">
+              <div class="threshold" style="left:60%"></div>
+              <div class="gauge-fill pass" style="width:76%"></div>
+            </div>
+            <span class="gauge-val pass">76%</span>
+          </div>
+          <div class="threshold-note">60% 매칭 임계선</div>
+        </div>
+      </div>
+
+      <!-- Data Card C (warn) -->
+      <div class="data-card warn">
+        <div class="data-card-head">
+          <span class="group-letter">C</span>
+          <span class="data-card-name">스킨케어형 베이스</span>
+          <span class="rank-badge r3">3순위</span>
+        </div>
+
+        <div class="data-block">
+          <div class="db-label">점수 · 성장률 <span class="g-tag">G2</span></div>
+          <div class="score-row">
+            <div class="big-score">
+              <div class="m-label">매칭 점수</div>
+              <div class="m-value-xl">54</div>
+            </div>
+            <div class="growth-pill up">
+              <span><span class="arrow">▲</span>+9%</span>
+              <span class="growth-sub">3개월</span>
+            </div>
+          </div>
+          <div class="mini-bar"><div class="mini-bar-fill r3" style="width:54%"></div></div>
+        </div>
+
+        <div class="data-block">
+          <div class="db-label">고객층 분포 <span class="g-tag">G1</span></div>
+          <div class="stack-row">
+            <span class="stack-name">연령</span>
+            <div class="stack-bar">
+              <div class="seg seg-age1" style="width:3%"  title="10대 3%"></div>
+              <div class="seg seg-age2" style="width:28%" title="20대 28%"></div>
+              <div class="seg seg-age3" style="width:39%" title="30대 39%"></div>
+              <div class="seg seg-age4" style="width:30%" title="40+ 30%"></div>
+            </div>
+          </div>
+          <div class="stack-row">
+            <span class="stack-name">성별</span>
+            <div class="stack-bar">
+              <div class="seg seg-f" style="width:65%" title="여 65%"></div>
+              <div class="seg seg-m" style="width:35%" title="남 35%"></div>
+            </div>
+          </div>
+          <div class="stack-legend">
+            <span><i class="dot seg-age1"></i>10대</span>
+            <span><i class="dot seg-age2"></i>20대</span>
+            <span><i class="dot seg-age3"></i>30대</span>
+            <span><i class="dot seg-age4"></i>40+</span>
+            <span><i class="dot seg-f"></i>여</span>
+            <span><i class="dot seg-m"></i>남</span>
+          </div>
+        </div>
+
+        <div class="data-block">
+          <div class="db-label">타겟 오버랩 <span class="g-tag">G5</span></div>
+          <div class="gauge-row">
+            <span class="gauge-name">연령</span>
+            <div class="gauge-track">
+              <div class="threshold" style="left:60%"></div>
+              <div class="gauge-fill warn" style="width:38%"></div>
+            </div>
+            <span class="gauge-val warn">38%</span>
+          </div>
+          <div class="gauge-row">
+            <span class="gauge-name">성별</span>
+            <div class="gauge-track">
+              <div class="threshold" style="left:60%"></div>
+              <div class="gauge-fill pass" style="width:65%"></div>
+            </div>
+            <span class="gauge-val pass">65%</span>
+          </div>
+          <div class="threshold-note">60% 임계선 · 연령 ⚠️ 미달</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ====== Part II — Trend Cards ====== -->
+    <div class="section-head">
+      <span class="section-badge">PART II</span>
+      <h2 class="section-title">트렌드 카드</h2>
+      <span class="section-desc">유행현황 · 수집 근거 · 매칭이유</span>
+    </div>
+
+    <div class="trend-grid">
+
+      <!-- Card A -->
+      <div class="trend-card">
+        <div class="card-top">
+          <div class="rank-row">
+            <span class="rank-badge">1순위</span>
+            <span class="group-letter">A</span>
+          </div>
+          <h3>매트 쿠션의 부상</h3>
+        </div>
+        <div class="card-body">
+
+          <div class="metric-strip">
+            <div class="metric">
+              <div class="m-label">검색량 지수</div>
+              <div class="m-value">47.4<span class="m-delta">+22%</span></div>
+            </div>
+            <div class="metric">
+              <div class="m-label">기간</div>
+              <div class="m-value" style="font-size:14px;">'26.01–05</div>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="block-label"><span class="ico">📊</span> 유행현황 (Status)</div>
+            <ul class="reason-list">
+              <li>글래스 스킨이나 과도한 광택보다 자연스럽고 얇은 레이어의 매트한 피부 표현이 2026년 핵심 트렌드로 떠올랐다. 매트와 글로우의 대비를 이용한 밸런스 잡힌 베이스 메이크업이 새로운 기준으로 자리 잡고 있다.</li>
+              <li>매트 쿠션 검색 관심도가 2026년 1월 38.9에서 5월 47.4로 22% 상승했으며, 라네즈 네오 쿠션 더 매트 등 신제품 출시로 시장이 활성화 중이다.</li>
+              <li>20대 여성층을 중심으로 '너무 매끈한' 베이스보다 '피부 결이 살아있는' 매트 마무리를 선호하는 경향이 확대되고 있다.</li>
+            </ul>
+          </div>
+
+          <div class="block">
+            <div class="block-label"><span class="ico">📚</span> 수집 근거</div>
+            <div class="src-list">
+              <div class="src-item"><span class="src-chip naver">Naver Datalab</span><span>검색량 지수 (2026-01 ~ 2026-05) → 매트쿠션 47.4 (5월), 커버쿠션·세미매트쿠션 함께 트렌드</span></div>
+              <div class="src-item"><span class="src-chip insta">Instagram</span><span>관련 콘텐츠 (최근 30일) → 라네즈 네오 쿠션 더 매트, 어바웃톤 디자인 멀티 팔레트 등 신상품 언급 다수</span></div>
+              <div class="src-item"><span class="src-chip tavily">Tavily</span><span>업계 분석 (2026년) → 2026 뷰티 트렌드 보고서에서 '매트와 글로의 대비'를 메이크업의 새로운 균형으로 명시</span></div>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="block-label"><span class="ico">🎯</span> 매칭이유</div>
+            <ul class="reason-list">
+              <li>브랜드 제형 '매트'와 트렌드 키워드 '매트쿠션' 직결로 제품-트렌드 일치도 높음</li>
+              <li>Z세대·트렌디 톤의 '피부 결이 살아있는' 자연스러운 표현이 브랜드 정체성과 완벽 부합</li>
+              <li>20대 여성의 자기표현 동기와 '새로운 기준' 트렌드 수용 성향 일치</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Card B -->
+      <div class="trend-card">
+        <div class="card-top">
+          <div class="rank-row">
+            <span class="rank-badge r2">2순위</span>
+            <span class="group-letter">B</span>
+          </div>
+          <h3>최소 레이어 베이스의 '얇고 정밀한' 철학</h3>
+        </div>
+        <div class="card-body">
+
+          <div class="metric-strip">
+            <div class="metric">
+              <div class="m-label">효능 키워드 1위</div>
+              <div class="m-value" style="font-size:16px;">밀착</div>
+            </div>
+            <div class="metric">
+              <div class="m-label">권장 조합</div>
+              <div class="m-value" style="font-size:16px;">3–4 단계</div>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="block-label"><span class="ico">📊</span> 유행현황 (Status)</div>
+            <ul class="reason-list">
+              <li>2026년 베이스 메이크업의 가장 큰 철학적 변화는 '완벽함'에서 '자연스러움'으로의 전환이다. 피부 자체를 커버하는 것이 아니라 피붓결만 정리하는 얇은 레이어가 새로운 기준이 되었으며, 20대 여성층 사이에서 '최소템으로 완벽 피부 만들기'가 핵심 트렌드로 부상했다.</li>
+              <li>2026년 뷰티 트렌드 분석에서 '어떻게 회복하고, 덜어내고, 정밀해질 것인가'가 핵심으로 명시되었다. 올리브영 베이스 메이크업 키워드 분석에서 '밀착'(상위 키워드)이 강조되고 있으며, 20대 대상 베이스 메이크업 가이드에서 최소 3~4가지 제품 조합과 피부 타입별 맞춤 선택이 권장되고 있다.</li>
+            </ul>
+          </div>
+
+          <div class="block">
+            <div class="block-label"><span class="ico">📚</span> 수집 근거</div>
+            <div class="src-list">
+              <div class="src-item"><span class="src-chip tavily">Tavily</span><span>트렌드 분석 (2026년) → 2026 뷰티 트렌드: 베이스는 완벽한 커버보다 피붓결만 정리한 얇은 레이어가 기준</span></div>
+              <div class="src-item"><span class="src-chip naver">Naver DataLab</span><span>효능 키워드 (2026년 1분기) → 베이스 제품 리뷰: 밀착(효능 1위), 촉촉하게·수분·지속 등 얇으면서도 밀착력 있는 제품 선호</span></div>
+              <div class="src-item"><span class="src-chip tavily">Tavily</span><span>콘텐츠 (2026년) → 20대 베이스 메이크업 가이드: 최소 3~4개 제품(스킨케어→프라이머→쿠션→파우더) 조합 권장</span></div>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="block-label"><span class="ico">🎯</span> 매칭이유</div>
+            <ul class="reason-list">
+              <li>Z세대·트렌디의 '자연스러움·미니멀·효율' 가치와 '최소 레이어·얇은 철학' 완벽 공명</li>
+              <li>브랜드 제형 '매트'가 '얇은 레이어·밀착' 트렌드와 제품 특성 차원에서 자연스럽게 조화</li>
+              <li>20대 자기표현의 '나다움을 가장 효율적으로 표현'하려는 동기와 '최소템 철학' 정확히 일치</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Card C (warn variant) -->
+      <div class="trend-card warn">
+        <div class="card-top">
+          <div class="rank-row">
+            <span class="rank-badge r3">3순위</span>
+            <span class="group-letter">C</span>
+            <span class="warn-note">⚠️ 보완 활용 권장</span>
+          </div>
+          <h3>웰니스 뷰티 기반의 스킨케어형 베이스</h3>
+        </div>
+        <div class="card-body">
+
+          <div class="metric-strip">
+            <div class="metric">
+              <div class="m-label">핵심 성분</div>
+              <div class="m-value" style="font-size:14px;">PDRN · 펩타이드</div>
+            </div>
+            <div class="metric">
+              <div class="m-label">포지셔닝</div>
+              <div class="m-value" style="font-size:14px;">하이브리드</div>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="block-label"><span class="ico">📊</span> 유행현황 (Status)</div>
+            <ul class="reason-list">
+              <li>2026년 뷰티 시장의 핵심 축이 '완벽한 커버'에서 '피부 회복'으로 이동했다. 메이크업이 피부 부담이 아닌 컨디션 유지 단계로 재해석되면서 세럼 프라이머, PDRN 베이스, 톤업 스킨케어 베이스 등 기능성 성분을 담은 하이브리드 포뮬러가 확산 중이다.</li>
+              <li>PDRN, NAD, 펩타이드, 레티날 등 바이오 기술 성분이 베이스 메이크업 제품에 적극 채용되고 있으며, 파운데이션과 쿠션에 스킨케어 성분을 담는 흐름이 기본화되었다.</li>
+              <li>만성 스트레스와 환경 자극으로 무너진 피부 체력을 회복하는 방향으로 안티에이징 개념이 확장되고 있다.</li>
+            </ul>
+          </div>
+
+          <div class="block">
+            <div class="block-label"><span class="ico">📚</span> 수집 근거</div>
+            <div class="src-list">
+              <div class="src-item"><span class="src-chip tavily">Tavily</span><span>트렌드 분석 (2026년) → 2026 뷰티 트렌드 분석: 파운데이션·쿠션에 스킨케어 성분 담는 흐름이 기본화, 세럼 프라이머·PDRN 베이스 등 하이브리드 포뮬러 증가</span></div>
+              <div class="src-item"><span class="src-chip tavily">Tavily</span><span>성분 트렌드 (2026년) → PDRN, NAD, 펩타이드, 엑소좀 등 바이오 기술 성분이 핵심 축으로 부상, 세포 에너지 관점의 안티에이징 확장</span></div>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="block-label"><span class="ico">🎯</span> 매칭이유 <span style="color:var(--warn); font-weight:700;">(오주연)</span></div>
+            <ul class="reason-list">
+              <li>Z세대·트렌디 톤과 과학적·기능성 강조 트렌드 간 톤앤매너 충돌</li>
+              <li>트렌드 키워드가 PDRN·펩타이드 등 성분 중심으로 학술적이어서 브랜드 제형 키워드와 무관</li>
+              <li>20대 자기표현 동기보다 피부 회복·관리 니즈 중심 트렌드로 페르소나 일치도 낮음</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ====== Part III — Reference ====== -->
+    <div class="section-head">
+      <span class="section-badge">PART III</span>
+      <h2 class="section-title">Reference</h2>
+      <span class="section-desc">담당: 오주연 · 이미지 시안 영역</span>
+    </div>
+
+    <div class="reference-card">
+      <div class="ref-grid">
+        <div class="ref-slot">
+          <span class="ref-tag">레퍼런스 시안 A</span>
+          <span class="ref-label">매트 쿠션의 부상</span>
+          <span class="ref-hint">추후 추가 예정</span>
+        </div>
+        <div class="ref-slot">
+          <span class="ref-tag">레퍼런스 시안 B</span>
+          <span class="ref-label">최소 레이어 베이스</span>
+          <span class="ref-hint">추후 추가 예정</span>
+        </div>
+        <div class="ref-slot">
+          <span class="ref-tag">레퍼런스 시안 C</span>
+          <span class="ref-label">스킨케어형 베이스</span>
+          <span class="ref-hint">추후 추가 예정</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Match Report v0.2 · Generated by Matching Agent · hince × 2026 Beauty Trend
+    </div>
+
+  </div>
+</body>
+</html>
