@@ -90,29 +90,11 @@ if (!data) {
   process.exit(1);
 }
 
-// 6. 미드저니 프롬프트 자동 조립 — LLM 본문 + --ar + --no + --s + --v
-//    LLM은 generation_prompt 본문만 만들고, 파라미터 플래그는 코드가 일관되게 부착.
-const MIDJOURNEY_STYLIZE = 250; // 뷰티 시안 무난한 중간값
-const MIDJOURNEY_VERSION = "6.1";
-function buildMidjourneyPrompt(v) {
-  const parts = [v.generation_prompt.trim()];
-  if (v.aspect_ratio) parts.push(`--ar ${v.aspect_ratio}`);
-  if (v.negative_prompt && v.negative_prompt.trim())
-    parts.push(`--no ${v.negative_prompt.trim()}`);
-  parts.push(`--s ${MIDJOURNEY_STYLIZE}`);
-  parts.push(`--v ${MIDJOURNEY_VERSION}`);
-  return parts.join(" ");
-}
-
-const visualsWithMj = data.visuals.map((v) => ({
-  ...v,
-  midjourney_prompt: buildMidjourneyPrompt(v),
-}));
-
-// brand_name(입력값 신뢰) + 조립된 visuals → envelope wrap
+// 6. brand_name(입력값 신뢰) + LLM visuals 조립 → envelope wrap
+//    나노바나나(Gemini)는 자연어 프롬프트라 별도 조립 불필요. generation_prompt가 곧 호출 프롬프트.
 const finalData = {
   brand_name: writerData.brand_name,
-  visuals: visualsWithMj,
+  visuals: data.visuals,
 };
 const result = wrap(finalData);
 

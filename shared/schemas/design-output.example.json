@@ -20,8 +20,7 @@
           "손가락으로 입술에 발색하는 모션 (slow motion)",
           "물광 윤기가 살아나는 입술 클로즈업",
           "자연광 아래 데일리 입술 풀샷 (입술 중심)"
-        ],
-        "midjourney_prompt": "Extreme close-up beauty video of a young Korean woman's lips with glossy nude gel tint (subject), tight macro framing on lips with slow push-in movement (composition), soft natural daylight with diffused light (lighting), warm nude rosy-brown beige tones (color), dewy glossy juicy glowing finish, editorial beauty product commercial photography (texture/style), fresh transparent airy youthful mood (mood), smooth soft cut transitions, 30fps --ar 9:16 --no matte dry cakey finish, distorted lips, asymmetric face, extra fingers, deformed hands, text, watermark, low quality, blurry, oversaturated, harsh lighting --s 250 --v 6.1"
+        ]
       },
       {
         "content_id": "C002",
@@ -31,8 +30,7 @@
         "visual_direction": "차분한 베이지 톤의 미니멀 배경, 로 글로우 젤 틴트 제품과 MLBB 컬러 입술 스와치를 정돈되게 배치. 자연스럽고 차분한 MLBB 컬러감, 세련되고 고급스러운 데일리 무드.",
         "generation_prompt": "Flat lay beauty product image of MLBB gel tint with lip swatches on neutral background (subject), centered top-down 90° flat lay composition with balanced negative space (composition), soft diffused studio softbox lighting (lighting), muted rosy-brown MLBB beige tones (color), velvety matte-dewy finish with minimal texture, high-end cosmetic editorial product photography (texture/style), refined calm sophisticated daily mood (mood)",
         "negative_prompt": "glossy wet look, greasy appearance, cluttered background, distorted product, text, watermark, low quality, blurry, oversaturated, deformed packaging",
-        "aspect_ratio": "1:1",
-        "midjourney_prompt": "Flat lay beauty product image of MLBB gel tint with lip swatches on neutral background (subject), centered top-down 90° flat lay composition with balanced negative space (composition), soft diffused studio softbox lighting (lighting), muted rosy-brown MLBB beige tones (color), velvety matte-dewy finish with minimal texture, high-end cosmetic editorial product photography (texture/style), refined calm sophisticated daily mood (mood) --ar 1:1 --no glossy wet look, greasy appearance, cluttered background, distorted product, text, watermark, low quality, blurry, oversaturated, deformed packaging --s 250 --v 6.1"
+        "aspect_ratio": "1:1"
       }
     ]
   }
