@@ -2,9 +2,9 @@ import { z } from "zod";
 import { envelopeSchema } from "../../shared/envelope.js";
 
 // 시안가 v2 입출력 스키마.
-// 입력: 작성가 산출(v1과 동일) — 콘텐츠 N개.
-// 처리: 콘텐츠별 [검색 → 비전 분석 → 프롬프트 생성 → (옵션) 이미지 생성] 4단계.
-// 출력: 콘텐츠 1개당 시안 1장. shot_type 등 형식은 LLM이 레퍼런스 보고 동적 결정.
+// 입력: 작성가 산출 — 트렌드 N개.
+// 처리: 트렌드별 × 매체별(Pinterest·Instagram·Mintoiro) 검색 → 매체별 선별·분석 → 매체별 분석 종합 → 시안 1개.
+// 출력: 트렌드 1개당 시안 1장.
 
 // ─── 입력 스키마 (작성가 산출 검증) ─────────────────────────────────
 const WriterContentSchema = z
@@ -27,24 +27,31 @@ export const InputWriterSchema = z
   })
   .passthrough();
 
-// ─── 단계별 LLM 출력 스키마 ──────────────────────────────────────────
-
-// 1단계: 검색 쿼리 생성 (LLM이 콘텐츠·브랜드 보고 영문 쿼리 생성 — Pinterest용).
+// ─── 1단계 LLM: 검색 쿼리·해시태그 생성 ─────────────────────────────
+//   queries: 영문 자연어 쿼리 — Pinterest·Mintoiro용.
+//   instagram_hashtags: 인스타 해시태그 (영문/한글 단어, # 없이) — Instagram용.
 export const LlmSearchQueriesSchema = z.object({
   queries: z.array(z.string().min(1)).min(1).max(5),
+  instagram_hashtags: z.array(z.string().min(1)).min(1).max(5),
 });
 
-// 2단계: 비전 분석 결과.
-// shot_type은 LLM이 레퍼런스 보고 동적으로 작성 (인물 광고·제품 단독·통합·무드보드 등 자유).
-export const LlmAnalysisSchema = z.object({
-  shot_type: z.string(), // 동적, LLM 자유 작성 (한국어 권장)
-  mood: z.string(), // 한국어 무드 요약
-  color_palette: z.array(z.string()).optional(), // HEX 또는 색명
-  composition: z.string(), // 구도 설명
-  key_objects: z.array(z.string()).optional(), // 핵심 오브제
+// ─── 2단계 LLM: 매체별 선별 + 분석 ──────────────────────────────────
+// N장 보여주고 → 대표 1장 인덱스 + 그 매체 강점에 맞는 분석 추출.
+// 매체별 강점:
+//   - pinterest → composition·shot_type (구도·앵글·연출)
+//   - instagram → mood·trend·lifestyle (트렌드 무드·인물·라이프스타일)
+//   - mintoiro → color_palette·package (패키지 디테일·컬러·타이포)
+export const LlmSourceAnalysisSchema = z.object({
+  best_index: z.number().int().min(0), // 보낸 이미지 배열의 인덱스 (0부터)
+  shot_type: z.string(), // 동적, 한국어
+  mood: z.string(), // 한국어
+  composition: z.string(), // 한국어
+  color_palette: z.array(z.string()).optional(),
+  key_objects: z.array(z.string()).optional(),
+  source_specific: z.string(), // 이 매체에서 특히 강조할 1-2문장 (한국어)
 });
 
-// 3단계: 프롬프트 생성 (LLM이 영문 generation_prompt 한 줄)
+// ─── 3단계 LLM: 영문 generation_prompt 작성 ─────────────────────────
 export const LlmPromptSchema = z.object({
   generation_prompt: z.string().min(1),
 });
@@ -52,22 +59,39 @@ export const LlmPromptSchema = z.object({
 // ─── 최종 출력 스키마 (envelope의 data) ─────────────────────────────
 
 const ReferenceSchema = z.object({
-  url: z.string(), // 원문 페이지 URL
-  image_url: z.string().nullable(), // 이미지 URL (없으면 null)
+  url: z.string(),
+  image_url: z.string().nullable(),
   title: z.string(),
-  source: z.enum(["pinterest", "mintoiro"]), // 출처
+  source: z.enum(["pinterest", "mintoiro", "instagram"]),
+});
+
+// 매체별 분석 결과 + 대표 이미지.
+const SourceAnalysisSchema = z.object({
+  source: z.enum(["pinterest", "mintoiro", "instagram"]),
+  best_reference: ReferenceSchema.nullable(), // 매체에서 선별된 대표 1장 (없으면 null)
+  shot_type: z.string(),
+  mood: z.string(),
+  composition: z.string(),
+  color_palette: z.array(z.string()).optional(),
+  key_objects: z.array(z.string()).optional(),
+  source_specific: z.string(),
 });
 
 const VisualSchema = z.object({
   content_id: z.string().optional(),
   trend_name: z.string(),
-  search_queries: z.array(z.string()), // 1단계 결과 (Pinterest 영문 쿼리)
-  references: z.array(ReferenceSchema), // 1단계 결과
-  analysis: LlmAnalysisSchema, // 2단계 결과
-  generation_prompt: z.string(), // 3단계 결과 (Avoid까지 통합된 영문)
-  aspect_ratio: z.literal("3:4"), // 코드 고정 (v1과 동일)
-  reference_image_path: z.string(), // 제품 사진 상대 경로 (Img2Img용)
-  generated_image_url: z.string().nullable(), // 4단계 결과 (Replicate URL 또는 null)
+  search_queries: z.array(z.string()), // Pinterest·Mintoiro 영문 쿼리
+  instagram_hashtags: z.array(z.string()).optional(),
+  references_by_source: z.object({
+    pinterest: z.array(ReferenceSchema),
+    instagram: z.array(ReferenceSchema),
+    mintoiro: z.array(ReferenceSchema),
+  }), // 1단계 수집된 raw (매체별 10장 정도)
+  analyses_by_source: z.array(SourceAnalysisSchema), // 2단계 매체별 분석
+  generation_prompt: z.string(), // 3단계 종합 영문 프롬프트
+  aspect_ratio: z.literal("3:4"),
+  reference_image_path: z.string(), // 제품 사진 (Img2Img용)
+  generated_image_url: z.string().nullable(),
 });
 
 const DesignV2DataSchema = z.object({

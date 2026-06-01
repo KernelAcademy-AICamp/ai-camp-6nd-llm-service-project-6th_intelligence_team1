@@ -14,11 +14,10 @@ const promptSystemPrompt = readFileSync(
   "utf-8",
 );
 
-// 3단계 — 분석 결과(shot_type·mood·구도·컬러·오브제) + 브랜드·콘셉트로 영문 generation_prompt 작성.
-// 결과는 단일 텍스트 — 본문 끝에 `, vertical 3:4 portrait composition. Avoid: ...` 통합.
+// ─── 3단계: 3매체 분석 종합 → 영문 generation_prompt ──────────────────
+// 입력: 매체별 분석 결과 배열 (Pinterest·Instagram·Mintoiro)
+// 출력: 코드가 `vertical 3:4 portrait composition. Avoid: ...` 자동 통합한 단일 텍스트
 
-// 인물 손·팔 결함 방지 어휘 (제품 단독 시안에도 무해해서 모든 시안에 일괄 append).
-// + 일반 광고 사진 negative.
 const FIXED_NEGATIVE = [
   "duplicate hands",
   "duplicated hands",
@@ -40,11 +39,26 @@ const FIXED_NEGATIVE = [
   "oversaturated",
   "deformed packaging",
 ];
-
 const ASPECT_TAIL = "vertical 3:4 portrait composition";
 
-export async function generatePrompt({ brand, content, analysis }) {
-  const userMessage = `다음 정보로 시안 1장의 영문 generation_prompt를 작성하세요.
+export async function generatePromptFromSources({ brand, content, analyses }) {
+  const byKey = (src) => analyses.find((a) => a.source === src) ?? null;
+  const pin = byKey("pinterest");
+  const ig = byKey("instagram");
+  const min = byKey("mintoiro");
+
+  const block = (label, a) =>
+    a
+      ? `### ${label}
+- shot_type: ${a.shot_type}
+- mood: ${a.mood}
+- composition: ${a.composition}
+- color_palette: ${JSON.stringify(a.color_palette ?? [])}
+- key_objects: ${JSON.stringify(a.key_objects ?? [])}
+- source_specific: ${a.source_specific}`
+      : `### ${label}\n(분석 없음)`;
+
+  const userMessage = `다음 3매체 분석을 종합해 시안 1장의 영문 generation_prompt 한 줄을 작성하세요.
 
 ## 브랜드
 - brand_name: ${brand.brand_name ?? "(없음)"}
@@ -56,14 +70,15 @@ export async function generatePrompt({ brand, content, analysis }) {
 - trend_name: ${content.trend_name}
 - concept: ${content.concept}
 
-## 분석 결과 (레퍼런스 무드)
-- shot_type: ${analysis.shot_type}
-- mood: ${analysis.mood}
-- composition: ${analysis.composition}
-- color_palette: ${JSON.stringify(analysis.color_palette ?? [])}
-- key_objects: ${JSON.stringify(analysis.key_objects ?? [])}
+## 매체별 분석
 
-위 분석 결과의 무드·구도·컬러를 따라가는 영문 generation_prompt 한 줄을 작성하세요. \`8k wallpaper\`까지만 — 그 뒤(aspect ratio, Avoid)는 코드가 자동 추가.`;
+${block("Pinterest (구도·앵글·연출 우선)", pin)}
+
+${block("Instagram (트렌드 무드·인물·라이프스타일 우선)", ig)}
+
+${block("Mintoiro (패키지·컬러·타이포 우선)", min)}
+
+\`8k wallpaper\`까지만 작성. 그 뒤(aspect ratio, Avoid)는 코드가 자동 추가.`;
 
   const response = await anthropic.messages.parse({
     model: "claude-haiku-4-5",
@@ -79,7 +94,6 @@ export async function generatePrompt({ brand, content, analysis }) {
   const data = response.parsed_output;
   if (!data) throw new Error("프롬프트 생성 실패 (LLM 응답 파싱 실패)");
 
-  // LLM이 끝에 마침표·공백 붙였으면 정리 후 aspect tail + Avoid 통합.
   const base = data.generation_prompt.trim().replace(/[.,\s]+$/, "");
   const final = `${base}, ${ASPECT_TAIL}. Avoid: ${FIXED_NEGATIVE.join(", ")}.`;
 

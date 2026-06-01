@@ -4,20 +4,22 @@ import { dirname, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { InputWriterSchema } from "./schemas.js";
 import { generateQueriesAndSearch } from "./search.js";
-import { analyzeReferences } from "./analyze.js";
-import { generatePrompt } from "./prompt.js";
+import { analyzeOneSource } from "./analyze.js";
+import { generatePromptFromSources } from "./prompt.js";
 import { wrap, wrapError } from "../../shared/envelope.js";
 
-// 시안가 v2 — 4단계 도구 체인 (현재 1단계만 구현, 2~4 placeholder)
-//   1. 검색 → Tavily 이미지 (LLM이 쿼리 생성)
-//   2. 비전 분석 → Haiku 비전 (TODO)
-//   3. 프롬프트 생성 → Haiku 영문 프롬프트 (TODO)
-//   4. 이미지 생성 → Flux Dev via Replicate (TODO)
+// 시안가 v2 — 매체별 강점 활용 흐름:
+//   1단계 검색 — 트렌드별 매체별 수집 (Pinterest·Instagram·Mintoiro 각 10장)
+//   2단계 분석 — 매체별로 선별(1장) + 분석 (3 LLM 호출/트렌드, 병렬)
+//                · Pinterest → 구도·앵글
+//                · Instagram → 무드·트렌드
+//                · Mintoiro → 컬러·패키지
+//   3단계 프롬프트 — 3매체 분석 종합 → 영문 generation_prompt 한 줄
+//   4단계 이미지 — Flux Dev (Replicate, 미구현)
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, "../..");
 
-// 1. 입력 로드 — 작성가 산출 + 브랜드 분석가 산출
 function readJsonOrExit(dataRelPath, agentLabel) {
   const dataPath = resolve(PROJECT_ROOT, dataRelPath);
   try {
@@ -32,7 +34,6 @@ function readJsonOrExit(dataRelPath, agentLabel) {
 const writerRaw = readJsonOrExit("shared/data/writer-output.json", "작성가");
 const brandRaw = readJsonOrExit("shared/data/brand-analysis.json", "브랜드 분석가");
 
-// 2. 입력 검증
 const parsed = InputWriterSchema.safeParse(writerRaw);
 if (!parsed.success) {
   console.error("❌ 작성가 산출 유효성 검사 실패");
@@ -47,7 +48,7 @@ const writerData = writerRaw.data;
 const brandData = brandRaw?.data ?? {};
 const brandName = writerData.brand_name;
 
-// 3. 제품 사진 탐지 — inputs/product-images/<brand>.<ext> (Img2Img용)
+// 제품 사진 탐지
 function findProductImage(brand) {
   const dir = resolve(PROJECT_ROOT, "inputs/product-images");
   for (const ext of ["jpg", "jpeg", "png", "webp"]) {
@@ -63,16 +64,12 @@ const productImagePath = productImageAbs
 if (!productImagePath) {
   console.error("");
   console.error("❌ 시안 생성을 진행하려면 제품 사진이 필요합니다.");
-  console.error("");
-  console.error("   사진을 다음 경로에 넣어주세요:");
   console.error(`   inputs/product-images/${brandName}.jpg`);
-  console.error("");
-  console.error("   지원 포맷: jpg, jpeg, png, webp");
-  console.error("");
+  console.error("   (지원: jpg, jpeg, png, webp)");
   process.exit(1);
 }
 
-// 4. 콘텐츠별 처리 — 콘텐츠 1개당 시안 1장
+// ─── 콘텐츠별 처리 ─────────────────────────────────────────────────────
 console.log(`\n시안가 v2 시작 — 콘텐츠 ${writerData.contents.length}개\n`);
 const startTime = Date.now();
 
@@ -83,76 +80,84 @@ let totalOutputTokens = 0;
 for (const c of writerData.contents) {
   console.log(`▶ ${c.trend_name} (${c.content_id ?? "id 없음"})`);
 
-  // 1단계: 영문 쿼리 생성 + Pinterest 검색
-  let search_queries = [];
-  let references = [];
+  // 1단계: 매체별 수집
+  let queries = [];
+  let instagram_hashtags = [];
+  let refsBySource = { pinterest: [], instagram: [], mintoiro: [] };
   try {
     const r = await generateQueriesAndSearch({ brand: brandData, content: c });
-    search_queries = r.queries;
-    references = r.references;
+    queries = r.queries;
+    instagram_hashtags = r.instagram_hashtags;
+    refsBySource = r.references_by_source;
     if (r.usage) {
       totalInputTokens += r.usage.input_tokens ?? 0;
       totalOutputTokens += r.usage.output_tokens ?? 0;
     }
-    const pinCount = references.filter((x) => x.source === "pinterest").length;
-    const minCount = references.filter((x) => x.source === "mintoiro").length;
     console.log(
-      `  [1단계] 쿼리 ${search_queries.length}개 → 레퍼런스 ${references.length}건 (Pinterest ${pinCount}, Mintoiro ${minCount})${r.used_local_pinterest ? " [Pinterest 로컬]" : ""}`,
+      `  [1단계] Pinterest ${refsBySource.pinterest.length} / Instagram ${refsBySource.instagram.length} / Mintoiro ${refsBySource.mintoiro.length}`,
     );
   } catch (err) {
     console.error(`  ❌ [1단계] 실패: ${err.message}`);
     continue;
   }
 
-  // 2단계: 레퍼런스 비전 분석 (Haiku)
-  let analysis;
+  // 2단계: 매체별 선별·분석 (병렬)
+  let analyses = [];
   try {
-    const r2 = await analyzeReferences({ brand: brandData, content: c, references });
-    analysis = r2.analysis;
-    if (r2.usage) {
-      totalInputTokens += r2.usage.input_tokens ?? 0;
-      totalOutputTokens += r2.usage.output_tokens ?? 0;
-    }
-    console.log(
-      `  [2단계] shot_type="${analysis.shot_type}" / mood="${analysis.mood}" (이미지 ${r2.analyzed_count}장)`,
-    );
+    analyses = await Promise.all([
+      analyzeOneSource({ brand: brandData, content: c, source: "pinterest", references: refsBySource.pinterest }),
+      analyzeOneSource({ brand: brandData, content: c, source: "instagram", references: refsBySource.instagram }),
+      analyzeOneSource({ brand: brandData, content: c, source: "mintoiro", references: refsBySource.mintoiro }),
+    ]);
+    analyses.forEach((a) => {
+      if (a.usage) {
+        totalInputTokens += a.usage.input_tokens ?? 0;
+        totalOutputTokens += a.usage.output_tokens ?? 0;
+      }
+    });
+    const summary = analyses
+      .map((a) => `${a.source}: ${a.best_reference ? "✓" : "✗"}`)
+      .join(" / ");
+    console.log(`  [2단계] 매체별 선별+분석 — ${summary}`);
   } catch (err) {
     console.error(`  ❌ [2단계] 실패: ${err.message}`);
     continue;
   }
 
-  // 3단계: 영문 generation_prompt 작성 (Haiku, 끝에 aspect+Avoid 코드가 통합)
+  // 3단계: 3매체 분석 종합 → 영문 프롬프트
   let generation_prompt;
   try {
-    const r3 = await generatePrompt({ brand: brandData, content: c, analysis });
+    const r3 = await generatePromptFromSources({
+      brand: brandData,
+      content: c,
+      analyses,
+    });
     generation_prompt = r3.generation_prompt;
     if (r3.usage) {
       totalInputTokens += r3.usage.input_tokens ?? 0;
       totalOutputTokens += r3.usage.output_tokens ?? 0;
     }
-    console.log(`  [3단계] 프롬프트 길이 ${generation_prompt.length}자`);
+    console.log(`  [3단계] 프롬프트 ${generation_prompt.length}자`);
   } catch (err) {
     console.error(`  ❌ [3단계] 실패: ${err.message}`);
     continue;
   }
 
-  // 4단계: 이미지 생성 (TODO — Replicate 키 도착 후)
-  const generated_image_url = null;
-
   visuals.push({
     content_id: c.content_id,
     trend_name: c.trend_name,
-    search_queries,
-    references,
-    analysis,
+    search_queries: queries,
+    instagram_hashtags,
+    references_by_source: refsBySource,
+    analyses_by_source: analyses.map(({ usage, ...rest }) => rest),
     generation_prompt,
     aspect_ratio: "3:4",
     reference_image_path: productImagePath,
-    generated_image_url,
+    generated_image_url: null,
   });
 }
 
-// 5. 저장
+// ─── 저장 ─────────────────────────────────────────────────────────────
 const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 const finalData = { brand_name: brandName, visuals };
 const result = wrap(finalData);
@@ -168,4 +173,4 @@ console.log(`산출 시안     : ${visuals.length}개`);
 console.log(`입력 토큰     : ${totalInputTokens} (Anthropic 누적)`);
 console.log(`출력 토큰     : ${totalOutputTokens} (Anthropic 누적)`);
 console.log(`결과 저장     : ${outputPath}`);
-console.log(`\n⚠️ 현재 1~3단계 구현됨. 4단계(이미지 생성)는 Replicate 키 도착 후.`);
+console.log(`\n⚠️ 4단계(이미지 생성)는 Replicate 키 도착 후.`);
