@@ -83,18 +83,20 @@ let totalOutputTokens = 0;
 for (const c of writerData.contents) {
   console.log(`▶ ${c.trend_name} (${c.content_id ?? "id 없음"})`);
 
-  // 1단계: 쿼리 생성 + 이미지 검색
-  let queries = [];
+  // 1단계: 영문 쿼리 생성 + Pinterest 검색
+  let search_queries = [];
   let references = [];
   try {
     const r = await generateQueriesAndSearch({ brand: brandData, content: c });
-    queries = r.queries;
+    search_queries = r.queries;
     references = r.references;
     if (r.usage) {
       totalInputTokens += r.usage.input_tokens ?? 0;
       totalOutputTokens += r.usage.output_tokens ?? 0;
     }
-    console.log(`  [1단계] 쿼리 ${queries.length}개 → 레퍼런스 ${references.length}건`);
+    console.log(
+      `  [1단계] 쿼리 ${search_queries.length}개 → 레퍼런스 ${references.length}건 (Pinterest)${r.used_local_pinterest ? " [로컬 dataset]" : ""}`,
+    );
   } catch (err) {
     console.error(`  ❌ [1단계] 실패: ${err.message}`);
     continue;
@@ -138,7 +140,7 @@ for (const c of writerData.contents) {
   visuals.push({
     content_id: c.content_id,
     trend_name: c.trend_name,
-    search_queries: queries,
+    search_queries,
     references,
     analysis,
     generation_prompt,

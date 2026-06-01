@@ -29,7 +29,7 @@ export const InputWriterSchema = z
 
 // ─── 단계별 LLM 출력 스키마 ──────────────────────────────────────────
 
-// 1단계: 검색 쿼리 생성 (LLM이 콘텐츠·브랜드 보고 영문 쿼리 생성)
+// 1단계: 검색 쿼리 생성 (LLM이 콘텐츠·브랜드 보고 영문 쿼리 생성 — Pinterest용).
 export const LlmSearchQueriesSchema = z.object({
   queries: z.array(z.string().min(1)).min(1).max(5),
 });
@@ -55,12 +55,13 @@ const ReferenceSchema = z.object({
   url: z.string(), // 원문 페이지 URL
   image_url: z.string().nullable(), // 이미지 URL (없으면 null)
   title: z.string(),
+  source: z.enum(["pinterest"]), // 출처 (현재 Pinterest만)
 });
 
 const VisualSchema = z.object({
   content_id: z.string().optional(),
   trend_name: z.string(),
-  search_queries: z.array(z.string()), // 1단계 결과
+  search_queries: z.array(z.string()), // 1단계 결과 (Pinterest 영문 쿼리)
   references: z.array(ReferenceSchema), // 1단계 결과
   analysis: LlmAnalysisSchema, // 2단계 결과
   generation_prompt: z.string(), // 3단계 결과 (Avoid까지 통합된 영문)

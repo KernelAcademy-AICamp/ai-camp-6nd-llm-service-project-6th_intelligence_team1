@@ -16,6 +16,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.1",
     "@tavily/core": "^0.7.3",
+    "apify-client": "^2.23.3",
     "axios": "^1.16.1",
     "dotenv": "^17.4.2",
     "zod": "^4.4.3"
