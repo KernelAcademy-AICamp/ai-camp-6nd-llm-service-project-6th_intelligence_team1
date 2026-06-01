@@ -94,8 +94,10 @@ for (const c of writerData.contents) {
       totalInputTokens += r.usage.input_tokens ?? 0;
       totalOutputTokens += r.usage.output_tokens ?? 0;
     }
+    const pinCount = references.filter((x) => x.source === "pinterest").length;
+    const minCount = references.filter((x) => x.source === "mintoiro").length;
     console.log(
-      `  [1단계] 쿼리 ${search_queries.length}개 → 레퍼런스 ${references.length}건 (Pinterest)${r.used_local_pinterest ? " [로컬 dataset]" : ""}`,
+      `  [1단계] 쿼리 ${search_queries.length}개 → 레퍼런스 ${references.length}건 (Pinterest ${pinCount}, Mintoiro ${minCount})${r.used_local_pinterest ? " [Pinterest 로컬]" : ""}`,
     );
   } catch (err) {
     console.error(`  ❌ [1단계] 실패: ${err.message}`);

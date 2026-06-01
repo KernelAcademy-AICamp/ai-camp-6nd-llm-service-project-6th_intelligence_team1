@@ -55,7 +55,7 @@ const ReferenceSchema = z.object({
   url: z.string(), // 원문 페이지 URL
   image_url: z.string().nullable(), // 이미지 URL (없으면 null)
   title: z.string(),
-  source: z.enum(["pinterest"]), // 출처 (현재 Pinterest만)
+  source: z.enum(["pinterest", "mintoiro"]), // 출처
 });
 
 const VisualSchema = z.object({

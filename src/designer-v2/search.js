@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { ApifyClient } from "apify-client";
+import { tavily } from "@tavily/core";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { readFileSync, existsSync } from "node:fs";
@@ -11,6 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, "../..");
 
 const apify = new ApifyClient({ token: process.env.APIFY_API_TOKEN });
+const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY });
 const anthropic = new Anthropic();
 
 const searchSystemPrompt = readFileSync(
@@ -67,23 +69,26 @@ export async function generateQueriesAndSearch({ brand, content }) {
   const data = response.parsed_output;
   if (!data) throw new Error("검색 쿼리 생성 실패 (LLM 응답 파싱 실패)");
 
-  // 1-2. Pinterest 검색
-  let pinterestRefs = [];
-  try {
-    pinterestRefs = await searchPinterest(data.queries);
-  } catch (err) {
-    console.warn(`  ⚠️ Pinterest 검색 실패: ${err.message}`);
-  }
+  // 1-2. Pinterest + Mintoiro 병렬 검색
+  const [pinterestRaw, mintoiroRefs] = await Promise.all([
+    searchPinterest(data.queries).catch((err) => {
+      console.warn(`  ⚠️ Pinterest 검색 실패: ${err.message}`);
+      return [];
+    }),
+    searchMintoiro(data.queries).catch((err) => {
+      console.warn(`  ⚠️ Mintoiro 검색 실패: ${err.message}`);
+      return [];
+    }),
+  ]);
 
-  // 로컬 모드: 콘텐츠당 PINS_PER_CONTENT개만 시드 기반 선택 (재현성 + 콘텐츠별 다양성)
-  // 운영 모드: 전체 결과 반환 (analyze.js에서 앞 N장 분석)
-  const finalRefs = USE_LOCAL_PINTEREST
-    ? samplePins(pinterestRefs, PINS_PER_CONTENT, content)
-    : pinterestRefs;
+  // 로컬 Pinterest 모드: 콘텐츠당 PINS_PER_CONTENT개만 시드 기반 선택 (재현성 + 다양성).
+  const pinterestRefs = USE_LOCAL_PINTEREST
+    ? samplePins(pinterestRaw, PINS_PER_CONTENT, content)
+    : pinterestRaw;
 
   return {
     queries: data.queries,
-    references: finalRefs,
+    references: [...pinterestRefs, ...mintoiroRefs],
     usage: response.usage,
     used_local_pinterest: USE_LOCAL_PINTEREST,
   };
@@ -128,4 +133,30 @@ function samplePins(pins, n, content) {
     .reduce((h, ch) => ((h * 31 + ch.charCodeAt(0)) >>> 0), 0x811c9dc5);
   const start = seed % Math.max(1, pins.length - n);
   return pins.slice(start, start + n);
+}
+
+// ─── Mintoiro (mintoiro.com) — Tavily site: 검색으로 패키지·무드 큐레이션 이미지 수집 ───
+// 쿼리당 Tavily 이미지 검색 (includeDomains: mintoiro.com). 결과 image URL 추출.
+async function searchMintoiro(queries) {
+  if (!queries?.length) return [];
+  const refs = [];
+  for (const q of queries) {
+    const r = await tavilyClient.search(q, {
+      searchDepth: "advanced",
+      maxResults: 5,
+      includeImages: true,
+      includeImageDescriptions: true,
+      includeAnswer: false,
+      includeDomains: ["mintoiro.com"],
+    });
+
+    const imgs = (r.images ?? []).map((img) => {
+      const url = typeof img === "string" ? img : img.url;
+      const desc = typeof img === "string" ? null : img.description;
+      return { url, image_url: url, title: desc || q, source: "mintoiro" };
+    });
+
+    refs.push(...imgs);
+  }
+  return refs.filter((r) => r.image_url);
 }
