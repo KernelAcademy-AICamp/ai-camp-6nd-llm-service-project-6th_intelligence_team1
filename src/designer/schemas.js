@@ -32,9 +32,10 @@ const VisualSchema = z.object({
   format: z.enum(["image", "video"]),
   concept: z.string(), // 시안 한 줄 컨셉
   visual_direction: z.string(), // 구도·색감·분위기·피사체 방향
-  generation_prompt: z.string(), // 이미지/영상 생성 도구용 프롬프트 (영문, 6요소)
-  negative_prompt: z.string(), // 생성에서 피할 요소 (영문) — 왜곡·텍스트·제형 반대 등
-  aspect_ratio: z.string(), // 예: "9:16", "1:1", "16:9"
+  generation_prompt: z.string(), // 미드저니 프롬프트 본문 (영문, 6요소, 파라미터 플래그 제외)
+  negative_prompt: z.string(), // 피할 요소 (영문 콤마 구분) — 코드가 --no 로 부착
+  aspect_ratio: z.string(), // 예: "9:16", "1:1", "16:9" — 코드가 --ar 로 부착
+  midjourney_prompt: z.string().optional(), // 코드가 조립한 완성형 (본문 + --ar + --no + --s + --v)
   duration: z.string().optional(), // video일 때 길이 (예: "15초")
   scene_flow: z.array(z.string()).optional(), // video일 때 장면 흐름
 });

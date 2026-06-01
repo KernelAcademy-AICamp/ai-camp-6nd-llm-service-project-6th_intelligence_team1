@@ -31,24 +31,45 @@
    - 유튜브·동적 스토리텔링 → `video`, 인스타 피드·스와치·정적 비주얼 → `image` 경향
 2. **시안 컨셉** (`concept`): 이 시안이 무엇을 보여주는지 한 줄
 3. **비주얼 방향** (`visual_direction`): 피사체·구도·색감·조명·분위기를 구체적으로 (한국어, 2-3문장)
-4. **생성 프롬프트** (`generation_prompt`): 이미지/영상 생성 도구에 넣을 **영문** 프롬프트. 아래 **6가지 구성요소를 빠짐없이** 순서대로 담을 것:
-   1. **피사체(subject)**: 누가/무엇이 (예: young Korean woman, lip tint product)
+4. **생성 프롬프트** (`generation_prompt`): **미드저니에 넣을 영문 프롬프트 본문** (파라미터 플래그 제외 — 그건 코드가 자동 부착). 아래 **6가지 구성요소를 빠짐없이** 순서대로 담을 것:
+   1. **피사체(subject)**: 누가/무엇이 (예: young Korean woman, lip tint product close-up)
    2. **구도(composition)**: 앵글·프레이밍 (예: extreme close-up, flat lay top-down, three-quarter angle)
    3. **조명(lighting)**: (예: soft natural daylight, diffused studio softbox, golden hour)
    4. **색감(color)**: 제품·무드 컬러 (예: warm beige tones, muted rosy-brown)
-   5. **질감/스타일(texture·style)**: **제형 매핑 테이블 준수** (아래 참조) + 사진 스타일 (예: dewy glossy finish, cosmetic commercial photography)
+   5. **질감/스타일(texture·style)**: **제형 매핑 테이블 준수**(아래 참조) + **사진 스타일 모디파이어** (예: dewy glossy finish, editorial beauty photography, cinematic, hyperrealistic, shot on Hasselblad)
    6. **분위기(mood)**: (예: fresh and airy, elegant and refined)
    - 6요소를 콤마로 자연스럽게 연결. 모호어("nice", "beautiful") 금지, 시각적으로 그릴 수 있는 단어만.
+   - **파라미터 플래그(`--ar`, `--no`, `--s`, `--niji`, `--v` 등)는 절대 본문에 쓰지 말 것.** 코드가 다른 필드(`aspect_ratio`, `negative_prompt` 등)를 보고 자동으로 붙여 `midjourney_prompt`를 만든다.
+   - 미드저니에 잘 통하는 표현 권장: `cinematic lighting`, `editorial beauty`, `commercial photography`, `hyperrealistic`, `award-winning`, `8k`, `shot on [카메라 모델]`, `product photography`, `studio lighting`, `bokeh`, `depth of field`.
+   - 비주얼 가중치가 필요하면 `keyword::1.5` 문법 사용 가능 (꼭 필요할 때만, 남용 금지).
 
-5. **부정 프롬프트** (`negative_prompt`): 생성에서 **피하고 싶은 요소**를 영문으로. 뷰티 시안 공통 + 케이스별:
-   - 공통: `distorted lips, asymmetric face, extra fingers, deformed hands, text, watermark, low quality, blurry`
-   - 제형 반대 요소 (예: 글로우 제품이면 `matte dry texture, cakey`)
+5. **부정 프롬프트** (`negative_prompt`): 생성에서 **피하고 싶은 요소**를 영문 콤마 구분으로 (예: `distorted lips, deformed hands, text`). 코드가 `--no <list>` 형태로 미드저니 프롬프트 끝에 자동 부착한다.
+   - 뷰티 공통: `distorted lips, asymmetric face, extra fingers, deformed hands, text, watermark, low quality, blurry, oversaturated`
+   - 제형 반대 요소 (예: 글로우 제품이면 `matte, dry, cakey` 추가 / 매트 제품이면 `glossy, wet look, greasy` 추가)
+   - 미드저니 `--no`는 명사 위주 콤마 구분. 문장이나 `not X` 같은 표현은 피할 것.
 
 6. **비율** (`aspect_ratio`): 채널에 맞게 — 유튜브 쇼츠·인스타 릴스·스토리 `"9:16"`, 인스타 피드 `"1:1"` 또는 `"4:5"`, 유튜브 가로 `"16:9"`
+   - 코드가 `--ar 9:16` 식으로 미드저니 프롬프트에 자동 부착.
 
 7. **포맷별 정교화**:
    - **영상(video)이면**: `duration`(예: `"15초"`), `scene_flow`(장면 흐름 배열). `generation_prompt`에 **카메라 무빙·전환**도 명시 (예: slow push-in, smooth pan, soft cut transition, 30fps). scene_flow는 각 컷을 "무엇을 어떻게 비추는지" 구체적으로.
    - **이미지(image)이면**: `generation_prompt`에 **레이아웃·앵글**을 명확히 (예: centered flat lay, rule-of-thirds, top-down 90° / eye-level). 단일 정지컷에 정보를 응축.
+   - ⚠️ **미드저니는 영상 생성 미지원**: `format: "video"`인 시안은 미드저니로 정지컷만 생성된다 (영상은 별도 도구 필요). scene_flow를 살리려면 각 컷별로 별도 시안을 만들거나, 대표 키프레임 1컷만 생성하는 방향.
+
+---
+
+## 미드저니 자동 파라미터 (코드가 부착, LLM은 신경 X)
+
+LLM이 만든 `generation_prompt` + `negative_prompt` + `aspect_ratio`를 가지고 시안가 코드가 미드저니에 바로 붙여넣을 수 있는 **`midjourney_prompt`** 필드를 생성한다. 자동 부착되는 플래그:
+
+| 자동 추가 | 값 | 비고 |
+|---|---|---|
+| `--ar W:H` | `aspect_ratio` 값 | 9:16 / 1:1 / 16:9 등 |
+| `--no x, y, z` | `negative_prompt` | 콤마 구분 그대로 |
+| `--s 250` | 스타일 강도 (기본값) | 뷰티 시안에 무난한 중간값 |
+| `--v 6.1` | 미드저니 모델 버전 | 기본값 |
+
+→ LLM은 `generation_prompt` 본문만 잘 쓰면 된다. 파라미터는 코드가 알아서.
 
 ---
 
