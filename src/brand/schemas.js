@@ -100,16 +100,33 @@ export const CAMPAIGN_BUDGET = [
 
 export const CAMPAIGN_CHANNELS = ["유튜브", "메타", "카카오"];
 
-// ─── 스키마 ───────────────────────────────────────────────────────
+// 브랜드가 평소 운영 중인 매체 (현재 활용 채널) — 이번 캠페인 주력 채널과는 별개.
+// UI는 이 enum 6개를 체크박스로 노출하고, 마케터가 자유 입력하지 않도록 제한.
+export const CURRENT_CHANNELS = [
+  "인스타그램",
+  "유튜브",
+  "틱톡",
+  "자사몰",
+  "네이버 스토어",
+  "오프라인 스토어",
+];
 
-// 매칭가가 받는 age_groups 정규식 (20대·Z세대·MZ세대·밀레니얼)과 동일
-const AGE_GROUP_RE = /^(\d+대|Z세대|MZ세대|밀레니얼)$/;
+// 마케터 폼이 노출할 연령 그룹 4개. UI 드롭다운/체크박스는 이 enum만 사용.
+// "40+"는 매칭가로 넘기기 전 "40대"·"50대"·"60대"로 자동 확장됨.
+export const AGE_GROUPS = ["10대", "20대", "30대", "40+"];
+
+// 매칭가가 기대하는 age_groups 포맷("20대"·"Z세대" 등)으로 확장. 폼이 보낸
+// "40+"는 매칭가가 모르는 값이므로 여기서 ["40대","50대","60대"]로 풀어줌.
+export function expandAgeGroupForMatching(group) {
+  if (group === "40+") return ["40대", "50대", "60대"];
+  return [group];
+}
+
+// ─── 스키마 ───────────────────────────────────────────────────────
 
 const TargetSchema = z.object({
   gender: z.enum(["여성", "남성", "공용"]),
-  age_groups: z
-    .array(z.string().regex(AGE_GROUP_RE, "age_groups 원소: '20대' 또는 'Z세대/MZ세대/밀레니얼'"))
-    .min(1),
+  age_groups: z.array(z.enum(AGE_GROUPS)).min(1),
   involvement: z.enum(INVOLVEMENT),
   motivation: z.array(z.enum(MOTIVATION)).min(1),
 });
@@ -117,7 +134,7 @@ const TargetSchema = z.object({
 export const BrandInputSchema = z
   .object({
     brand_name: z.string().min(1),
-    current_channels: z.array(z.string()).optional().default([]),
+    current_channels: z.array(z.enum(CURRENT_CHANNELS)).optional().default([]),
     brand_channel_url: z.string().url().optional().or(z.literal("")).optional(),
 
     product_name: z.string().min(1),
