@@ -2,32 +2,33 @@ import dotenv from "dotenv";
 import axios from "axios";
 import fs from "fs";
 dotenv.config();
+fs.mkdirSync("trend/data", { recursive: true });
 
 const CLIENT_ID = process.env.NAVER_CLIENT_ID;
 const CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET;
 const BASE_URL = "https://openapi.naver.com/v1/datalab/search";
 
-const KEYWORD_GROUPS = [
-  {
-    groupName: "매트 쿠션",
-    keywords: ["매트쿠션", "커버쿠션", "세미매트쿠션"]
-  },
-  {
-    groupName: "베이스 메이크업",
-    keywords: ["쿠션추천", "데일리쿠션", "20대쿠션"]
-  },
-  {
-    groupName: "커버 베이스 트렌드",
-    keywords: ["커버력쿠션", "지속력쿠션", "모공커버"]
-  }
-];
+// 브랜드 분석가가 만든 brand-analysis.json을 읽어옴
+const brandAnalysis = JSON.parse(
+  fs.readFileSync("shared/data/brand-analysis.json", "utf-8")
+);
+
+// datalab_keywords를 키워드 그룹으로 사용 (하드코딩 대신 동적으로)
+const KEYWORD_GROUPS = brandAnalysis.data.datalab_keywords;
+
+// brand_context도 brand-analysis.json에서 가져옴
+const brandContext = {
+  target_gender: brandAnalysis.data.target.gender,
+  target_age: brandAnalysis.data.target.age_groups.join(", "),
+  tone: brandAnalysis.data.tone_and_manner.join(", ")
+};
 
 async function fetchSearchTrend() {
   const response = await axios.post(BASE_URL,
     {
-      startDate: "2026-01-01",  // 올해 1월부터
-      endDate: new Date().toISOString().split("T")[0],  // 오늘까지
-      timeUnit: "month",        // 월별 데이터
+      startDate: "2026-01-01",
+      endDate: new Date().toISOString().split("T")[0],
+      timeUnit: "month",
       keywordGroups: KEYWORD_GROUPS
     },
     {
@@ -38,35 +39,28 @@ async function fetchSearchTrend() {
       }
     }
   );
-
   return response.data;
 }
 
 async function main() {
   console.log("네이버 데이터랩 트렌드 수집 시작...\n");
+  console.log(`키워드 그룹 ${KEYWORD_GROUPS.length}개를 brand-analysis.json에서 읽어왔어!\n`);
 
   const result = await fetchSearchTrend();
 
-  // 트렌드 분석가 B에게 넘길 형태로 포맷 구성
   const output = {
     collected_at: new Date().toISOString(),
-    brand_context: {
-      target_gender: "여성",
-      target_age: "20대",
-      tone: "Z세대·트렌디"
-    },
+    brand_context: brandContext,
     raw_data: result.results.map(group => ({
       query: group.title,
       source: "naver_datalab",
       keywords: group.keywords,
-      // 가장 최근 달의 검색량 지수를 evidence로 활용
       latest_ratio: group.data[group.data.length - 1]?.ratio || 0,
-      trend_data: group.data,  // 월별 검색량 추이 전체
+      trend_data: group.data,
       url: null
     }))
   };
 
-  // JSON 파일로 저장
   fs.writeFileSync("trend/data/naver_raw.json", JSON.stringify(output, null, 2), "utf-8");
 
   console.log("=== 수집 완료 ===");

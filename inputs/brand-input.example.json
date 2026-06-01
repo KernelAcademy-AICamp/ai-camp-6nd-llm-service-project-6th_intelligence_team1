@@ -1,0 +1,26 @@
+{
+  "brand_name": "예시 브랜드명 (예: 힌스, 헤라, 샤넬)",
+  "current_channels": ["인스타그램", "유튜브"],
+  "brand_channel_url": "https://www.youtube.com/@example",
+
+  "product_name": "예시 제품명",
+  "category": "메이크업 > 베이스",
+  "texture_keywords": ["매트"],
+  "tone_and_manner": ["Z세대·트렌디"],
+
+  "target": {
+    "gender": "여성",
+    "age_groups": ["20대"],
+    "involvement": "일상사용자",
+    "motivation": ["자기표현"]
+  },
+  "mood_image_url": "",
+
+  "campaign_kpi": "재구매 유도",
+  "campaign_period": "한달",
+  "campaign_budget": "200~500만원",
+  "media_channels": ["유튜브"],
+
+  "reference_campaign_url": "",
+  "competitors": ["경쟁사1", "경쟁사2"]
+}

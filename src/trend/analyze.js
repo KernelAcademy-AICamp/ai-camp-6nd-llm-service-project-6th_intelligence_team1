@@ -35,12 +35,27 @@ if (rawData.length === 0) {
   process.exit(1);
 }
 
+// 1-2. 브랜드 분석가 산출 로드 (제품·카테고리·제형 컨텍스트).
+//      없으면 빈 객체로 graceful 처리 (브랜드 분석가를 먼저 실행하면 정확도↑).
+let brand = {};
+try {
+  const brandPath = resolve(PROJECT_ROOT, "shared/data/brand-analysis.json");
+  brand = JSON.parse(readFileSync(brandPath, "utf-8")).data ?? {};
+  console.log(
+    `[brand] ${brand.brand_name ?? "(미상)"} / ${brand.product_name ?? "(제품 미상)"} / ${brand.category ?? "(카테고리 미상)"}`,
+  );
+} catch {
+  console.warn(
+    "⚠️ brand-analysis.json을 못 읽었습니다 — 제품 컨텍스트 없이 진행 (브랜드 분석가를 먼저 실행하세요).",
+  );
+}
+
 // 2. 시스템 프롬프트 — LLM이 따라야 할 출력 형식·규칙 (트렌드 분석가의 두뇌)
 const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
 수집된 raw 검색 데이터(YouTube·Tavily)를 분석해, 매칭가에게 넘길 트렌드 분석 JSON을 생성합니다.
 
 ## 작업
-1. raw_data 배열(검색 결과 제목·설명)을 읽고, 의미가 비슷한 것끼리 묶어 **3~6개의 뚜렷한 트렌드**로 정제합니다.
+1. raw_data 배열(검색 결과 제목·설명)을 읽고, 의미가 비슷한 것끼리 묶어 **근거가 뚜렷하고 서로 구별되는 트렌드를 최대한 많이** 정제합니다. (개수를 억지로 채우려 비슷한 트렌드를 쪼개거나 근거 없는 트렌드를 만들지 마세요.)
 2. 각 트렌드마다 아래 구조의 객체를 만듭니다.
 3. raw 데이터에 실제 근거가 있는 트렌드만 만듭니다. 없는 내용을 지어내지 마세요.
 
@@ -89,10 +104,26 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
 - 검색·조회수 등 수치는 raw 데이터로 직접 관측되지 않으면 brand_context 기반으로 합리적 추정하되, source에 "추정" 명시
 - **출력은 순수 JSON 하나만.** 코드 블록 표시나 설명 텍스트 없이 JSON만.`;
 
-// 3. 사용자 메시지 — 브랜드 컨텍스트 + raw 데이터
-const userMessage = `다음 수집 데이터를 분석해서 트렌드를 산출하세요.
+// 3. 사용자 메시지 — 브랜드 프로필 + 수집 컨텍스트 + raw 데이터
+const brandProfile = {
+  brand_name: brand.brand_name,
+  product_name: brand.product_name,
+  category: brand.category,
+  texture_keywords: brand.texture_keywords,
+  tone_and_manner: brand.tone_and_manner,
+  target: brand.target,
+};
+const targetCategory = brand.category ?? "";
+const targetTexture = (brand.texture_keywords ?? []).join(", ");
 
-## 브랜드 컨텍스트 (이 타겟·톤 기준으로 수집됨)
+const userMessage = `다음 수집 데이터를 분석해서, 이 브랜드/제품에 맞는 트렌드를 산출하세요.
+
+## 브랜드 프로필 (이 제품 기준으로 트렌드를 정렬·선별하세요)
+\`\`\`json
+${JSON.stringify(brandProfile, null, 2)}
+\`\`\`
+
+## 수집 컨텍스트 (크롤 기준)
 \`\`\`json
 ${JSON.stringify(brandContext, null, 2)}
 \`\`\`
@@ -102,7 +133,11 @@ ${JSON.stringify(brandContext, null, 2)}
 ${JSON.stringify(rawData, null, 2)}
 \`\`\`
 
-위 데이터에서 3~6개의 뚜렷한 트렌드를 정제해 출력 형식대로 JSON으로 반환하세요.`;
+위 데이터에서 근거가 뚜렷하고 서로 구별되는 트렌드를 최대한 많이 정제해 출력 형식대로 JSON으로 반환하세요.${
+  targetCategory
+    ? `\n\n**카테고리 정렬 (중요)**: 이 브랜드의 카테고리는 "${targetCategory}"입니다. 트렌드의 category 대분류·소분류가 이와 명백히 다르면(예: 베이스 브랜드 × 립 트렌드) 생성하지 마세요. 제품 카테고리와 제형(${targetTexture || "미상"})에 직접 관련된 트렌드를 우선합니다.`
+    : ""
+}`;
 
 // 4. Claude API 호출 (시스템 프롬프트 끝에 cache_control로 비용 절감)
 const client = new Anthropic();
@@ -111,7 +146,7 @@ const startTime = Date.now();
 
 const response = await client.messages.create({
   model: "claude-haiku-4-5",
-  max_tokens: 8192,
+  max_tokens: 16384, // 트렌드를 "최대한 많이" 뽑으므로 출력 잘림 방지로 상향
   system: [
     { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
   ],

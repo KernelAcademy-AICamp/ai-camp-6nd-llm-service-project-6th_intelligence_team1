@@ -78,7 +78,11 @@ function compute2A(brandTarget, audience) {
   const ageOk = agePct >= 60;
   const genderOk = genderPct >= 60;
   const result = ageOk && genderOk ? "✅" : ageOk || genderOk ? "⚠️" : "❌";
-  const reason = `[코드 계산] 연령 오버랩 ${agePct}% (${ageOk ? "≥" : "<"}60), 성별 오버랩 ${genderPct}% (${genderOk ? "≥" : "<"}60) → ${result}`;
+  // 인구 분포는 네이버 데이터랩 실측 % 가 아니라 추정값이므로, 구체 수치는 노출하지 않는다.
+  // 판정에는 계속 쓰되(코드 내부), reason에는 방향성(부합/부분/미흡)만 정성 표기.
+  const ageWord = ageOk ? "타겟 연령대와 부합" : "타겟 연령대와 부분 부합";
+  const genderWord = genderOk ? "타겟 성별 우세" : "타겟 성별 비우세";
+  const reason = `[코드 판정] ${ageWord}, ${genderWord} → ${result} (인구 분포 추정 기반, 구체 수치 비공개)`;
   return { result, reason };
 }
 
@@ -97,6 +101,26 @@ function computeVerdict(q1, q2) {
 }
 
 // LLM 정성 판정(1-A·1-B·2-B) + 코드 계산(2-A·passes·verdict)을 최종 구조로 조립.
+// summary_reasons에서 신뢰할 수 없는 근거 항목을 제거 (코드 안전망).
+const VAGUE_TERMS = ["다수", "확산", "활발", "급증", "다양", "여럿", "증가 추세", "인기", "주목"];
+// 인구통계 수치(추정값이라 부정확) 인용 차단용 패턴. LLM이 규칙 어기고 넣어도 코드가 제거.
+const DEMOGRAPHIC_RE = /(여성|남성)\s*\d|\d+\s*(대|세)\s*\d*\s*%|성별\s*(비중|오버랩)|연령\s*(비중|오버랩)/;
+function filterVagueReasons(reasons) {
+  if (!Array.isArray(reasons)) return reasons;
+  const kept = reasons.filter((r) => {
+    const text = `${r?.category ?? ""} ${r?.fact ?? ""}`;
+    // ① 인구통계 수치 인용 항목 제거 (추정값 — 근거로 쓰지 않음)
+    if (DEMOGRAPHIC_RE.test(text)) return false;
+    // ② 모호어가 들었는데 숫자가 없으면 제거 (숫자 있으면 구체적이므로 유지)
+    const fact = r?.fact ?? "";
+    const hasNumber = /\d/.test(fact);
+    const hasVague = VAGUE_TERMS.some((t) => fact.includes(t));
+    return hasNumber || !hasVague;
+  });
+  // 전부 걸러져 빈 배열이 되면 원본 유지 (근거 0개 방지) — 최소 1개는 남긴다.
+  return kept.length > 0 ? kept : reasons;
+}
+
 function assembleEvaluation(llmEval, trend, brandTarget) {
   const c = llmEval.comparisons;
   const a2 = compute2A(brandTarget, trend?.audience_distribution);
@@ -117,7 +141,7 @@ function assembleEvaluation(llmEval, trend, brandTarget) {
       },
     },
     verdict: computeVerdict(q1passes, q2passes),
-    summary_reasons: llmEval.summary_reasons,
+    summary_reasons: filterVagueReasons(llmEval.summary_reasons),
   };
 }
 
@@ -229,14 +253,38 @@ function makeExcludedByCategory(trend, brandCategory) {
       question_2: { label: "타겟 적합성", comparisons: { "2-A": skip, "2-B": skip }, passes: 0 },
     },
     verdict: "제외",
-    summary_reasons: [`${reason} → 카테고리 게이트에서 사전 제외 (LLM 평가 생략)`],
+    summary_reasons: [
+      {
+        category: "카테고리 적합성",
+        fact: reason,
+        source: "브랜드·트렌드 category (입력)",
+      },
+    ],
   };
 }
 
 const brandCategory = brandAnalysis.data.category;
+
+// 입력 트렌드 중복 제거 — 트렌드 분석가가 같은 trend_name을 두 번 산출하면
+// evaluations·recommendations에 동일 트렌드가 중복되므로, 첫 번째만 남기고 거른다.
+const seenTrendNames = new Set();
+const uniqueTrends = [];
+let dupCount = 0;
+for (const t of trendAnalysis.data.trends) {
+  if (seenTrendNames.has(t.trend_name)) {
+    dupCount++;
+    continue;
+  }
+  seenTrendNames.add(t.trend_name);
+  uniqueTrends.push(t);
+}
+if (dupCount > 0) {
+  console.log(`중복 트렌드 ${dupCount}개 제거 (trend_name 기준)`);
+}
+
 const passedTrends = [];
 const gatedEvaluations = [];
-for (const t of trendAnalysis.data.trends) {
+for (const t of uniqueTrends) {
   if (categoryMatches(brandCategory, t.category)) passedTrends.push(t);
   else gatedEvaluations.push(makeExcludedByCategory(t, brandCategory));
 }
@@ -293,6 +341,7 @@ if (passedTrends.length > 0) {
   const response = await client.messages.parse({
     model: "claude-haiku-4-5",
     max_tokens: 8192,
+    temperature: 0, // 정성 판정(1-A·1-B·2-B) 흔들림 최소화 — 경계선 트렌드 순위 안정화
     system: systemContent,
     messages: [{ role: "user", content: userMessage }],
     output_config: {
