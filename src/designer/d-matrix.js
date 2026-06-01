@@ -13,6 +13,33 @@ export const SUPPORTED_MAKEUP_MINOR = [
   "립", "치크", "파운데이션", "비비", "쿠션", "아이",
 ];
 
+// ─── 인물 샷 [A: 모델 특징] 매트릭스 (톤앤매너 기반) ─────────────────
+// 톤별 1개 고정 — 같은 브랜드면 카테고리 무관하게 모델·헤어·메이크업 무드 동일.
+// 표정·시선·자세는 [D]에서 처리, 구체 립 컬러는 [B]에서 처리하므로 여기선 제외.
+// 조명·배경·마무리 어구는 고정 틀과 [C]에서 처리하므로 여기선 제외.
+export const PERSON_A_MATRIX = {
+  "클린뷰티":
+    "20-year-old korean beauty model, long straight natural black hair cascading softly down her shoulders with gentle flyaways, minimalist clean beauty makeup, ultra-transparent and hydrated glass skin, bare shoulders",
+  "로맨틱·감성":
+    "23-year-old korean model, loose messy low bun with soft curly tendrils framing her face, milk tea brown hair color, soft-focus romantic makeup, muted rose watercolor blush",
+  "럭셔리·프리미엄":
+    "25-year-old elegant korean high-fashion model, sharp sleek chin-length black bob haircut tucked neatly behind her ears, high-contrast premium luxury cosmetics makeup, perfectly sculpted face contour, satin-finish flawless skin",
+  "키치·플레이풀":
+    "19-year-old energetic vibrant korean influencer, high bouncy ponytail with colorful hair clips, playful aesthetic bright makeup, neon peach blush on the bridge of the nose, faux freckles on cheeks",
+  "더마·과학적":
+    "26-year-old intellectual korean model, dark hair perfectly tied back into a sleek low ponytail, professional derma skincare advertisement makeup, semi-matte skin focus, no-makeup makeup look emphasizing natural healthy skin barrier",
+  "Z세대·트렌디":
+    "21-year-old cool gen-z korean influencer, messy wet-hair look with long undone hippie curls and micro-braids, trendy Y2K beauty makeup, icy metallic eyeshadow highlight, sharp cat-eye eyeliner",
+  "비건":
+    "22-year-old natural-looking korean model, light brown wavy hair styled in a loose side-braid with organic texture, eco-friendly vegan beauty makeup, sun-kissed dewy skin sheen, soft earth-tone terracotta makeup",
+};
+
+// 브랜드 tone_and_manner 첫 항목으로 [A] 결정. 매핑 없으면 null (코드 게이트에서 거부).
+export function pickPersonA(toneAndManner) {
+  const firstTone = Array.isArray(toneAndManner) ? toneAndManner[0] : toneAndManner;
+  return PERSON_A_MATRIX[firstTone] ?? null;
+}
+
 // ─── 인물 샷 [D] 매트릭스 (소분류 기반) ─────────────────────────────
 // 키: 소분류 이름 — 입력 "클렌징 > 클렌징폼"의 "클렌징폼" 부분 매칭
 // 값: 자세·구도 옵션 3개 (인물 자세 + 손동작 + 제품 동작이 한 줄로)

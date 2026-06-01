@@ -25,37 +25,36 @@ export const InputWriterSchema = z
   })
   .passthrough();
 
-// ─── 출력 스키마 ────────────────────────────────────────────────────
-// 한 시안(인물 또는 제품). LLM이 채우는 슬롯(A/B/C)과 코드가 채우는 슬롯([D]+필요 시 [A])이 섞임.
+// ─── 최종 저장 스키마 (envelope의 data) ─────────────────────────────
+// 한 시안(인물 또는 제품). 코드가 매트릭스 룩업으로 [A]·[D]를 채우고
+// LLM은 [B]·[C]+메타만 채워, 코드가 고정 틀에 끼워 generation_prompt를 조립한 결과.
 const VisualSchema = z.object({
   content_id: z.string().optional(),
   trend_name: z.string(),
-  shot_type: z.enum(["person", "product"]), // 인물 샷 / 제품 샷
-  concept: z.string(), // 시안 한 줄 컨셉 (한국어)
-  visual_direction: z.string(), // 비주얼 방향 설명 (한국어)
-  generation_prompt: z.string(), // 나노바나나에 넣을 영문 프롬프트 (고정 틀에 슬롯 채워진 완성형)
-  negative_prompt: z.string(), // 피할 요소 (영문 콤마 구분)
-  aspect_ratio: z.string(), // "9:16" | "1:1" | "16:9" 등
+  shot_type: z.enum(["person", "product"]),
+  concept: z.string(), // 한국어 한 줄
+  visual_direction: z.string(), // 한국어 2-3문장
+  generation_prompt: z.string(), // 나노바나나용 영문 완성형
+  negative_prompt: z.string(), // 영문 콤마 구분
+  aspect_ratio: z.string(), // "9:16" | "1:1" | "16:9" | "4:5"
+  reference_image_path: z.string(), // 제품 사진 경로 (필수). 나노바나나 호출 시 이미지+텍스트 같이 전달.
 });
 
-// 최종 저장 구조 — 콘텐츠 1개당 visual 2개(person, product)가 visuals 배열에 평탄화돼 들어감.
-export const DesignDataSchema = z.object({
+// 콘텐츠 1개당 visual 2개(person, product)가 평탄화돼 visuals 배열에 들어감.
+const DesignDataSchema = z.object({
   brand_name: z.string(),
   visuals: z.array(VisualSchema),
 });
 
+// envelope 포함 전체. 외부에서 design-output.json 검증할 때 사용 가능.
 export const DesignResultSchema = envelopeSchema(DesignDataSchema);
 
 // ─── LLM 전용 출력 스키마 ───────────────────────────────────────────
-// LLM은 슬롯 텍스트만 생성. [D]는 코드 룩업이라 LLM이 안 만듦.
-// 콘텐츠 1개 → person·product 두 묶음으로 출력.
+// LLM은 [C 배경 컬러]·메타만 생성. [A]·[D]·고정 틀은 코드, [B 제품 특징]은 첨부 사진으로 대체.
 const LlmShotSlotsSchema = z.object({
   concept: z.string(),
   visual_direction: z.string(),
-  // 인물 샷: a_model(모델 특징) | 제품 샷: a_product 없음(코드 매트릭스가 채움)
-  a_model: z.string().optional(), // person 샷에만
-  b_product: z.string(), // 공통
-  c_background: z.string(), // 공통
+  c_background: z.string(),
   negative_prompt: z.string(),
   aspect_ratio: z.string(),
 });
@@ -63,8 +62,8 @@ const LlmShotSlotsSchema = z.object({
 const LlmContentVisualsSchema = z.object({
   trend_name: z.string(),
   content_id: z.string().optional(),
-  person: LlmShotSlotsSchema, // a_model 필수
-  product: LlmShotSlotsSchema, // a_model 없음
+  person: LlmShotSlotsSchema,
+  product: LlmShotSlotsSchema,
 });
 
 export const LlmDesignDataSchema = z.object({
