@@ -374,6 +374,82 @@
     .dropzone { padding: 40px 20px; }
     .dz-icon { width: 56px; height: 56px; }
   }
+
+  /* ===== Loading overlay (shown when "레퍼런스 생성하기" clicked) ===== */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(240, 238, 233, 0.96);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  .loading-overlay.is-active { display: flex; }
+  .loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+    text-align: center;
+    padding: 24px;
+  }
+  .loading-skeletons {
+    display: flex;
+    gap: 18px;
+  }
+  .skel-box {
+    width: 170px;
+    height: 215px;
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+  .skel-box::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(91, 134, 173, 0.20) 50%,
+      transparent 100%
+    );
+    animation: shimmer 1.8s infinite linear;
+  }
+  .skel-box:nth-child(2)::after { animation-delay: 0.25s; }
+  .skel-box:nth-child(3)::after { animation-delay: 0.5s; }
+  @keyframes shimmer {
+    0%   { left: -100%; }
+    100% { left:  100%; }
+  }
+  .loading-texts {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .loading-text-main {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .loading-text-sub {
+    font-size: 13.5px;
+    color: var(--text-mute);
+  }
+  @media (max-width: 540px) {
+    .skel-box { width: 96px; height: 120px; }
+    .loading-skeletons { gap: 10px; }
+    .loading-text-main { font-size: 16px; }
+  }
 </style>
 </head>
 <body>
@@ -463,6 +539,21 @@
       Funnel 2/3 — Match Report v0.2 · hince × 2026 Beauty Trend
     </div>
 
+  </div>
+
+  <!-- ====== Loading overlay (hidden by default) ====== -->
+  <div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
+    <div class="loading-content">
+      <div class="loading-skeletons">
+        <div class="skel-box"></div>
+        <div class="skel-box"></div>
+        <div class="skel-box"></div>
+      </div>
+      <div class="loading-texts">
+        <div class="loading-text-main">최적의 조합으로 레퍼런스를 추출하는 중입니다</div>
+        <div class="loading-text-sub">잠시만 기다려주세요</div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -573,10 +664,17 @@
         fi.value = ''; // allow re-picking the same file
       });
 
-      // Continue button
+      // Continue button — show loading overlay, then navigate
       cb.addEventListener('click', () => {
         if (cb.disabled) return;
-        window.location.href = 'report-mockup-reference.html';
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.classList.add('is-active');
+        overlay.setAttribute('aria-hidden', 'false');
+        // Prevent accidental double-click
+        cb.disabled = true;
+        setTimeout(() => {
+          window.location.href = 'report-mockup-reference.html';
+        }, 2800);
       });
     })();
   </script>
