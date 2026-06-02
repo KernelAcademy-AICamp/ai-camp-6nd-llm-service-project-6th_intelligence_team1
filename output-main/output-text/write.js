@@ -217,21 +217,88 @@ export function generateReport({ brand, trend, match } = {}) {
   return lines.join("\n");
 }
 
-// ─── writer-output.json 생성 (UI용 구조화 JSON) ─────────────────
-// shared/schemas/writer-output.example.json 형식에 맞춰 출력.
-// 카피 필드(concept·headline·body_copy·key_message)는 LLM 없이
-// 매칭·트렌드 데이터에서 데이터 매핑으로 채움. v2에서 LLM 카피 생성 예정.
+// ─── writer-output.json v2 생성 (리포트 mockup 전용 단일 데이터 소스) ─
+// 합의문: docs/writer-output-v2-spec.md (옵션 C)
+// 형식: shared/schemas/writer-output.example.json
+//
+// 카피 필드(concept·headline·body_copy·key_message·mood·format_hint)는
+// 모두 제거됨. mockup이 필요로 하는 리포트 메타데이터 필드만 출력.
 
-// 채널명 → format_hint 매핑
-const CHANNEL_FORMAT = {
-  유튜브: "video",
-  메타: "image",
-  인스타그램: "image",
-  카카오: "card",
+// evidence source 한국어/영문 표기를 enum으로 정규화
+const SOURCE_ENUM = {
+  "naver datalab": "naver_datalab",
+  "naver_datalab": "naver_datalab",
+  "naver": "naver_datalab",
+  "네이버": "naver_datalab",
+  "instagram": "instagram",
+  "인스타그램": "instagram",
+  "tavily": "tavily",
+  "youtube": "youtube",
+  "유튜브": "youtube",
 };
 
-function deriveFormatHint(channel = "") {
-  return CHANNEL_FORMAT[channel] ?? "image";
+function normalizeSource(source = "") {
+  const key = String(source).trim().toLowerCase();
+  return SOURCE_ENUM[key] ?? key;
+}
+
+// enum에 맞는 라벨 (UI 표시용)
+const SOURCE_LABEL = {
+  naver_datalab: "Naver Datalab",
+  instagram: "Instagram",
+  tavily: "Tavily",
+  youtube: "YouTube",
+};
+
+function targetDisplay(b) {
+  const ages = b.target_display?.age_groups ?? b.target?.age_groups ?? [];
+  const gender = b.target?.gender ?? "";
+  const tone = (b.tone_and_manner ?? []).join("·");
+  const demo = [ages.join("·"), gender].filter(Boolean).join(" ");
+  return [demo, tone].filter(Boolean).join(" · ");
+}
+
+function deriveVariant(rank) {
+  return rank === 3 ? "supplementary" : "primary";
+}
+
+function deriveStrength(total) {
+  if (total >= 4) return "strong";
+  if (total >= 3) return "partial";
+  return "weak";
+}
+
+// summary_bullets 룰베이스 생성:
+// trend의 summary·meaning·status를 빈 값 제외하고 차례대로 array에 담음.
+// LLM 없이 분석가가 만든 텍스트를 그대로 활용.
+function buildSummaryBullets(td) {
+  if (!td) return [];
+  return [td.summary, td.meaning, td.status].filter(
+    (x) => typeof x === "string" && x.trim().length > 0,
+  );
+}
+
+// evidence: 분석가가 만든 원본을 v2 enum 형식으로 정규화
+function buildEvidence(td) {
+  return (td?.evidence ?? []).map((e) => {
+    const src = normalizeSource(e.source);
+    return {
+      source: src,
+      label: SOURCE_LABEL[src] ?? e.source,
+      description: [e.metric, e.period ? `(${e.period})` : null, e.value]
+        .filter(Boolean)
+        .join(" "),
+      url: e.url ?? sourceUrl(e.source) ?? null,
+    };
+  });
+}
+
+// channels: trend의 media_channel_status를 그대로 받되 빈 배열 fallback
+function buildChannels(td) {
+  return (td?.media_channel_status ?? []).map((c) => ({
+    name: c.media_channel ?? c.name ?? "",
+    status: c.status ?? "stable",
+  }));
 }
 
 export function generateWriterOutput({ brand, trend, match } = {}) {
@@ -240,32 +307,33 @@ export function generateWriterOutput({ brand, trend, match } = {}) {
   const m = unwrap(match);
 
   const top = m.recommendations ?? [];
+  const evaluations = m.evaluations ?? [];
   const findTrend = (name) => (t.trends ?? []).find((x) => x.trend_name === name);
-
-  const tone = (b.tone_and_manner ?? []).join("·");
-  const primaryChannel = (b.media_channels ?? [])[0] ?? "유튜브";
-
-  // 캠페인 테마: 제품명 + 1순위 트렌드 요약
-  const top1 = top[0];
-  const top1Trend = top1 ? findTrend(top1.trend_name) : null;
-  const campaign_theme = top1Trend
-    ? `${b.product_name}: ${top1Trend.summary ?? top1.trend_name}`
-    : (b.product_name ?? "");
+  const findEval = (name) => evaluations.find((e) => e.trend_name === name);
 
   const contents = top.map((r, i) => {
     const td = findTrend(r.trend_name);
-    const id = `C${String(i + 1).padStart(3, "0")}`;
-    const reasons = r.summary_reasons ?? [];
+    const ev = findEval(r.trend_name);
+
+    const q1 = ev?.evaluation?.question_1?.passes ?? 0;
+    const q2 = ev?.evaluation?.question_2?.passes ?? 0;
+    const total = q1 + q2;
+
     return {
-      content_id: id,
+      content_id: `C${String(i + 1).padStart(3, "0")}`,
       trend_name: r.trend_name,
-      concept: td?.meaning ?? "",                       // 트렌드의 의미 → 콘셉트
-      headline: td?.summary ?? r.trend_name,             // 트렌드 요약 → 헤드라인
-      body_copy: reasonText(reasons[0]),                 // 매칭이유 1 (fact 평문) → 본문
-      key_message: reasonText(reasons[1] ?? reasons[0]), // 매칭이유 2 → 핵심 메시지
-      channel: primaryChannel,
-      mood: tone,
-      format_hint: deriveFormatHint(primaryChannel),
+      rank: r.rank,
+      verdict: ev?.verdict ?? `${r.rank}순위`,
+      display_variant: deriveVariant(r.rank),
+      keywords: (td?.keywords ?? []).slice(0, 5),
+      headline_metric: td?.headline_metric ?? { metric: "", value: "", delta: "" },
+      metrics: td?.metrics ?? { score: 0, growth_rate: 0, period: "" },
+      summary_bullets: buildSummaryBullets(td),
+      reason_bullets: (r.summary_reasons ?? []).map(reasonText).filter(Boolean),
+      evidence: buildEvidence(td),
+      channels: buildChannels(td),
+      match_passes: { q1, q2, total },
+      match_strength: deriveStrength(total),
     };
   });
 
@@ -275,9 +343,12 @@ export function generateWriterOutput({ brand, trend, match } = {}) {
     status: "success",
     data: {
       source: "작성가",
-      brand_name: b.brand_name ?? "",
-      product_name: b.product_name ?? "",
-      campaign_theme,
+      brand: {
+        name: b.brand_name ?? "",
+        product_name: b.product_name ?? "",
+        category: b.category ?? "",
+        target_display: targetDisplay(b),
+      },
       contents,
     },
   };
