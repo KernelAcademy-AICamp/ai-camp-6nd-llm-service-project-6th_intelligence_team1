@@ -1,14 +1,12 @@
 import { z } from "zod";
 import { envelopeSchema } from "../../shared/envelope.js";
 
-// 매칭가 출력 스키마 v0.2 (2질문 × 2비교 × ✅/⚠️/❌ 판정 방식)
-// envelope(schema_version·generated_at·status)은 shared/envelope.js의 envelopeSchema로 자동 부여.
+// 매칭가 출력 스키마 v0.3 (4기준: Ingred-Fit / Visual-Fit / Life-Fit / Safe-Fit).
+// 각 기준 단일 ✅/⚠️/❌ 판정. verdict는 4기준 합산 + ❌ 개수로 결정.
+// envelope(schema_version·generated_at·status)은 shared/envelope.js가 자동 부여.
 
 // ─── 입력 스키마 (분석가 산출 검증) ─────────────────────────────────
-// LLM에 보내기 전 형식·타입·enum 위반을 코드에서 잡는다. 시스템 프롬프트의
-// 톤 7종 enum과 일치시켜, 같은 약속을 코드·프롬프트 양쪽에서 강제.
 
-// 시스템 프롬프트 prompts/system.md에 정의된 톤앤매너 7종 — 변경 시 같이 갱신.
 const TONE_KEYWORDS = [
   "클린뷰티",
   "로맨틱·감성",
@@ -19,43 +17,29 @@ const TONE_KEYWORDS = [
   "비건",
 ];
 
-// age_groups 원소: '20대' 정량 표현 또는 세대 표현(Z세대·MZ세대·밀레니얼).
-// 세대 표현은 match.js에서 현재 년도 기준 연령 범위로 환산됨 (GENERATION_BIRTH_YEARS).
 const AGE_GROUP_RE = /^(\d+대|Z세대|MZ세대|밀레니얼)$/;
 
 const BrandTargetSchema = z
   .object({
-    gender: z.enum(["여성", "남성", "공용"], {
-      message: "gender는 '여성'·'남성'·'공용' 중 하나여야 합니다",
-    }),
+    gender: z.enum(["여성", "남성", "공용"]).optional(),
     age_groups: z
       .array(z.string().regex(AGE_GROUP_RE, "age_groups 원소는 '20대' 또는 'Z세대/MZ세대/밀레니얼' 형식"))
       .optional(),
     age_range: z
       .string()
       .regex(/^\d+(-\d+)?$/, "age_range는 '20-30' 형식")
-      .refine(
-        (s) => {
-          const [lo, hi] = s.split("-").map(Number);
-          return hi === undefined || lo <= hi;
-        },
-        { message: "age_range 시작이 종료보다 큼 (예: '30-20' 불가)" },
-      )
       .optional(),
     involvement: z.string().optional(),
     motivation: z.array(z.string()).optional(),
   })
+  // Life-Fit이 LLM 정성 평가라 필수 필드가 줄어듬. 다만 라이프스타일 비교에 쓸 정보 최소 1개는 있어야.
   .refine(
     (t) =>
       (Array.isArray(t.age_groups) && t.age_groups.length > 0) ||
-      (typeof t.age_range === "string" && t.age_range.trim().length > 0),
-    { message: "target.age_groups 또는 target.age_range 중 하나는 비어있지 않아야 함 (2-A 평가에 필요)" },
-  )
-  .refine(
-    (t) =>
+      (typeof t.age_range === "string" && t.age_range.trim().length > 0) ||
       (Array.isArray(t.motivation) && t.motivation.length > 0) ||
       (typeof t.involvement === "string" && t.involvement.trim().length > 0),
-    { message: "target.motivation 또는 target.involvement 중 하나는 비어있지 않아야 함 (2-B 평가에 필요)" },
+    { message: "target에 age·motivation·involvement 중 최소 1개는 있어야 Life-Fit 평가 가능" },
   );
 
 export const InputBrandSchema = z
@@ -70,135 +54,94 @@ export const InputBrandSchema = z
               message: `tone_and_manner는 ${TONE_KEYWORDS.join("·")} 중 하나여야 합니다`,
             }),
           )
-          .min(1, "tone_and_manner는 최소 1개 (1-A·1-B 평가에 필요)"),
+          .min(1, "tone_and_manner는 최소 1개 (Visual·Safe-Fit 평가에 필요)"),
         target: BrandTargetSchema,
+        // 선택: 있으면 Ingred-Fit이 강한 근거. 없으면 LLM이 정성 판단.
+        product_features: z.array(z.string().min(1)).min(1).optional(),
+        // 선택: 있으면 Visual-Fit이 매체 매칭 강도 ↑.
+        media_channels: z.array(z.string().min(1)).min(1).optional(),
       })
       .passthrough(),
   })
   .passthrough();
 
-// 2-A를 코드가 계산하려면 트렌드에 연령·성별 비중이 구조화돼 있어야 함.
-// 합계는 1에 수렴해야 함 — 1을 넘으면 2-A 연령·성별 오버랩이 부풀려져 판정이 왜곡됨.
-// 소수점 반올림 오차를 감안해 ±0.02 허용.
-const RATIO_SUM_TOLERANCE = 0.02;
-const sumsToOne = (nums) =>
-  Math.abs(nums.reduce((s, v) => s + v, 0) - 1) <= RATIO_SUM_TOLERANCE;
-
-const AudienceDistributionSchema = z.object({
-  gender_ratio: z
-    .object({
-      female: z.number().min(0).max(1),
-      male: z.number().min(0).max(1),
-    })
-    .refine((g) => sumsToOne([g.female, g.male]), {
-      message: "gender_ratio 합(female+male)이 1±0.02를 벗어남 (2-A 계산 왜곡 방지)",
-    }),
-  age_ratio: z
-    .record(z.string(), z.number().min(0).max(1))
-    .refine((a) => sumsToOne(Object.values(a)), {
-      message: "age_ratio 전체 합이 1±0.02를 벗어남 (2-A 계산 왜곡 방지)",
-    }),
-}).passthrough();
-
+// 트렌드 audience_distribution: Life-Fit이 LLM 정성 평가로 바뀌어 필수 X (코드 계산 폐지).
+// 다만 LLM이 인구통계 참고는 가능하므로 선택 필드로 유지 (스키마 검증 없이 통과).
 const TrendItemSchema = z
   .object({
     trend_name: z.string().min(1, "trend_name 비어있음"),
-    category: z.string().min(1, "category 비어있음 (카테고리 게이트에 필요, 브랜드와 '대분류 > 소분류' 표기 동일)"),
-    summary: z.string().min(1, "summary 비어있음 (1-A 평가에 필요)"),
+    category: z.string().min(1, "category 비어있음"),
+    summary: z.string().min(1, "summary 비어있음 (모든 4기준 평가에 필요)"),
     keywords: z.array(z.string().min(1)).optional(),
     core_keywords: z.array(z.string().min(1)).optional(),
-    audience_distribution: AudienceDistributionSchema,
   })
   .passthrough()
   .refine(
     (t) =>
       (Array.isArray(t.keywords) && t.keywords.length > 0) ||
       (Array.isArray(t.core_keywords) && t.core_keywords.length > 0),
-    { message: "keywords 또는 core_keywords 중 하나는 비어있지 않아야 함 (1-B 평가에 필요)" },
+    { message: "keywords 또는 core_keywords 중 하나는 비어있지 않아야 함 (Ingred-Fit 평가에 필요)" },
   );
 
 export const InputTrendSchema = z
   .object({
     data: z
       .object({
-        trends: z.array(TrendItemSchema).min(1, "trends 배열 비어있음 (평가할 트렌드 없음)"),
+        trends: z.array(TrendItemSchema).min(1, "trends 배열 비어있음"),
       })
       .passthrough(),
   })
   .passthrough();
 
-// ─── 출력 스키마 (LLM 응답 검증) ────────────────────────────────────
+// ─── 출력 스키마 ────────────────────────────────────────────────────
 
-const ComparisonResultSchema = z.object({
+const FitResultSchema = z.object({
   result: z.enum(["✅", "⚠️", "❌"]),
   reason: z.string(),
 });
 
-// 데이터 근거 — 입력 데이터에서 직접 확인 가능한 사실 + 출처만. 정성 판단(톤 부합 등)은 제외.
+// 데이터 근거 — 입력에서 직접 확인 가능한 사실 + 출처만. 정성 판단은 제외.
 const EvidenceReasonSchema = z.object({
-  category: z.string(), // 분류 (예: "제형 적합성", "시장 성장성", "색상 적합성")
-  fact: z.string(), // 입력에서 직접 확인 가능한 사실 (수치 또는 키워드 일치)
-  source: z.string(), // 출처 (예: "네이버 데이터랩, 2026-01~05", "트렌드 키워드", "audience_distribution")
-});
-
-const Question1Schema = z.object({
-  label: z.literal("브랜드 적합성"),
-  comparisons: z.object({
-    "1-A": ComparisonResultSchema,
-    "1-B": ComparisonResultSchema,
-  }),
-  passes: z.union([z.literal(0), z.literal(1), z.literal(2)]),
-});
-
-const Question2Schema = z.object({
-  label: z.literal("타겟 적합성"),
-  comparisons: z.object({
-    "2-A": ComparisonResultSchema,
-    "2-B": ComparisonResultSchema,
-  }),
-  passes: z.union([z.literal(0), z.literal(1), z.literal(2)]),
+  category: z.string(), // 예: "성분 적합성", "매체 매칭", "라이프스타일 매칭", "트렌드 수명"
+  fact: z.string(),
+  source: z.string(),
 });
 
 const EvaluationItemSchema = z.object({
   trend_name: z.string(),
   evaluation: z.object({
-    question_1: Question1Schema,
-    question_2: Question2Schema,
+    ingred_fit: FitResultSchema, // 제품 features ↔ 트렌드 성분·효능
+    visual_fit: FitResultSchema, // 매체·톤 ↔ 트렌드 매체 콘텐츠
+    life_fit: FitResultSchema, // 타겟 ↔ 트렌드 라이프스타일·가치관
+    safe_fit: FitResultSchema, // 브랜드 격·톤 ↔ 트렌드 수명·이미지
   }),
+  score: z.number().int().min(0).max(8), // ✅=2, ⚠️=1, ❌=0 합산 (max 8)
   verdict: z.enum(["1순위", "2순위", "3순위", "제외"]),
   summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
 });
 
-// 추천 트렌드 (제외 아닌 것 중 상위 N개). 코드가 정렬·선별해 생성.
-// verdict 등급은 출력에 노출하지 않음 — rank(추천 순서)와 근거만. 등급은 evaluations에 내부 보존.
 const RecommendationSchema = z.object({
   rank: z.number().int().positive(),
   trend_name: z.string(),
   summary_reasons: z.array(EvidenceReasonSchema),
 });
 
-// 최종 저장 구조 (코드가 LLM 정성 판정 + 코드 계산[2-A·passes·verdict]을 조립한 결과)
-//   - recommendations: 브랜드와 맞는 상위 3개 추천 (제외 트렌드는 빠짐)
-//   - evaluations: 입력 트렌드 전체 평가 (제외 포함, 추천순 → 제외순 정렬)
 export const MatchDataSchema = z.object({
   brand_name: z.string(),
   recommendations: z.array(RecommendationSchema),
   evaluations: z.array(EvaluationItemSchema),
 });
 
-// 저장된 결과 전체를 검증할 때 사용 (envelope 포함)
 export const MatchResultSchema = envelopeSchema(MatchDataSchema);
 
 // ─── LLM 전용 출력 스키마 ───────────────────────────────────────────
-// LLM은 정성 판정(1-A·1-B·2-B의 result+reason)과 summary_reasons만 생성.
-// 숫자 계산인 2-A, 규칙 계산인 passes·verdict는 코드(match.js)가 확정한다.
+// LLM은 4기준 정성 판정 + summary_reasons만 생성. score·verdict는 코드가 계산.
 const LlmEvaluationItemSchema = z.object({
   trend_name: z.string(),
-  comparisons: z.object({
-    "1-A": ComparisonResultSchema,
-    "1-B": ComparisonResultSchema,
-    "2-B": ComparisonResultSchema,
-  }),
+  ingred_fit: FitResultSchema,
+  visual_fit: FitResultSchema,
+  life_fit: FitResultSchema,
+  safe_fit: FitResultSchema,
   summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
 });
 

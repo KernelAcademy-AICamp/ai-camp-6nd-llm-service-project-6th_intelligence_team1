@@ -35,69 +35,34 @@ function ageGroupToRange(group, currentYear) {
   return null;
 }
 
-// ─── 2-A·passes·verdict 코드 계산 (숫자·규칙은 LLM에 맡기지 않음) ───────
+// ─── 4기준 score·verdict 코드 계산 ────────────────────────────────────
+// 각 fit: ✅=2, ⚠️=1, ❌=0. 4기준 합산 max 8.
+// verdict 규칙:
+//   - ❌ 2개 이상 → 제외 (합산 무관)
+//   - score 8 → 1순위
+//   - score 6-7 → 2순위
+//   - score 2-5 → 3순위 (❌ 1개 가능)
+//   - score < 2 → 제외
+const FIT_POINT = { "✅": 2, "⚠️": 1, "❌": 0 };
 
-// "14-29" → [14, 29] / "20" → [20, 20]
-function parseAgeRange(s) {
-  const m = String(s ?? "").match(/^(\d+)(?:-(\d+))?$/);
-  if (!m) return null;
-  const lo = parseInt(m[1], 10);
-  return [lo, m[2] ? parseInt(m[2], 10) : lo];
-}
+function computeScoreAndVerdict(fits /* { ingred_fit, visual_fit, life_fit, safe_fit } */) {
+  const results = [
+    fits.ingred_fit?.result,
+    fits.visual_fit?.result,
+    fits.life_fit?.result,
+    fits.safe_fit?.result,
+  ];
+  const failCount = results.filter((r) => r === "❌").length;
+  const score = results.reduce((sum, r) => sum + (FIT_POINT[r] ?? 0), 0);
 
-// 트렌드 age_ratio 키 → 나이 버킷. "10s" → [10,19], "50s+" → [50, 200]
-function ageBucketRange(key) {
-  const n = parseInt(key, 10);
-  if (Number.isNaN(n)) return null;
-  return key.includes("+") ? [n, 200] : [n, n + 9];
-}
+  let verdict;
+  if (failCount >= 2) verdict = "제외";
+  else if (score === 8) verdict = "1순위";
+  else if (score >= 6) verdict = "2순위";
+  else if (score >= 2) verdict = "3순위";
+  else verdict = "제외";
 
-function rangesOverlap([a1, a2], [b1, b2]) {
-  return a1 <= b2 && b1 <= a2;
-}
-
-// 비교 2-A: 브랜드 타겟 연령·성별 ↔ 트렌드 비중 합산. 60%가 칼같은 경계.
-function compute2A(brandTarget, audience) {
-  const range = parseAgeRange(brandTarget?.age_range);
-  const ageRatio = audience?.age_ratio ?? {};
-  let agePct = 0;
-  if (range) {
-    for (const [key, val] of Object.entries(ageRatio)) {
-      const bucket = ageBucketRange(key);
-      if (bucket && rangesOverlap(range, bucket)) agePct += val;
-    }
-  }
-  agePct = Math.round(agePct * 100);
-
-  const genderRatio = audience?.gender_ratio ?? {};
-  let genderPct;
-  if (brandTarget?.gender === "여성") genderPct = Math.round((genderRatio.female ?? 0) * 100);
-  else if (brandTarget?.gender === "남성") genderPct = Math.round((genderRatio.male ?? 0) * 100);
-  else genderPct = 100; // 공용 → 전체 포괄
-
-  const ageOk = agePct >= 60;
-  const genderOk = genderPct >= 60;
-  const result = ageOk && genderOk ? "✅" : ageOk || genderOk ? "⚠️" : "❌";
-  // 인구 분포는 네이버 데이터랩 실측 % 가 아니라 추정값이므로, 구체 수치는 노출하지 않는다.
-  // 판정에는 계속 쓰되(코드 내부), reason에는 방향성(부합/부분/미흡)만 정성 표기.
-  const ageWord = ageOk ? "타겟 연령대와 부합" : "타겟 연령대와 부분 부합";
-  const genderWord = genderOk ? "타겟 성별 우세" : "타겟 성별 비우세";
-  const reason = `[코드 판정] ${ageWord}, ${genderWord} → ${result} (인구 분포 추정 기반, 구체 수치 비공개)`;
-  return { result, reason };
-}
-
-// 질문별 passes: 두 비교 조합 매핑. ❌ 하나라도 → 0, ✅+✅ → 2, 그 외 → 1.
-function computePasses(rA, rB) {
-  if (rA === "❌" || rB === "❌") return 0;
-  if (rA === "✅" && rB === "✅") return 2;
-  return 1;
-}
-
-// 최종 verdict: q1·q2 passes 매트릭스. 하나라도 0이면 제외.
-function computeVerdict(q1, q2) {
-  if (q1 === 0 || q2 === 0) return "제외";
-  const sum = q1 + q2;
-  return sum === 4 ? "1순위" : sum === 3 ? "2순위" : "3순위";
+  return { score, verdict };
 }
 
 // LLM 정성 판정(1-A·1-B·2-B) + 코드 계산(2-A·passes·verdict)을 최종 구조로 조립.
@@ -121,26 +86,19 @@ function filterVagueReasons(reasons) {
   return kept.length > 0 ? kept : reasons;
 }
 
-function assembleEvaluation(llmEval, trend, brandTarget) {
-  const c = llmEval.comparisons;
-  const a2 = compute2A(brandTarget, trend?.audience_distribution);
-  const q1passes = computePasses(c["1-A"].result, c["1-B"].result);
-  const q2passes = computePasses(a2.result, c["2-B"].result);
+function assembleEvaluation(llmEval) {
+  const fits = {
+    ingred_fit: llmEval.ingred_fit,
+    visual_fit: llmEval.visual_fit,
+    life_fit: llmEval.life_fit,
+    safe_fit: llmEval.safe_fit,
+  };
+  const { score, verdict } = computeScoreAndVerdict(fits);
   return {
     trend_name: llmEval.trend_name,
-    evaluation: {
-      question_1: {
-        label: "브랜드 적합성",
-        comparisons: { "1-A": c["1-A"], "1-B": c["1-B"] },
-        passes: q1passes,
-      },
-      question_2: {
-        label: "타겟 적합성",
-        comparisons: { "2-A": a2, "2-B": c["2-B"] },
-        passes: q2passes,
-      },
-    },
-    verdict: computeVerdict(q1passes, q2passes),
+    evaluation: fits,
+    score,
+    verdict,
     summary_reasons: filterVagueReasons(llmEval.summary_reasons),
   };
 }
@@ -249,9 +207,12 @@ function makeExcludedByCategory(trend, brandCategory) {
   return {
     trend_name: trend.trend_name,
     evaluation: {
-      question_1: { label: "브랜드 적합성", comparisons: { "1-A": skip, "1-B": skip }, passes: 0 },
-      question_2: { label: "타겟 적합성", comparisons: { "2-A": skip, "2-B": skip }, passes: 0 },
+      ingred_fit: skip,
+      visual_fit: skip,
+      life_fit: skip,
+      safe_fit: skip,
     },
+    score: 0,
     verdict: "제외",
     summary_reasons: [
       {
@@ -303,7 +264,9 @@ const systemContent = [
     type: "text",
     text: `## 출력 리마인더
 
-각 트렌드마다 **1-A·1-B·2-B의 result(✅/⚠️/❌)+reason**과 **summary_reasons**만 담아 \`evaluations[]\`로 출력하세요. 2-A·passes·verdict·envelope은 매칭가 코드가 계산·부여하므로 **출력하지 마세요.** 코드 블록 표시나 부가 설명 없이 순수 JSON 하나만.`,
+각 트렌드마다 **4기준(ingred_fit·visual_fit·life_fit·safe_fit)의 result(✅/⚠️/❌)+reason**과 **summary_reasons**를 담아 \`evaluations[]\`로 출력하세요.
+
+score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 **출력하지 마세요.** 코드 블록 표시나 부가 설명 없이 순수 JSON 하나만.`,
     cache_control: { type: "ephemeral" },
   },
 ];
@@ -325,7 +288,9 @@ ${JSON.stringify(brandAnalysis, null, 2)}
 ${JSON.stringify(passedTrendInput, null, 2)}
 \`\`\`
 
-위 모든 트렌드에 대해 **정성 판정 3개(1-A, 1-B, 2-B)의 result+reason과 summary_reasons만** \`evaluations[]\`에 담아 반환하세요. 2-A·passes·verdict·envelope은 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
+위 모든 트렌드에 대해 **4기준(ingred_fit·visual_fit·life_fit·safe_fit)의 result+reason과 summary_reasons**를 \`evaluations[]\`에 담아 반환하세요.
+
+score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
 
 // 5. Claude API 호출 — 통과 트렌드가 있을 때만. LLM은 data 본체만 생성.
 let llmEvaluations = [];
@@ -378,11 +343,24 @@ if (passedTrends.length > 0) {
     process.exit(1);
   }
 
-  // LLM 정성 판정 + 코드 계산(2-A·passes·verdict)을 조립. trend_name으로 트렌드 매칭.
-  const trendByName = new Map(passedTrends.map((t) => [t.trend_name, t]));
-  llmEvaluations = data.evaluations.map((le) =>
-    assembleEvaluation(le, trendByName.get(le.trend_name), brandAnalysis.data.target),
-  );
+  // LLM이 같은 trend_name을 두 번 출력하는 환각 케이스 — 첫 번째만 남기고 dedup.
+  const seenLlmNames = new Set();
+  const dedupedEvals = [];
+  let llmDupCount = 0;
+  for (const le of data.evaluations) {
+    if (seenLlmNames.has(le.trend_name)) {
+      llmDupCount++;
+      continue;
+    }
+    seenLlmNames.add(le.trend_name);
+    dedupedEvals.push(le);
+  }
+  if (llmDupCount > 0) {
+    console.warn(`⚠️ LLM 응답에서 ${llmDupCount}개 중복 trend_name 제거됨`);
+  }
+
+  // LLM 정성 판정(4기준) + 코드 계산(score·verdict)을 조립.
+  llmEvaluations = dedupedEvals.map((le) => assembleEvaluation(le));
   usage = response.usage;
   modelName = response.model;
 } else {
@@ -396,14 +374,13 @@ const allTrendByName = new Map(
   trendAnalysis.data.trends.map((t) => [t.trend_name, t]),
 );
 
-// 정렬: verdict 순위(1순위>2순위>3순위>제외) → passes 합 내림 → 트렌드 score 내림.
+// 정렬: verdict 순위 → 4기준 score 내림 → 트렌드 metrics.score 내림.
 const VERDICT_RANK = { "1순위": 1, "2순위": 2, "3순위": 3, 제외: 99 };
 function sortTuple(ev) {
   const vr = VERDICT_RANK[ev.verdict] ?? 99;
-  const passSum =
-    ev.evaluation.question_1.passes + ev.evaluation.question_2.passes;
-  const score = allTrendByName.get(ev.trend_name)?.metrics?.score ?? 0;
-  return [vr, -passSum, -score]; // vr 오름차순, passSum·score 내림차순
+  const fitScore = ev.score ?? 0;
+  const trendScore = allTrendByName.get(ev.trend_name)?.metrics?.score ?? 0;
+  return [vr, -fitScore, -trendScore];
 }
 allEvaluations.sort((a, b) => {
   const ka = sortTuple(a);
