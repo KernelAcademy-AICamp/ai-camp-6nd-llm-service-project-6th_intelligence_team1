@@ -4,6 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>힌스 (hince) — 캠페인 트렌드 매칭 리포트</title>
+<meta name="description" content="힌스 커버 마스터 핑크 쿠션 — 2026 베이스 메이크업 트렌드와의 매칭 분석 리포트" />
+<meta property="og:title" content="힌스 (hince) — 캠페인 트렌드 매칭 리포트" />
+<meta property="og:description" content="브랜드 톤·타겟과 2026년 베이스 메이크업 트렌드의 적합도를 분석한 리포트" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
@@ -707,14 +712,247 @@
 
   /* Print */
   @media print {
+    @page { size: A4; margin: 12mm; }
     body { background: #fff; }
-    .page { padding: 0; }
-    .appbar { display: none; }
-    .trend-card, .summary-card, .reference-card, .report-header { box-shadow: none; }
+    .page { padding: 0; max-width: none; }
+    .appbar, .funnel-cta, .funnel-step { display: none !important; }
+    .trend-card, .summary-card, .reference-card, .report-header,
+    .data-card, .compare-card {
+      box-shadow: none;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    /* Preserve all backgrounds/colors when printing */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    /* "어떻게 평가했나요?" 토글은 JS가 open 처리 — 표시만 차분하게 */
+    details.eval-details summary { cursor: default; }
+    details.eval-details summary::before { display: none; }
   }
 
   @media (max-width: 1024px) {
     .trend-grid, .ref-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ===== Export dropdown ===== */
+  .export-dropdown { position: relative; }
+  .dropdown-toggle .chevron {
+    width: 11px; height: 11px; margin-left: 2px;
+    transition: transform 0.15s ease;
+  }
+  .export-dropdown.is-open .dropdown-toggle .chevron { transform: rotate(180deg); }
+  .dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 12px 28px rgba(20, 22, 35, 0.14);
+    min-width: 300px;
+    padding: 4px;
+    z-index: 100;
+    display: none;
+    animation: menu-in 0.12s ease-out;
+  }
+  .export-dropdown.is-open .dropdown-menu { display: block; }
+  @keyframes menu-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .dropdown-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    color: var(--text);
+    transition: background 0.12s ease;
+  }
+  .dropdown-item:hover { background: var(--primary-soft); }
+  .di-icon { font-size: 17px; line-height: 1.2; flex-shrink: 0; }
+  .di-title {
+    font-size: 13px; font-weight: 700;
+    margin-bottom: 2px;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .di-platform {
+    display: inline-block;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--primary-deep);
+    background: var(--primary-soft);
+    padding: 2px 6px;
+    border-radius: 3px;
+    line-height: 1.2;
+  }
+  .di-desc {
+    font-size: 11.5px;
+    color: var(--text-sub);
+    line-height: 1.45;
+  }
+  .dropdown-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 6px;
+  }
+  .dropdown-help {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    font-size: 11.5px;
+    color: var(--primary);
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+  }
+  .dropdown-help:hover { background: var(--primary-soft); }
+
+  /* Help modal (Slack 공유 확장 설정) */
+  .help-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .help-modal.is-active { display: flex; }
+  .help-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 22, 35, 0.4);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  .help-modal-card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 20px 50px rgba(20, 22, 35, 0.16);
+    animation: menu-in 0.18s ease-out;
+  }
+  .help-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .help-modal-header h2 {
+    margin: 0;
+    font-size: 16px; font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .help-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 22px; line-height: 1;
+    color: var(--text-mute);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+  }
+  .help-modal-close:hover { background: #f6f3ed; color: var(--text); }
+  .help-modal-body {
+    padding: 20px 22px;
+    font-size: 13px;
+    color: var(--text-sub);
+    line-height: 1.65;
+  }
+  .help-modal-body p { margin: 0 0 14px; color: var(--text); }
+  .help-steps {
+    margin: 0 0 14px;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+  }
+  .help-steps li {
+    counter-increment: step;
+    padding: 10px 12px 10px 38px;
+    background: #f6f3ed;
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    position: relative;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .help-steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px; top: 10px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-size: 11px; font-weight: 800;
+    display: grid; place-items: center;
+  }
+  .help-tip {
+    background: var(--primary-soft);
+    color: var(--primary-deep);
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1200;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: var(--text);
+    color: var(--surface);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(20, 22, 35, 0.2);
+    animation: toast-in 0.2s ease-out;
+    max-width: 360px;
+  }
+  .toast.is-active { display: inline-flex; }
+  .toast.error { background: var(--danger); }
+  .toast-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    font-size: 11px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 </style>
 </head>
@@ -730,7 +968,42 @@
         </div>
       </div>
       <div class="appbar-right">
-        <button class="btn ghost">자료 내보내기</button>
+        <button class="btn ghost" id="pdfBtn" type="button">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          PDF 다운로드
+        </button>
+        <div class="export-dropdown" id="exportDropdown">
+          <button class="btn ghost dropdown-toggle" id="exportBtn" type="button">
+            자료 내보내기
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div class="dropdown-menu" id="exportMenu" role="menu">
+            <button class="dropdown-item" type="button" data-action="share" role="menuitem">
+              <span class="di-icon">⚡</span>
+              <div>
+                <div class="di-title">Slack 채널 선택해서 보내기 <span class="di-platform">MAC ONLY</span></div>
+                <div class="di-desc">공유 시트 → Slack → 채널/DM 선택 다이얼로그</div>
+              </div>
+            </button>
+            <button class="dropdown-item" type="button" data-action="copy" role="menuitem">
+              <span class="di-icon">🔗</span>
+              <div>
+                <div class="di-title">링크 복사 + Slack 열기</div>
+                <div class="di-desc">지금 바로 가능 · Slack 채팅창에 ⌘V로 붙여넣기</div>
+              </div>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-help" type="button" id="exportHelp">
+              ⓘ Slack을 공유 시트에 추가하는 방법
+            </button>
+          </div>
+        </div>
         <button class="btn primary">분석 새로 시작하기</button>
       </div>
     </div>
@@ -1256,5 +1529,208 @@
     </div>
 
   </div>
+
+  <!-- ====== Help modal: Slack 공유 확장 설정 ====== -->
+  <div class="help-modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+    <div class="help-modal-backdrop" id="helpModalBackdrop"></div>
+    <div class="help-modal-card">
+      <div class="help-modal-header">
+        <h2 id="helpModalTitle">Slack 공유 다이얼로그 활성화 (Mac)</h2>
+        <button class="help-modal-close" id="helpCloseBtn" type="button" aria-label="닫기">×</button>
+      </div>
+      <div class="help-modal-body">
+        <p>한 번만 설정하면 "Slack 채널 선택해서 보내기"가 바로 동작합니다.</p>
+        <ol class="help-steps">
+          <li>좌측 상단  메뉴 → <strong>시스템 설정</strong></li>
+          <li>일반 → <strong>로그인 항목 및 확장 프로그램</strong></li>
+          <li>아래로 스크롤 → <strong>공유 메뉴</strong> 클릭</li>
+          <li>목록에서 <strong>Slack</strong>을 켜기 (체크)</li>
+        </ol>
+        <div class="help-tip">💡 Slack 데스크탑 앱이 설치돼 있어야 목록에 나타납니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Toast ====== -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast-icon" id="toastIcon">✓</span>
+    <span class="toast-text" id="toastText">Slack에 공유됐어요</span>
+  </div>
+
+  <script>
+    (function () {
+      const pdfBtn = document.getElementById('pdfBtn');
+      if (!pdfBtn) return;
+
+      // PDF 다운로드 = 브라우저 print 대화상자 → "PDF로 저장" 선택
+      // 파일명은 document.title이 기본값으로 채워짐
+      const ORIGINAL_TITLE = document.title;
+      const PDF_TITLE = 'hince-매칭리포트';
+
+      function openAllDetails() {
+        const detailsList = document.querySelectorAll('details');
+        const prev = [];
+        detailsList.forEach((d) => {
+          prev.push({ el: d, wasOpen: d.open });
+          d.open = true;
+        });
+        return prev;
+      }
+      function restoreDetails(prev) {
+        prev.forEach(({ el, wasOpen }) => { el.open = wasOpen; });
+      }
+
+      pdfBtn.addEventListener('click', () => {
+        document.title = PDF_TITLE;
+        const prev = openAllDetails();
+        // 다음 paint cycle에 print 호출해서 details 펼친 상태가 반영되게
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            window.print();
+            // print 대화상자 닫힌 뒤 상태 복원 (afterprint가 일부 브라우저에서 즉시 안 뜸)
+            setTimeout(() => {
+              restoreDetails(prev);
+              document.title = ORIGINAL_TITLE;
+            }, 500);
+          });
+        });
+      });
+
+      // afterprint 이벤트도 별도 처리 (Chrome/Edge에서 신뢰성 ↑)
+      window.addEventListener('afterprint', () => {
+        document.title = ORIGINAL_TITLE;
+      });
+    })();
+
+    // ===== 자료 내보내기 — 2가지 옵션 드롭다운 =====
+    //   (1) Slack 채널 선택해서 보내기 → navigator.share (OS 공유 시트 → Slack 공유 다이얼로그)
+    //       └ Mac에서 Slack 공유 확장 켜져 있어야 시트에 Slack이 보임 (도움말 모달로 안내)
+    //   (2) 링크 복사 + Slack 열기 → 어떤 환경에서도 동작
+    (function () {
+      const dropdown  = document.getElementById('exportDropdown');
+      const exportBtn = document.getElementById('exportBtn');
+      const menu      = document.getElementById('exportMenu');
+      const helpBtn   = document.getElementById('exportHelp');
+      const helpModal = document.getElementById('helpModal');
+      const helpBackdrop = document.getElementById('helpModalBackdrop');
+      const helpClose = document.getElementById('helpCloseBtn');
+      const toast     = document.getElementById('toast');
+      const toastIcon = document.getElementById('toastIcon');
+      const toastText = document.getElementById('toastText');
+
+      const REPORT_URL = location.href.split('#')[0].split('?')[0];
+      const SHARE_TITLE = '힌스 (hince) — 캠페인 트렌드 매칭 리포트';
+      const SHARE_TEXT  = '힌스 캠페인 트렌드 매칭 리포트\n제품: 커버 마스터 핑크 쿠션 · 타겟: 20대 여성';
+
+      let toastTimer = null;
+      function showToast(text, isError) {
+        toastText.textContent = text;
+        toastIcon.textContent = isError ? '!' : '✓';
+        toast.classList.toggle('error', !!isError);
+        toast.classList.add('is-active');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('is-active'), 4000);
+      }
+
+      function openMenu()  { dropdown.classList.add('is-open'); }
+      function closeMenu() { dropdown.classList.remove('is-open'); }
+      function openHelp()  { helpModal.classList.add('is-active'); }
+      function closeHelp() { helpModal.classList.remove('is-active'); }
+
+      function openSlackApp() {
+        const a = document.createElement('a');
+        a.href = 'slack://open';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+
+      async function copyUrl() {
+        try {
+          await navigator.clipboard.writeText(REPORT_URL);
+          return true;
+        } catch (err) {
+          try {
+            const ta = document.createElement('textarea');
+            ta.value = REPORT_URL;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            return true;
+          } catch (e) { return false; }
+        }
+      }
+
+      async function actionShareSheet() {
+        if (!navigator.share) {
+          showToast('이 브라우저는 공유 시트를 지원하지 않아요. 링크 복사 옵션을 사용해주세요.', true);
+          return;
+        }
+        try {
+          await navigator.share({ title: SHARE_TITLE, text: SHARE_TEXT, url: REPORT_URL });
+        } catch (err) {
+          if (err && err.name === 'AbortError') {
+            // 사용자가 시트를 닫음 — Slack이 시트에 안 보였을 수도 있음. 도움말 노출.
+            showToast('Slack이 시트에 없나요? "Slack을 공유 시트에 추가하는 방법" 참고', true);
+          } else {
+            console.error(err);
+            showToast('공유 실패', true);
+          }
+        }
+      }
+
+      async function actionCopy() {
+        const copied = await copyUrl();
+        openSlackApp();
+        if (copied) {
+          showToast('링크 복사 완료 · Slack 채팅창에 ⌘V로 붙여넣기');
+        } else {
+          showToast('Slack 띄움 · 주소창 URL을 직접 복사해주세요', true);
+        }
+      }
+
+      // 토글
+      exportBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (dropdown.classList.contains('is-open')) closeMenu();
+        else openMenu();
+      });
+
+      // 외부 클릭 → 닫기
+      document.addEventListener('click', (e) => {
+        if (!dropdown.contains(e.target)) closeMenu();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (helpModal.classList.contains('is-active')) closeHelp();
+          else closeMenu();
+        }
+      });
+
+      // 옵션 클릭
+      menu.querySelectorAll('.dropdown-item').forEach((item) => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          closeMenu();
+          const action = item.dataset.action;
+          if (action === 'share') actionShareSheet();
+          else if (action === 'copy') actionCopy();
+        });
+      });
+
+      // 도움말
+      helpBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeMenu();
+        openHelp();
+      });
+      helpClose.addEventListener('click', closeHelp);
+      helpBackdrop.addEventListener('click', closeHelp);
+    })();
+  </script>
 </body>
 </html>
