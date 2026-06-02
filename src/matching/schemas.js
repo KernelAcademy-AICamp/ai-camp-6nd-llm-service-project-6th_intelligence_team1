@@ -95,9 +95,13 @@ export const InputTrendSchema = z
 
 // ─── 출력 스키마 ────────────────────────────────────────────────────
 
+// 4기준 단일 결과. ⚠️/❌일 때 gap·solution(컨설팅 제안)을 LLM이 작성.
+// ✅이면 갭 없으므로 gap·solution 생략 또는 null.
 const FitResultSchema = z.object({
   result: z.enum(["✅", "⚠️", "❌"]),
   reason: z.string(),
+  gap: z.string().nullable().optional(), // 어디서 어긋나는지 (⚠️/❌일 때)
+  solution: z.string().nullable().optional(), // 갭을 메우는 액션 (⚠️/❌일 때)
 });
 
 // 데이터 근거 — 입력에서 직접 확인 가능한 사실 + 출처만. 정성 판단은 제외.
