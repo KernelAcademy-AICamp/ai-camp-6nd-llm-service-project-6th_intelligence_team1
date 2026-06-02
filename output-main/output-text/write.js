@@ -198,6 +198,72 @@ export function generateReport({ brand, trend, match } = {}) {
   return lines.join("\n");
 }
 
+// ─── writer-output.json 생성 (UI용 구조화 JSON) ─────────────────
+// shared/schemas/writer-output.example.json 형식에 맞춰 출력.
+// 카피 필드(concept·headline·body_copy·key_message)는 LLM 없이
+// 매칭·트렌드 데이터에서 데이터 매핑으로 채움. v2에서 LLM 카피 생성 예정.
+
+// 채널명 → format_hint 매핑
+const CHANNEL_FORMAT = {
+  유튜브: "video",
+  메타: "image",
+  인스타그램: "image",
+  카카오: "card",
+};
+
+function deriveFormatHint(channel = "") {
+  return CHANNEL_FORMAT[channel] ?? "image";
+}
+
+export function generateWriterOutput({ brand, trend, match } = {}) {
+  const b = unwrap(brand);
+  const t = unwrap(trend);
+  const m = unwrap(match);
+
+  const top = m.recommendations ?? [];
+  const findTrend = (name) => (t.trends ?? []).find((x) => x.trend_name === name);
+
+  const tone = (b.tone_and_manner ?? []).join("·");
+  const primaryChannel = (b.media_channels ?? [])[0] ?? "유튜브";
+
+  // 캠페인 테마: 제품명 + 1순위 트렌드 요약
+  const top1 = top[0];
+  const top1Trend = top1 ? findTrend(top1.trend_name) : null;
+  const campaign_theme = top1Trend
+    ? `${b.product_name}: ${top1Trend.summary ?? top1.trend_name}`
+    : (b.product_name ?? "");
+
+  const contents = top.map((r, i) => {
+    const td = findTrend(r.trend_name);
+    const id = `C${String(i + 1).padStart(3, "0")}`;
+    const reasons = r.summary_reasons ?? [];
+    return {
+      content_id: id,
+      trend_name: r.trend_name,
+      concept: td?.meaning ?? "",                  // 트렌드의 의미 → 콘셉트
+      headline: td?.summary ?? r.trend_name,        // 트렌드 요약 → 헤드라인
+      body_copy: reasons[0] ?? "",                  // 매칭이유 1 → 본문
+      key_message: reasons[1] ?? reasons[0] ?? "",  // 매칭이유 2 → 핵심 메시지
+      channel: primaryChannel,
+      mood: tone,
+      format_hint: deriveFormatHint(primaryChannel),
+    };
+  });
+
+  return {
+    schema_version: "0.2",
+    generated_at: new Date().toISOString(),
+    status: "success",
+    data: {
+      source: "작성가",
+      brand_name: b.brand_name ?? "",
+      product_name: b.product_name ?? "",
+      campaign_theme,
+      contents,
+    },
+  };
+}
+
 // ─── 스크립트 진입점 ─────────────────────────────────────────────
 const isDirectRun = process.argv[1] === fileURLToPath(import.meta.url);
 
@@ -206,14 +272,20 @@ if (isDirectRun) {
   const trend = readJSON(resolve(PROJECT_ROOT, "shared/data/trend-analysis.json"));
   const match = readJSON(resolve(PROJECT_ROOT, "shared/data/match-result.json"));
 
+  // 1) 마크다운 리포트 (사람용)
   const md = generateReport({ brand, trend, match });
+  const mdPath = resolve(__dirname, "report.md");
+  mkdirSync(dirname(mdPath), { recursive: true });
+  writeFileSync(mdPath, md);
 
-  const outPath = resolve(__dirname, "report.md");
-  mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, md);
+  // 2) JSON 구조화 산출물 (UI용)
+  const writerJson = generateWriterOutput({ brand, trend, match });
+  const jsonPath = resolve(__dirname, "writer-output.json");
+  writeFileSync(jsonPath, JSON.stringify(writerJson, null, 2));
 
-  console.log(`✅ 리포트 생성 완료: ${md.split("\n").length}줄`);
+  console.log(`✅ 작성가 산출물 생성 완료`);
   console.log(`   브랜드: ${brand.data.brand_name} (${brand.data.product_name})`);
   console.log(`   트렌드 ${match.data.recommendations.length}개 추천`);
-  console.log(`   저장: ${outPath}`);
+  console.log(`   📄 마크다운: ${mdPath}`);
+  console.log(`   📦 JSON:    ${jsonPath}`);
 }
