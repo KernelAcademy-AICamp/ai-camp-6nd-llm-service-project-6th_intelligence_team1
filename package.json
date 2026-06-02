@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.1",
+    "@google/genai": "^2.7.0",
     "@tavily/core": "^0.7.3",
     "apify-client": "^2.23.3",
     "axios": "^1.16.1",

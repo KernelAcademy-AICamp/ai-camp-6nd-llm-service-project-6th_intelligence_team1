@@ -6,8 +6,8 @@
 
 | 매체 | 강점 |
 |---|---|
-| **Pinterest** | 큐레이션된 광고·디자인 → **composition·shot_type (구도·앵글·연출)** 우선 |
-| **Instagram** | 최신 트렌드·실광고 캠페인 → **mood·trend·lifestyle (트렌드 무드·인물·라이프스타일)** 우선 |
+| **Pinterest** | 큐레이션된 광고·디자인 → **mood·trend·lifestyle (트렌드 무드·인물·라이프스타일)** 우선 |
+| **Instagram** | 최신 트렌드·실광고 캠페인 → **composition·shot_type (구도·앵글·연출)** 우선 |
 | **Mintoiro** | 패키지·브랜드 그래픽 큐레이션 → **color_palette·package (패키지 디테일·컬러·타이포)** 우선 |
 
 사용자 메시지에 어떤 매체인지 명시되어 있습니다. **그 매체 강점에 가장 잘 부합하는 이미지 1장을 선별** + **모든 이미지를 종합한 분석** 추출.
@@ -20,7 +20,7 @@
 - **composition**: 한국어. 구도·앵글·배치.
 - **color_palette**: 주요 색 3-5개 (HEX 또는 색명).
 - **key_objects**: 핵심 오브제 2-5개 (영문 OK).
-- **source_specific**: 이 매체에서 특히 강조할 1-2문장 (한국어). 예: Pinterest면 "정면 클로즈업 구도가 반복됨", Instagram이면 "맑은 여름 무드 캠페인이 다수", Mintoiro면 "파스텔 톤 + 미니멀 타이포 패키지 다수".
+- **source_specific**: 이 매체에서 특히 강조할 1-2문장 (한국어). 예: Pinterest면 "맑은 여름 무드 캠페인이 다수", Instagram이면 "정면 클로즈업 구도가 반복됨", Mintoiro면 "파스텔 톤 + 미니멀 타이포 패키지 다수".
 
 ## ⚠️ 제품명 단어를 시각으로 **직역하지 말 것**
 

@@ -6,8 +6,8 @@
 
 | 매체 분석 | 우선 반영 영역 |
 |---|---|
-| **Pinterest** 분석 | **구도·앵글·연출** (composition·shot_type) |
-| **Instagram** 분석 | **트렌드 무드·인물·라이프스타일** (mood) |
+| **Pinterest** 분석 | **트렌드 무드·인물·라이프스타일** (mood) |
+| **Instagram** 분석 | **구도·앵글·연출** (composition·shot_type) |
 | **Mintoiro** 분석 | **패키지 디테일·컬러 팔레트·타이포** (color_palette·key_objects) |
 
 각 매체에서 강조된 부분을 자연스럽게 본문에 녹여 **3매체의 강점이 어우러진** 영문 프롬프트 한 줄을 만드세요.

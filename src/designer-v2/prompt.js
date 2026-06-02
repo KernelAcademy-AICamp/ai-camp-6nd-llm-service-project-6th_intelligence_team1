@@ -72,9 +72,9 @@ export async function generatePromptFromSources({ brand, content, analyses }) {
 
 ## 매체별 분석
 
-${block("Pinterest (구도·앵글·연출 우선)", pin)}
+${block("Pinterest (트렌드 무드·인물·라이프스타일 우선)", pin)}
 
-${block("Instagram (트렌드 무드·인물·라이프스타일 우선)", ig)}
+${block("Instagram (구도·앵글·연출 우선)", ig)}
 
 ${block("Mintoiro (패키지·컬러·타이포 우선)", min)}
 
