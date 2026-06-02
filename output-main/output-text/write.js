@@ -37,6 +37,43 @@ function formatTarget(data) {
   return [demo, tone].filter(Boolean).join(" · ");
 }
 
+// 출처명 → 원본 링크 (HTML 시안 report-mockup.html의 src-chip 기준)
+const SOURCE_URL = {
+  "naver datalab": "https://datalab.naver.com/",
+  "naver": "https://datalab.naver.com/",
+  "네이버": "https://datalab.naver.com/",
+  "instagram": "https://www.instagram.com/",
+  "인스타그램": "https://www.instagram.com/",
+  "tavily": "https://tavily.com/",
+};
+
+// 출처 문자열에 매핑 키가 포함되면 해당 URL 반환 (없으면 null)
+function sourceUrl(source = "") {
+  const s = source.toLowerCase();
+  for (const [key, url] of Object.entries(SOURCE_URL)) {
+    if (s.includes(key)) return url;
+  }
+  return null;
+}
+
+// 키워드 배열 → `칩1` `칩2` (백틱 인라인 코드로 칩 표현, HTML keyword-tags 등가)
+function keywordChips(keywords = []) {
+  return keywords.filter(Boolean).map((k) => `\`${k}\``).join(" ");
+}
+
+// 정량 지표 한 줄 (headline_metric + 기간) — HTML metric-strip 등가
+function metricStrip(td) {
+  const hm = td?.headline_metric ?? {};
+  const period = td?.metrics?.period ?? "";
+  const parts = [];
+  if (hm.metric || hm.value) {
+    const delta = hm.delta ? ` (${hm.delta})` : "";
+    parts.push(`**${hm.metric ?? "지표"}** ${hm.value ?? ""}${delta}`.trim());
+  }
+  if (period) parts.push(`**기간** ${period}`);
+  return parts.length ? `> 📊 ${parts.join(" · ")}` : "";
+}
+
 export function generateReport({ brand, trend, match } = {}) {
   const b = unwrap(brand);
   const t = unwrap(trend);
@@ -81,22 +118,45 @@ export function generateReport({ brand, trend, match } = {}) {
     lines.push(`### [${letter}] ${r.trend_name} (${r.rank}순위)`);
     lines.push("");
 
-    lines.push("**💡 의미 (Meaning)**");
-    lines.push(td?.meaning ?? "*(데이터 없음)*");
-    lines.push("");
+    // 키워드 칩 (HTML keyword-tags 등가)
+    const chips = keywordChips(td?.keywords);
+    if (chips) {
+      lines.push(chips);
+      lines.push("");
+    }
 
+    // 정량 지표 (HTML metric-strip 등가)
+    const strip = metricStrip(td);
+    if (strip) {
+      lines.push(strip);
+      lines.push("");
+    }
+
+    // 📊 유행현황 — 의미(meaning)를 첫 불렛으로 흡수 (별도 의미 블록 제거)
     lines.push("**📊 유행현황 (Status)**");
-    lines.push(td?.status ?? "*(데이터 없음)*");
+    const statusBullets = [];
+    if (td?.meaning) statusBullets.push(td.meaning);
+    const status = td?.status;
+    if (Array.isArray(status)) statusBullets.push(...status.filter(Boolean));
+    else if (status) statusBullets.push(status);
+    if (statusBullets.length === 0) {
+      lines.push("*(데이터 없음)*");
+    } else {
+      statusBullets.forEach((s) => lines.push(`- ${s}`));
+    }
     lines.push("");
 
-    lines.push("**📚 수집 근거 (가지수)**");
+    // 📚 수집 근거 — 출처 링크 (HTML src-chip 등가)
+    lines.push("**📚 수집 근거**");
     const evidence = td?.evidence ?? [];
     if (evidence.length === 0) {
       lines.push("*(수집된 evidence 없음)*");
     } else {
       evidence.forEach((e) => {
+        const url = sourceUrl(e.source);
+        const src = url ? `[${e.source}](${url})` : `**[${e.source}]**`;
         const period = e.period ? ` (${e.period})` : "";
-        lines.push(`- **[${e.source}]** ${e.metric}${period} → ${e.value}`);
+        lines.push(`- ${src} — ${e.metric}${period} → ${e.value}`);
       });
     }
     lines.push("");
