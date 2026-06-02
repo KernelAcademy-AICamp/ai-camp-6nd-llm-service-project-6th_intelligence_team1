@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>힌스 (hince) — 이미지 업로드 (Funnel 2)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f0eee9;
+    --surface: #fbfaf7;
+    --border: #e3ddd2;
+    --line-strong: #cdc4b4;
+    --text: #2a2723;
+    --text-sub: #837b6f;
+    --text-mute: #b1a89a;
+    --primary: #5b86ad;
+    --primary-soft: #e4eef7;
+    --primary-deep: #436384;
+    --accent-pink: #a9c9e6;
+    --ok: #5b7a52;
+    --ok-soft: #e8efe5;
+    --warn: #c79a3e;
+    --radius-lg: 8px;
+    --radius-md: 6px;
+    --radius-sm: 4px;
+    --shadow-card: 0 1px 2px rgba(60, 50, 30, 0.04), 0 4px 12px rgba(60, 50, 30, 0.04);
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 32px 40px 80px;
+  }
+
+  /* App Bar */
+  .appbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .appbar-left { display: flex; align-items: center; gap: 14px; }
+  .brand-mark {
+    width: 36px; height: 36px; border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-pink) 100%);
+    display: grid; place-items: center;
+    color: #fff; font-weight: 800; font-size: 16px; letter-spacing: -0.02em;
+  }
+  .brand-name { font-weight: 700; font-size: 15px; }
+  .brand-name span { color: var(--text-mute); font-weight: 500; margin-left: 6px; }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 16px; border-radius: var(--radius-sm);
+    background: var(--primary-soft); color: var(--primary-deep);
+    font-size: 13px; font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+  .back-link:hover { background: #d3e4f1; }
+
+  /* Report Header */
+  .report-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-card);
+  }
+  .report-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; color: var(--primary);
+    background: var(--primary-soft);
+    padding: 5px 10px; border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .report-title {
+    font-size: 24px; font-weight: 800; letter-spacing: -0.02em;
+    margin: 0 0 6px;
+  }
+  .report-sub { color: var(--text-sub); font-size: 14px; margin: 0; }
+
+  /* Step indicator */
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 600px;
+    margin: 0 auto 32px;
+  }
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+  .step-dot {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 13px; font-weight: 800;
+  }
+  .step.done .step-dot {
+    background: var(--ok); color: #fff;
+  }
+  .step.current .step-dot {
+    background: var(--primary); color: #fff;
+    box-shadow: 0 0 0 4px var(--primary-soft);
+  }
+  .step.pending .step-dot {
+    background: var(--surface); color: var(--text-mute);
+    border: 2px solid var(--border);
+  }
+  .step-label {
+    font-size: 12px; font-weight: 600;
+    color: var(--text-sub);
+    white-space: nowrap;
+  }
+  .step.current .step-label {
+    color: var(--text); font-weight: 700;
+  }
+  .step.done .step-label {
+    color: var(--ok);
+  }
+  .step-line {
+    flex: 1; height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 26px;
+  }
+  .step-line.active { background: var(--ok); }
+
+  /* Dropzone */
+  .dropzone {
+    border: 2px dashed var(--line-strong);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    padding: 56px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    box-shadow: var(--shadow-card);
+  }
+  .dropzone:hover {
+    border-color: var(--primary);
+    background: #f9f7f1;
+  }
+  .dropzone.is-over {
+    border-color: var(--primary);
+    border-style: solid;
+    background: var(--primary-soft);
+    transform: scale(1.005);
+  }
+  .dz-icon {
+    width: 64px; height: 64px;
+    margin: 0 auto 20px;
+    background: var(--primary-soft);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    color: var(--primary-deep);
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+  .dropzone.is-over .dz-icon {
+    background: var(--primary);
+    color: #fff;
+    transform: scale(1.05);
+  }
+  .dz-text {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .dz-text-sub {
+    font-size: 13px; color: var(--text-sub);
+    margin-bottom: 20px;
+  }
+  .dz-or {
+    display: flex; align-items: center; gap: 14px;
+    font-size: 12px; color: var(--text-mute);
+    margin: 0 auto 16px;
+    max-width: 200px;
+  }
+  .dz-or::before, .dz-or::after {
+    content: '';
+    flex: 1; height: 1px;
+    background: var(--border);
+  }
+  .dz-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 11px 24px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s ease;
+  }
+  .dz-button:hover { background: var(--primary-deep); }
+  .dz-hint {
+    font-size: 11.5px;
+    color: var(--text-mute);
+    margin-top: 20px;
+  }
+
+  /* Tips */
+  .tips {
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: #f6f3ed;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 12.5px;
+    color: var(--text-sub);
+  }
+  .tips-title {
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+    font-size: 12px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tips ul {
+    margin: 0; padding-left: 18px;
+    line-height: 1.7;
+  }
+
+  /* Preview area */
+  .preview-area {
+    margin-top: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    box-shadow: var(--shadow-card);
+  }
+  .preview-head {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .preview-head .pv-count {
+    color: var(--primary);
+    background: var(--primary-soft);
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 800;
+  }
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 14px;
+  }
+  .pv-item {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+  .pv-item img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .pv-remove {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: rgba(20, 22, 35, 0.65);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    font-weight: 700;
+    display: grid; place-items: center;
+    font-family: inherit;
+    transition: background 0.15s ease;
+  }
+  .pv-remove:hover { background: rgba(20, 22, 35, 0.85); }
+  .pv-name {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(20, 22, 35, 0.75), transparent);
+    color: #fff;
+    font-size: 10.5px;
+    padding: 14px 8px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* CTA */
+  .cta-zone {
+    margin-top: 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 44px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-deep) 100%);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(91, 134, 173, 0.32);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    font-family: inherit;
+  }
+  .cta-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(91, 134, 173, 0.4);
+  }
+  .cta-btn:hover:not(:disabled) .cta-arrow {
+    transform: translateX(3px);
+  }
+  .cta-btn:disabled {
+    background: var(--line-strong);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .cta-arrow {
+    font-size: 18px;
+    transition: transform 0.15s ease;
+  }
+  .cta-hint {
+    font-size: 12px;
+    color: var(--text-mute);
+  }
+
+  .footer {
+    margin-top: 32px;
+    text-align: center;
+    font-size: 12px; color: var(--text-mute);
+  }
+
+  @media (max-width: 720px) {
+    .stepper { gap: 6px; }
+    .step-label { font-size: 11px; }
+    .dropzone { padding: 40px 20px; }
+    .dz-icon { width: 56px; height: 56px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- App Bar -->
+    <div class="appbar">
+      <div class="appbar-left">
+        <div class="brand-mark">h</div>
+        <div>
+          <div class="brand-name">Match Report <span>· Funnel 2/3 — 이미지 업로드</span></div>
+        </div>
+      </div>
+      <a class="back-link" href="report-mockup.html">← 이전으로 돌아가기</a>
+    </div>
+
+    <!-- Report Header -->
+    <div class="report-header">
+      <span class="report-eyebrow">● Beauty × Trend Matching · 이미지 업로드</span>
+      <h1 class="report-title">제품 이미지를 업로드해주세요</h1>
+      <p class="report-sub">Funnel 1에서 추출된 1·2·3순위 트렌드를 바탕으로 레퍼런스 시안을 생성합니다. 브랜드 제품 이미지가 필요합니다.</p>
+    </div>
+
+    <!-- Stepper -->
+    <div class="stepper">
+      <div class="step done">
+        <div class="step-dot">✓</div>
+        <div class="step-label">트렌드 분석</div>
+      </div>
+      <div class="step-line active"></div>
+      <div class="step current">
+        <div class="step-dot">2</div>
+        <div class="step-label">이미지 업로드</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step pending">
+        <div class="step-dot">3</div>
+        <div class="step-label">레퍼런스 시안</div>
+      </div>
+    </div>
+
+    <!-- Dropzone -->
+    <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="이미지 업로드 영역">
+      <input type="file" id="fileInput" multiple accept="image/*" style="display:none;">
+      <div class="dz-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+      </div>
+      <div class="dz-text">이미지를 여기로 끌어다 놓으세요</div>
+      <div class="dz-text-sub">데스크탑에서 직접 드래그할 수 있어요</div>
+      <div class="dz-or">또는</div>
+      <button class="dz-button" type="button" id="pickerBtn">
+        파일 선택하기
+      </button>
+      <div class="dz-hint">JPG · PNG · WEBP · 최대 10MB · 여러 장 업로드 가능</div>
+    </div>
+
+    <!-- Tips -->
+    <div class="tips">
+      <div class="tips-title">💡 권장 사항</div>
+      <ul>
+        <li>제품 정면이 잘 보이는 깨끗한 배경의 이미지</li>
+        <li>여러 각도 권장 — 정면 / 측면 / 디테일 등</li>
+        <li>최대 5장 권장 (많을수록 다양한 시안 생성 가능)</li>
+      </ul>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-area" id="previewArea" hidden>
+      <div class="preview-head">업로드된 이미지<span class="pv-count" id="count">0</span></div>
+      <div class="preview-grid" id="previewGrid"></div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-zone">
+      <button class="cta-btn" id="continueBtn" disabled>
+        레퍼런스 생성하기
+        <span class="cta-arrow">→</span>
+      </button>
+      <div class="cta-hint" id="ctaHint">최소 1장의 이미지를 업로드해주세요</div>
+    </div>
+
+    <div class="footer">
+      Funnel 2/3 — Match Report v0.2 · hince × 2026 Beauty Trend
+    </div>
+
+  </div>
+
+  <script>
+    (function () {
+      const dz = document.getElementById('dropzone');
+      const fi = document.getElementById('fileInput');
+      const btn = document.getElementById('pickerBtn');
+      const pa = document.getElementById('previewArea');
+      const pg = document.getElementById('previewGrid');
+      const cnt = document.getElementById('count');
+      const cb = document.getElementById('continueBtn');
+      const hint = document.getElementById('ctaHint');
+      const items = new Map(); // id -> { file, url, el }
+
+      function addFiles(fileList) {
+        for (const f of fileList) {
+          if (!f.type.startsWith('image/')) continue;
+          if (f.size > 10 * 1024 * 1024) {
+            alert(`"${f.name}" 은 10MB를 초과합니다.`);
+            continue;
+          }
+          const id = `pv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          const url = URL.createObjectURL(f);
+          const el = document.createElement('div');
+          el.className = 'pv-item';
+          el.dataset.id = id;
+          el.innerHTML = `
+            <img src="${url}" alt="${escapeHtml(f.name)}">
+            <button class="pv-remove" type="button" aria-label="제거">×</button>
+            <div class="pv-name">${escapeHtml(f.name)}</div>
+          `;
+          pg.appendChild(el);
+          el.querySelector('.pv-remove').addEventListener('click', (e) => {
+            e.stopPropagation();
+            URL.revokeObjectURL(url);
+            el.remove();
+            items.delete(id);
+            updateState();
+          });
+          items.set(id, { file: f, url, el });
+        }
+        updateState();
+      }
+
+      function updateState() {
+        const n = items.size;
+        cnt.textContent = n;
+        pa.hidden = n === 0;
+        cb.disabled = n === 0;
+        hint.textContent = n === 0
+          ? '최소 1장의 이미지를 업로드해주세요'
+          : `${n}장 업로드 완료 · 클릭해서 다음 단계로`;
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, (c) => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[c]);
+      }
+
+      // Drag-drop
+      ['dragenter', 'dragover'].forEach((ev) => {
+        dz.addEventListener(ev, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dz.classList.add('is-over');
+        });
+      });
+      ['dragleave'].forEach((ev) => {
+        dz.addEventListener(ev, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // Only remove highlight when leaving the dropzone entirely
+          if (e.relatedTarget && dz.contains(e.relatedTarget)) return;
+          dz.classList.remove('is-over');
+        });
+      });
+      dz.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dz.classList.remove('is-over');
+        if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
+      });
+
+      // Prevent browser default when dropping outside zone
+      window.addEventListener('dragover', (e) => e.preventDefault());
+      window.addEventListener('drop', (e) => e.preventDefault());
+
+      // Click to open file picker
+      dz.addEventListener('click', (e) => {
+        if (e.target.closest('.pv-remove')) return;
+        fi.click();
+      });
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fi.click();
+      });
+      // Keyboard accessibility
+      dz.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          fi.click();
+        }
+      });
+
+      fi.addEventListener('change', () => {
+        addFiles(fi.files);
+        fi.value = ''; // allow re-picking the same file
+      });
+
+      // Continue button
+      cb.addEventListener('click', () => {
+        if (cb.disabled) return;
+        window.location.href = 'report-mockup-reference.html';
+      });
+    })();
+  </script>
+</body>
+</html>
