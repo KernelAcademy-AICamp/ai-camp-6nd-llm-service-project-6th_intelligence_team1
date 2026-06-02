@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>힌스 (hince) — 레퍼런스 시안 (Funnel 2)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
+<style>
+  :root {
+    /* Page surfaces (베이지·아이보리) */
+    --bg: #f0eee9;
+    --surface: #fbfaf7;
+    --border: #e3ddd2;
+    --line-strong: #cdc4b4;
+    /* Text */
+    --text: #2a2723;
+    --text-sub: #837b6f;
+    --text-mute: #b1a89a;
+    /* Accent (액션 블루) */
+    --primary: #5b86ad;
+    --primary-soft: #e4eef7;
+    --primary-deep: #436384;
+    --accent-pink: #a9c9e6;     /* repurposed: sky-deep */
+    /* Geometry */
+    --radius-lg: 8px;
+    --radius-md: 6px;
+    --radius-sm: 4px;
+    --shadow-card: 0 1px 2px rgba(60, 50, 30, 0.04), 0 4px 12px rgba(60, 50, 30, 0.04);
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 40px 80px;
+  }
+
+  /* App Bar */
+  .appbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .appbar-left { display: flex; align-items: center; gap: 14px; }
+  .brand-mark {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-pink) 100%);
+    display: grid; place-items: center;
+    color: #fff; font-weight: 800; font-size: 16px; letter-spacing: -0.02em;
+  }
+  .brand-name { font-weight: 700; font-size: 15px; }
+  .brand-name span { color: var(--text-mute); font-weight: 500; margin-left: 6px; }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 16px; border-radius: 8px;
+    background: var(--primary-soft); color: var(--primary-deep);
+    font-size: 13px; font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+  .back-link:hover { background: #d3e4f1; }
+
+  /* Report Header */
+  .report-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-card);
+  }
+  .report-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; color: var(--primary);
+    background: var(--primary-soft);
+    padding: 5px 10px; border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .report-title {
+    font-size: 26px; font-weight: 800; letter-spacing: -0.02em;
+    margin: 0 0 6px;
+  }
+  .report-sub { color: var(--text-sub); font-size: 14px; margin: 0; }
+
+  /* Section Head */
+  .section-head {
+    display: flex; align-items: center; gap: 12px;
+    margin: 32px 0 14px;
+  }
+  .section-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--primary); color: #fff;
+    font-size: 12px; font-weight: 700;
+    padding: 6px 12px; border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .section-title {
+    font-size: 20px; font-weight: 800; margin: 0; letter-spacing: -0.01em;
+  }
+  .section-desc { color: var(--text-mute); font-size: 13px; margin-left: auto; }
+
+  /* Reference Card */
+  .reference-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+    box-shadow: var(--shadow-card);
+  }
+  .ref-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .ref-slot {
+    aspect-ratio: 4 / 5;
+    border-radius: var(--radius-md);
+    border: 1.5px dashed #cdc4b4;
+    background:
+      linear-gradient(135deg, #f6f3ed 25%, transparent 25%) -10px 0/20px 20px,
+      linear-gradient(225deg, #f6f3ed 25%, transparent 25%) -10px 0/20px 20px,
+      linear-gradient(315deg, #f6f3ed 25%, #fbfaf7 25%) 0 0/20px 20px,
+      linear-gradient(45deg,  #f6f3ed 25%, #fbfaf7 25%) 0 0/20px 20px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px;
+    color: var(--text-mute);
+  }
+  .ref-slot .ref-tag {
+    background: var(--primary-soft); color: var(--primary-deep);
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+  }
+  .ref-slot .ref-label { font-size: 13px; font-weight: 600; color: var(--text-sub); }
+  .ref-slot .ref-hint { font-size: 11.5px; color: var(--text-mute); }
+
+  .footer {
+    margin-top: 32px;
+    text-align: center;
+    font-size: 12px; color: var(--text-mute);
+  }
+
+  /* Print */
+  @media print {
+    body { background: #fff; }
+    .page { padding: 0; }
+    .appbar { display: none; }
+    .reference-card, .report-header { box-shadow: none; }
+  }
+
+  @media (max-width: 1024px) {
+    .ref-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- App Bar with back link -->
+    <div class="appbar">
+      <div class="appbar-left">
+        <div class="brand-mark">h</div>
+        <div>
+          <div class="brand-name">Match Report <span>· Funnel 2/2 — Reference</span></div>
+        </div>
+      </div>
+      <a class="back-link" href="report-mockup.html">← 이전으로 돌아가기</a>
+    </div>
+
+    <!-- Report Header -->
+    <div class="report-header">
+      <span class="report-eyebrow">● Beauty × Trend Matching · 레퍼런스</span>
+      <h1 class="report-title">힌스 (hince) — 캠페인 레퍼런스 시안</h1>
+      <p class="report-sub">매칭 파트에서 추출된 1·2·3순위 트렌드의 비주얼 레퍼런스 시안입니다.</p>
+    </div>
+
+    <!-- Part III — Reference -->
+    <div class="section-head">
+      <span class="section-badge">PART III</span>
+      <h2 class="section-title">Reference</h2>
+      <span class="section-desc">이미지 시안 영역</span>
+    </div>
+
+    <div class="reference-card">
+      <div class="ref-grid">
+        <div class="ref-slot">
+          <span class="ref-tag">레퍼런스 시안 A</span>
+          <span class="ref-label">매트 쿠션의 부상</span>
+          <span class="ref-hint">추후 추가 예정</span>
+        </div>
+        <div class="ref-slot">
+          <span class="ref-tag">레퍼런스 시안 B</span>
+          <span class="ref-label">최소 레이어 베이스</span>
+          <span class="ref-hint">추후 추가 예정</span>
+        </div>
+        <div class="ref-slot">
+          <span class="ref-tag">레퍼런스 시안 C</span>
+          <span class="ref-label">스킨케어형 베이스</span>
+          <span class="ref-hint">추후 추가 예정</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Funnel 2/2 — Match Report v0.2 · hince × 2026 Beauty Trend
+    </div>
+
+  </div>
+</body>
+</html>

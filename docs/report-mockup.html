@@ -6,38 +6,50 @@
 <title>힌스 (hince) — 캠페인 트렌드 매칭 리포트</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
 <style>
   :root {
-    --bg: #F4F4FA;
-    --surface: #FFFFFF;
-    --border: #ECECF3;
-    --text: #1B1B26;
-    --text-sub: #5F6172;
-    --text-mute: #9396A6;
-    --primary: #6C5BFF;
-    --primary-soft: #EDEAFF;
-    --primary-deep: #4B3CDB;
-    --accent-pink: #FF7AB6;
-    --accent-pink-soft: #FFE6F0;
-    --warn: #F0A04B;
-    --warn-soft: #FFF1E0;
-    --rank1: #6C5BFF;
-    --rank2: #8A7BFF;
-    --rank3: #BDB6E6;
+    /* Page surfaces (베이지·아이보리) */
+    --bg: #f0eee9;
+    --surface: #fbfaf7;
+    --border: #e3ddd2;
+    --line-strong: #cdc4b4;
+    /* Text */
+    --text: #2a2723;
+    --text-sub: #837b6f;
+    --text-mute: #b1a89a;
+    /* Accent (액션 블루) */
+    --primary: #5b86ad;
+    --primary-soft: #e4eef7;
+    --primary-deep: #436384;
+    --accent-pink: #a9c9e6;     /* repurposed: sky-deep */
+    --accent-pink-soft: #d3e4f1;
+    /* Status */
+    --warn: #c79a3e;            /* gold (rare point) */
+    --warn-soft: #f5ebd3;
+    --ok: #5b7a52;
+    --ok-soft: #e8efe5;
+    --danger: #a94e4e;
+    --danger-soft: #f1e0e0;
+    /* Rank colors */
+    --rank1: #5b86ad;
+    --rank2: #a9c9e6;
+    --rank3: #c79a3e;
+    /* External chips (브랜드 색 유지) */
     --chip-naver: #03C75A;
     --chip-insta: #E1306C;
     --chip-tavily: #4A90E2;
-    --radius-lg: 16px;
-    --radius-md: 12px;
-    --radius-sm: 8px;
-    --shadow-card: 0 1px 2px rgba(20, 22, 50, 0.04), 0 4px 16px rgba(20, 22, 50, 0.04);
+    /* Geometry */
+    --radius-lg: 8px;
+    --radius-md: 6px;
+    --radius-sm: 4px;
+    --shadow-card: 0 1px 2px rgba(60, 50, 30, 0.04), 0 4px 12px rgba(60, 50, 30, 0.04);
   }
 
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0;
-    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
     background: var(--bg);
     color: var(--text);
     line-height: 1.55;
@@ -102,7 +114,7 @@
   .meta-row { display: flex; flex-wrap: wrap; gap: 10px; }
   .meta-chip {
     display: inline-flex; align-items: center; gap: 8px;
-    background: #F7F7FB; border: 1px solid var(--border);
+    background: #f6f3ed; border: 1px solid var(--border);
     padding: 8px 12px; border-radius: 10px;
     font-size: 13px; color: var(--text-sub);
   }
@@ -142,7 +154,7 @@
     gap: 16px;
     padding: 16px 18px;
     border-radius: var(--radius-md);
-    background: #FAFAFE;
+    background: #f6f3ed;
     border: 1px solid var(--border);
   }
   .summary-letter {
@@ -175,7 +187,7 @@
   .trend-card .card-top {
     padding: 18px 20px 14px;
     border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, #FAFAFE 0%, #FFFFFF 100%);
+    background: linear-gradient(180deg, #f6f3ed 0%, #fbfaf7 100%);
   }
   .rank-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .rank-badge {
@@ -216,14 +228,14 @@
   }
   .metric {
     flex: 1;
-    background: #FAFAFE;
+    background: #f6f3ed;
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 10px 12px;
   }
   .metric .m-label { font-size: 11px; color: var(--text-mute); font-weight: 600; margin-bottom: 2px; }
   .metric .m-value { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
-  .metric .m-delta { font-size: 11px; font-weight: 700; color: #1FAF6A; margin-left: 4px; }
+  .metric .m-delta { font-size: 11px; font-weight: 700; color: #5b7a52; margin-left: 4px; }
 
   /* sources */
   .src-list { display: flex; flex-direction: column; gap: 8px; }
@@ -232,7 +244,7 @@
     flex-direction: column;
     gap: 6px;
     padding: 12px 14px;
-    background: #FAFAFE;
+    background: #f6f3ed;
     border: 1px solid var(--border);
     border-radius: 10px;
     font-size: 12.5px;
@@ -270,7 +282,7 @@
   .trend-card.warn .reason-list li::before { background: var(--warn); }
 
   /* warn variant for 3rd card */
-  .trend-card.warn .card-top { background: linear-gradient(180deg, var(--warn-soft) 0%, #FFFFFF 100%); }
+  .trend-card.warn .card-top { background: linear-gradient(180deg, var(--warn-soft) 0%, #fbfaf7 100%); }
   .warn-note {
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 11.5px; font-weight: 700; color: var(--warn);
@@ -295,12 +307,12 @@
   .ref-slot {
     aspect-ratio: 4 / 5;
     border-radius: var(--radius-md);
-    border: 1.5px dashed #D6D5E6;
+    border: 1.5px dashed #cdc4b4;
     background:
-      linear-gradient(135deg, #FAFAFE 25%, transparent 25%) -10px 0/20px 20px,
-      linear-gradient(225deg, #FAFAFE 25%, transparent 25%) -10px 0/20px 20px,
-      linear-gradient(315deg, #FAFAFE 25%, #FFFFFF 25%) 0 0/20px 20px,
-      linear-gradient(45deg,  #FAFAFE 25%, #FFFFFF 25%) 0 0/20px 20px;
+      linear-gradient(135deg, #f6f3ed 25%, transparent 25%) -10px 0/20px 20px,
+      linear-gradient(225deg, #f6f3ed 25%, transparent 25%) -10px 0/20px 20px,
+      linear-gradient(315deg, #f6f3ed 25%, #fbfaf7 25%) 0 0/20px 20px,
+      linear-gradient(45deg,  #f6f3ed 25%, #fbfaf7 25%) 0 0/20px 20px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 8px;
     color: var(--text-mute);
@@ -364,7 +376,7 @@
   }
   .compare-bar-track {
     height: 28px; border-radius: 8px;
-    background: #F2F1FA;
+    background: #e8e3d8;
     position: relative; overflow: hidden;
   }
   .compare-bar-fill {
@@ -374,9 +386,9 @@
     padding-right: 12px;
     font-weight: 800; font-size: 13px; color: #fff;
   }
-  .compare-bar-fill.r1 { background: linear-gradient(90deg, #6C5BFF 0%, #8A7BFF 100%); }
-  .compare-bar-fill.r2 { background: linear-gradient(90deg, #8A7BFF 0%, #ADA1FF 100%); }
-  .compare-bar-fill.r3 { background: linear-gradient(90deg, #F0A04B 0%, #FFB970 100%); }
+  .compare-bar-fill.r1 { background: linear-gradient(90deg, #5b86ad 0%, #436384 100%); }
+  .compare-bar-fill.r2 { background: linear-gradient(90deg, #436384 0%, #a9c9e6 100%); }
+  .compare-bar-fill.r3 { background: linear-gradient(90deg, #c79a3e 0%, #e0c283 100%); }
 
   /* Per-trend data cards grid */
   .data-grid {
@@ -428,13 +440,13 @@
     font-weight: 800; font-size: 14px;
     line-height: 1.2;
   }
-  .growth-pill.up { color: #1FAF6A; background: #E6F7EE; }
-  .growth-pill.down { color: #E04848; background: #FCE8E8; }
+  .growth-pill.up { color: #5b7a52; background: #e8efe5; }
+  .growth-pill.down { color: #a94e4e; background: #f1e0e0; }
   .growth-pill .arrow { font-size: 10px; margin-right: 2px; }
   .growth-pill .growth-sub { font-size: 10px; font-weight: 600; color: var(--text-mute); margin-top: 2px; }
   .mini-bar {
     height: 6px; border-radius: 4px;
-    background: #F2F1FA; overflow: hidden;
+    background: #e8e3d8; overflow: hidden;
   }
   .mini-bar-fill { height: 100%; border-radius: 4px; }
   .mini-bar-fill.r1 { background: var(--primary); }
@@ -453,15 +465,15 @@
     height: 14px; border-radius: 4px;
     overflow: hidden;
     display: flex;
-    background: #F2F1FA;
+    background: #e8e3d8;
   }
   .seg { height: 100%; }
-  .seg-age1 { background: #E8E4FB; }
-  .seg-age2 { background: #6C5BFF; }
-  .seg-age3 { background: #BDB6E6; }
-  .seg-age4 { background: #8C86B5; }
-  .seg-f { background: #FF7AB6; }
-  .seg-m { background: #4A90E2; }
+  .seg-age1 { background: #ece4d5; }
+  .seg-age2 { background: #5b86ad; }
+  .seg-age3 { background: #a9c9e6; }
+  .seg-age4 { background: #436384; }
+  .seg-f { background: #5b86ad; }
+  .seg-m { background: #a9c9e6; }
   .stack-legend {
     display: flex; flex-wrap: wrap; gap: 6px 12px;
     margin-top: 10px;
@@ -483,23 +495,23 @@
   .gauge-name { font-size: 11px; font-weight: 700; color: var(--text-mute); }
   .gauge-track {
     height: 12px; border-radius: 4px;
-    background: #F2F1FA;
+    background: #e8e3d8;
     position: relative; overflow: hidden;
   }
   .gauge-fill { height: 100%; border-radius: 4px; }
-  .gauge-fill.pass { background: linear-gradient(90deg, #1FAF6A 0%, #38C481 100%); }
-  .gauge-fill.warn { background: linear-gradient(90deg, #F0A04B 0%, #FFB970 100%); }
+  .gauge-fill.pass { background: linear-gradient(90deg, #5b7a52 0%, #7a9970 100%); }
+  .gauge-fill.warn { background: linear-gradient(90deg, #c79a3e 0%, #e0c283 100%); }
   .gauge-track .threshold {
     position: absolute; top: -2px; bottom: -2px;
     width: 0;
-    border-left: 2px dashed #FF5C5C;
+    border-left: 2px dashed #a94e4e;
     z-index: 2;
   }
   .gauge-val {
     text-align: right;
     font-size: 13px; font-weight: 800;
   }
-  .gauge-val.pass { color: #1FAF6A; }
+  .gauge-val.pass { color: #5b7a52; }
   .gauge-val.warn { color: var(--warn); }
   .threshold-note {
     font-size: 10.5px; color: var(--text-mute);
@@ -510,8 +522,188 @@
     content: '';
     display: inline-block;
     width: 14px; height: 0;
-    border-top: 2px dashed #FF5C5C;
+    border-top: 2px dashed #a94e4e;
   }
+
+  /* ===== Funnel CTA Button (Funnel 1 → Funnel 2) ===== */
+  .funnel-cta {
+    margin-top: 36px;
+    display: flex;
+    justify-content: center;
+  }
+  .funnel-cta a {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 44px;
+    background: linear-gradient(135deg, var(--primary) 0%, #436384 100%);
+    color: #fff;
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+    border-radius: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 16px rgba(91, 134, 173, 0.32);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .funnel-cta a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(91, 134, 173, 0.4);
+  }
+  .funnel-cta .cta-arrow {
+    font-size: 18px;
+    transition: transform 0.15s ease;
+  }
+  .funnel-cta a:hover .cta-arrow {
+    transform: translateX(3px);
+  }
+  .funnel-step {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-mute);
+  }
+
+  /* ===== Match Passes (d) — replaces gauge area ===== */
+  .mp-total {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .match-passes-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: #ece4d5;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .match-passes-bar .mpb-fill {
+    height: 100%;
+    border-radius: 4px;
+  }
+  .match-passes-bar.strong .mpb-fill { background: var(--ok); }
+  .match-passes-bar.partial .mpb-fill { background: var(--warn); }
+  .match-passes-bar.weak .mpb-fill { background: var(--danger); }
+
+  .mp-passes-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .mp-passes-row:last-child { margin-bottom: 0; }
+  .mp-q {
+    color: var(--text-sub);
+    flex: 1;
+    font-weight: 600;
+  }
+  .mp-dots { display: inline-flex; gap: 4px; }
+  .mp-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #ece4d5;
+  }
+  .mp-passes-row.strong .mp-dot.on { background: var(--ok); }
+  .mp-passes-row.partial .mp-dot.on { background: var(--warn); }
+  .mp-passes-row.weak .mp-dot.on { background: var(--danger); }
+  .mp-frac {
+    font-size: 12px; font-weight: 700;
+    color: var(--text-sub);
+    min-width: 24px; text-align: right;
+  }
+
+  /* ===== Match passes inline subtitle (β) ===== */
+  .mp-passes-row.with-sub { margin-bottom: 2px; }
+  .mp-sub {
+    font-size: 11px;
+    color: var(--text-mute);
+    margin-bottom: 10px;
+    line-height: 1.4;
+    padding-left: 2px;
+  }
+
+  /* ===== Match passes expandable details (γ) ===== */
+  details.eval-details {
+    margin-top: 14px;
+    background: #f6f3ed;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+  details.eval-details summary {
+    cursor: pointer;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary-deep);
+    list-style: none;
+    display: flex; align-items: center; gap: 6px;
+  }
+  details.eval-details summary::-webkit-details-marker { display: none; }
+  details.eval-details summary::before {
+    content: '▶';
+    font-size: 9px;
+    color: var(--primary);
+    transition: transform 0.15s;
+  }
+  details.eval-details[open] summary::before { transform: rotate(90deg); }
+  details.eval-details .ed-body {
+    padding: 4px 14px 14px;
+    font-size: 11.5px;
+    color: var(--text-sub);
+    line-height: 1.6;
+  }
+  details.eval-details .ed-group { margin-bottom: 10px; }
+  details.eval-details .ed-group:last-child { margin-bottom: 0; }
+  details.eval-details .ed-group-title {
+    font-weight: 700; color: var(--text);
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  details.eval-details ul { margin: 0; padding-left: 16px; }
+  details.eval-details ul li { margin-bottom: 2px; }
+
+  /* ===== Channel Status (e) ===== */
+  .channel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .channel-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #f6f3ed;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 12px;
+  }
+  .ch-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .ch-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--line-strong);
+  }
+  .ch-status {
+    font-size: 10.5px; font-weight: 700;
+    padding: 2px 9px; border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .ch-dot.active { background: var(--ok); }
+  .ch-status.active { background: var(--ok-soft); color: var(--ok); }
+  .ch-dot.rising { background: var(--primary); }
+  .ch-status.rising { background: var(--primary-soft); color: var(--primary-deep); }
+  .ch-dot.stable { background: var(--line-strong); }
+  .ch-status.stable { background: #fbfaf7; color: var(--text-sub); border: 1px solid var(--border); }
+  .ch-dot.decline { background: var(--warn); }
+  .ch-status.decline { background: var(--warn-soft); color: var(--warn); }
 
   /* Print */
   @media print {
@@ -551,7 +743,7 @@
       <div class="meta-row">
         <div class="meta-chip"><span class="dot"></span><strong>제품</strong> 커버 마스터 핑크 쿠션</div>
         <div class="meta-chip"><span class="dot" style="background:var(--accent-pink)"></span><strong>카테고리</strong> 메이크업 &gt; 베이스</div>
-        <div class="meta-chip"><span class="dot" style="background:#1FAF6A"></span><strong>타겟</strong> 20대 여성 · Z세대·트렌디</div>
+        <div class="meta-chip"><span class="dot" style="background:#5b7a52"></span><strong>타겟</strong> 20대 여성 · Z세대·트렌디</div>
       </div>
     </div>
 
@@ -596,7 +788,7 @@
     <div class="section-head">
       <span class="section-badge data">📊 DATA</span>
       <h2 class="section-title">정량 분석</h2>
-      <span class="section-desc">점수 · 성장률 · 고객층 · 타겟 일치도</span>
+      <span class="section-desc">점수 · 성장률 · 매칭 결과 · 채널 현황</span>
     </div>
 
     <!-- Graph 3 — Trend score comparison -->
@@ -663,52 +855,60 @@
         </div>
 
         <div class="data-block">
-          <div class="db-label">고객층 분포 <span class="g-tag">G1</span></div>
-          <div class="stack-row">
-            <span class="stack-name">연령</span>
-            <div class="stack-bar">
-              <div class="seg seg-age1" style="width:5%"  title="10대 5%"></div>
-              <div class="seg seg-age2" style="width:62%" title="20대 62%"></div>
-              <div class="seg seg-age3" style="width:24%" title="30대 24%"></div>
-              <div class="seg seg-age4" style="width:9%"  title="40+ 9%"></div>
+          <div class="db-label">매칭 결과 <span class="g-tag">G5</span></div>
+          <div class="mp-total">4개 비교 중 4개 통과</div>
+          <div class="match-passes-bar strong">
+            <div class="mpb-fill" style="width:100%"></div>
+          </div>
+          <div class="mp-passes-row strong with-sub">
+            <span class="mp-q">브랜드 적합성</span>
+            <span class="mp-dots"><span class="mp-dot on"></span><span class="mp-dot on"></span></span>
+            <span class="mp-frac">2/2</span>
+          </div>
+          <div class="mp-sub">톤·키워드가 트렌드와 맞는지</div>
+          <div class="mp-passes-row strong with-sub">
+            <span class="mp-q">타겟 적합성</span>
+            <span class="mp-dots"><span class="mp-dot on"></span><span class="mp-dot on"></span></span>
+            <span class="mp-frac">2/2</span>
+          </div>
+          <div class="mp-sub">우리 고객층·라이프스타일이 트렌드와 맞는지</div>
+          <details class="eval-details">
+            <summary>어떻게 평가했나요?</summary>
+            <div class="ed-body">
+              <div class="ed-group">
+                <div class="ed-group-title">브랜드 적합성 (2개)</div>
+                <ul>
+                  <li>브랜드 톤앤매너 ↔ 트렌드 흐름</li>
+                  <li>브랜드 키워드·제형 ↔ 트렌드 키워드</li>
+                </ul>
+              </div>
+              <div class="ed-group">
+                <div class="ed-group-title">타겟 적합성 (2개)</div>
+                <ul>
+                  <li>우리 타겟 ↔ 트렌드 주 소비층</li>
+                  <li>우리 타겟 ↔ 트렌드 라이프스타일·동기</li>
+                </ul>
+              </div>
             </div>
-          </div>
-          <div class="stack-row">
-            <span class="stack-name">성별</span>
-            <div class="stack-bar">
-              <div class="seg seg-f" style="width:82%" title="여 82%"></div>
-              <div class="seg seg-m" style="width:18%" title="남 18%"></div>
-            </div>
-          </div>
-          <div class="stack-legend">
-            <span><i class="dot seg-age1"></i>10대</span>
-            <span><i class="dot seg-age2"></i>20대</span>
-            <span><i class="dot seg-age3"></i>30대</span>
-            <span><i class="dot seg-age4"></i>40+</span>
-            <span><i class="dot seg-f"></i>여</span>
-            <span><i class="dot seg-m"></i>남</span>
-          </div>
+          </details>
         </div>
 
         <div class="data-block">
-          <div class="db-label">타겟 오버랩 <span class="g-tag">G5</span></div>
-          <div class="gauge-row">
-            <span class="gauge-name">연령</span>
-            <div class="gauge-track">
-              <div class="threshold" style="left:60%"></div>
-              <div class="gauge-fill pass" style="width:87%"></div>
+          <div class="db-label">채널 현황</div>
+          <div class="channel-list">
+            <div class="channel-row">
+              <span class="ch-name"><span class="ch-dot active"></span>Instagram</span>
+              <span class="ch-status active">활성</span>
             </div>
-            <span class="gauge-val pass">87%</span>
-          </div>
-          <div class="gauge-row">
-            <span class="gauge-name">성별</span>
-            <div class="gauge-track">
-              <div class="threshold" style="left:60%"></div>
-              <div class="gauge-fill pass" style="width:82%"></div>
+            <div class="channel-row">
+              <span class="ch-name"><span class="ch-dot rising"></span>TikTok</span>
+              <span class="ch-status rising">부상</span>
             </div>
-            <span class="gauge-val pass">82%</span>
+            <div class="channel-row">
+              <span class="ch-name"><span class="ch-dot stable"></span>Naver 블로그</span>
+              <span class="ch-status stable">안정</span>
+            </div>
           </div>
-          <div class="threshold-note">60% 매칭 임계선</div>
         </div>
       </div>
 
@@ -736,52 +936,60 @@
         </div>
 
         <div class="data-block">
-          <div class="db-label">고객층 분포 <span class="g-tag">G1</span></div>
-          <div class="stack-row">
-            <span class="stack-name">연령</span>
-            <div class="stack-bar">
-              <div class="seg seg-age1" style="width:8%"  title="10대 8%"></div>
-              <div class="seg seg-age2" style="width:55%" title="20대 55%"></div>
-              <div class="seg seg-age3" style="width:27%" title="30대 27%"></div>
-              <div class="seg seg-age4" style="width:10%" title="40+ 10%"></div>
+          <div class="db-label">매칭 결과 <span class="g-tag">G5</span></div>
+          <div class="mp-total">4개 비교 중 3개 통과</div>
+          <div class="match-passes-bar partial">
+            <div class="mpb-fill" style="width:75%"></div>
+          </div>
+          <div class="mp-passes-row partial with-sub">
+            <span class="mp-q">브랜드 적합성</span>
+            <span class="mp-dots"><span class="mp-dot on"></span><span class="mp-dot on"></span></span>
+            <span class="mp-frac">2/2</span>
+          </div>
+          <div class="mp-sub">톤·키워드가 트렌드와 맞는지</div>
+          <div class="mp-passes-row partial with-sub">
+            <span class="mp-q">타겟 적합성</span>
+            <span class="mp-dots"><span class="mp-dot on"></span><span class="mp-dot"></span></span>
+            <span class="mp-frac">1/2</span>
+          </div>
+          <div class="mp-sub">우리 고객층·라이프스타일이 트렌드와 맞는지</div>
+          <details class="eval-details">
+            <summary>어떻게 평가했나요?</summary>
+            <div class="ed-body">
+              <div class="ed-group">
+                <div class="ed-group-title">브랜드 적합성 (2개)</div>
+                <ul>
+                  <li>브랜드 톤앤매너 ↔ 트렌드 흐름</li>
+                  <li>브랜드 키워드·제형 ↔ 트렌드 키워드</li>
+                </ul>
+              </div>
+              <div class="ed-group">
+                <div class="ed-group-title">타겟 적합성 (2개)</div>
+                <ul>
+                  <li>우리 타겟 ↔ 트렌드 주 소비층</li>
+                  <li>우리 타겟 ↔ 트렌드 라이프스타일·동기</li>
+                </ul>
+              </div>
             </div>
-          </div>
-          <div class="stack-row">
-            <span class="stack-name">성별</span>
-            <div class="stack-bar">
-              <div class="seg seg-f" style="width:76%" title="여 76%"></div>
-              <div class="seg seg-m" style="width:24%" title="남 24%"></div>
-            </div>
-          </div>
-          <div class="stack-legend">
-            <span><i class="dot seg-age1"></i>10대</span>
-            <span><i class="dot seg-age2"></i>20대</span>
-            <span><i class="dot seg-age3"></i>30대</span>
-            <span><i class="dot seg-age4"></i>40+</span>
-            <span><i class="dot seg-f"></i>여</span>
-            <span><i class="dot seg-m"></i>남</span>
-          </div>
+          </details>
         </div>
 
         <div class="data-block">
-          <div class="db-label">타겟 오버랩 <span class="g-tag">G5</span></div>
-          <div class="gauge-row">
-            <span class="gauge-name">연령</span>
-            <div class="gauge-track">
-              <div class="threshold" style="left:60%"></div>
-              <div class="gauge-fill pass" style="width:76%"></div>
+          <div class="db-label">채널 현황</div>
+          <div class="channel-list">
+            <div class="channel-row">
+              <span class="ch-name"><span class="ch-dot active"></span>Instagram</span>
+              <span class="ch-status active">활성</span>
             </div>
-            <span class="gauge-val pass">76%</span>
-          </div>
-          <div class="gauge-row">
-            <span class="gauge-name">성별</span>
-            <div class="gauge-track">
-              <div class="threshold" style="left:60%"></div>
-              <div class="gauge-fill pass" style="width:76%"></div>
+            <div class="channel-row">
+              <span class="ch-name"><span class="ch-dot rising"></span>YouTube</span>
+              <span class="ch-status rising">부상</span>
             </div>
-            <span class="gauge-val pass">76%</span>
+            <div class="channel-row">
+              <span class="ch-name"><span class="ch-dot stable"></span>Pinterest</span>
+              <span class="ch-status stable">안정</span>
+            </div>
           </div>
-          <div class="threshold-note">60% 매칭 임계선</div>
         </div>
       </div>
 
@@ -809,52 +1017,60 @@
         </div>
 
         <div class="data-block">
-          <div class="db-label">고객층 분포 <span class="g-tag">G1</span></div>
-          <div class="stack-row">
-            <span class="stack-name">연령</span>
-            <div class="stack-bar">
-              <div class="seg seg-age1" style="width:3%"  title="10대 3%"></div>
-              <div class="seg seg-age2" style="width:28%" title="20대 28%"></div>
-              <div class="seg seg-age3" style="width:39%" title="30대 39%"></div>
-              <div class="seg seg-age4" style="width:30%" title="40+ 30%"></div>
+          <div class="db-label">매칭 결과 <span class="g-tag">G5</span></div>
+          <div class="mp-total">4개 비교 중 2개 통과 · 보조 트렌드</div>
+          <div class="match-passes-bar weak">
+            <div class="mpb-fill" style="width:50%"></div>
+          </div>
+          <div class="mp-passes-row weak with-sub">
+            <span class="mp-q">브랜드 적합성</span>
+            <span class="mp-dots"><span class="mp-dot on"></span><span class="mp-dot"></span></span>
+            <span class="mp-frac">1/2</span>
+          </div>
+          <div class="mp-sub">톤·키워드가 트렌드와 맞는지</div>
+          <div class="mp-passes-row weak with-sub">
+            <span class="mp-q">타겟 적합성</span>
+            <span class="mp-dots"><span class="mp-dot on"></span><span class="mp-dot"></span></span>
+            <span class="mp-frac">1/2</span>
+          </div>
+          <div class="mp-sub">우리 고객층·라이프스타일이 트렌드와 맞는지</div>
+          <details class="eval-details">
+            <summary>어떻게 평가했나요?</summary>
+            <div class="ed-body">
+              <div class="ed-group">
+                <div class="ed-group-title">브랜드 적합성 (2개)</div>
+                <ul>
+                  <li>브랜드 톤앤매너 ↔ 트렌드 흐름</li>
+                  <li>브랜드 키워드·제형 ↔ 트렌드 키워드</li>
+                </ul>
+              </div>
+              <div class="ed-group">
+                <div class="ed-group-title">타겟 적합성 (2개)</div>
+                <ul>
+                  <li>우리 타겟 ↔ 트렌드 주 소비층</li>
+                  <li>우리 타겟 ↔ 트렌드 라이프스타일·동기</li>
+                </ul>
+              </div>
             </div>
-          </div>
-          <div class="stack-row">
-            <span class="stack-name">성별</span>
-            <div class="stack-bar">
-              <div class="seg seg-f" style="width:65%" title="여 65%"></div>
-              <div class="seg seg-m" style="width:35%" title="남 35%"></div>
-            </div>
-          </div>
-          <div class="stack-legend">
-            <span><i class="dot seg-age1"></i>10대</span>
-            <span><i class="dot seg-age2"></i>20대</span>
-            <span><i class="dot seg-age3"></i>30대</span>
-            <span><i class="dot seg-age4"></i>40+</span>
-            <span><i class="dot seg-f"></i>여</span>
-            <span><i class="dot seg-m"></i>남</span>
-          </div>
+          </details>
         </div>
 
         <div class="data-block">
-          <div class="db-label">타겟 오버랩 <span class="g-tag">G5</span></div>
-          <div class="gauge-row">
-            <span class="gauge-name">연령</span>
-            <div class="gauge-track">
-              <div class="threshold" style="left:60%"></div>
-              <div class="gauge-fill warn" style="width:38%"></div>
+          <div class="db-label">채널 현황</div>
+          <div class="channel-list">
+            <div class="channel-row">
+              <span class="ch-name"><span class="ch-dot stable"></span>Instagram</span>
+              <span class="ch-status stable">안정</span>
             </div>
-            <span class="gauge-val warn">38%</span>
-          </div>
-          <div class="gauge-row">
-            <span class="gauge-name">성별</span>
-            <div class="gauge-track">
-              <div class="threshold" style="left:60%"></div>
-              <div class="gauge-fill pass" style="width:65%"></div>
+            <div class="channel-row">
+              <span class="ch-name"><span class="ch-dot rising"></span>메디컬 블로그</span>
+              <span class="ch-status rising">부상</span>
             </div>
-            <span class="gauge-val pass">65%</span>
+            <div class="channel-row">
+              <span class="ch-name"><span class="ch-dot decline"></span>TikTok</span>
+              <span class="ch-status decline">감소</span>
+            </div>
           </div>
-          <div class="threshold-note">60% 임계선 · 연령 ⚠️ 미달</div>
         </div>
       </div>
 
@@ -938,8 +1154,8 @@
               <div class="m-value" style="font-size:16px;">밀착</div>
             </div>
             <div class="metric">
-              <div class="m-label">권장 조합</div>
-              <div class="m-value" style="font-size:16px;">3–4 단계</div>
+              <div class="m-label">기간</div>
+              <div class="m-value" style="font-size:14px;">'26.01–05</div>
             </div>
           </div>
 
@@ -954,8 +1170,8 @@
           <div class="block">
             <div class="block-label"><span class="ico">📚</span> 수집 근거</div>
             <div class="src-list">
-              <div class="src-item"><span class="src-chip tavily">Tavily</span><span>트렌드 분석 (2026년) → 2026 뷰티 트렌드: 베이스는 완벽한 커버보다 피붓결만 정리한 얇은 레이어가 기준</span></div>
               <div class="src-item"><span class="src-chip naver">Naver DataLab</span><span>효능 키워드 (2026년 1분기) → 베이스 제품 리뷰: 밀착(효능 1위), 촉촉하게·수분·지속 등 얇으면서도 밀착력 있는 제품 선호</span></div>
+              <div class="src-item"><span class="src-chip tavily">Tavily</span><span>트렌드 분석 (2026년) → 2026 뷰티 트렌드: 베이스는 완벽한 커버보다 피붓결만 정리한 얇은 레이어가 기준</span></div>
               <div class="src-item"><span class="src-chip tavily">Tavily</span><span>콘텐츠 (2026년) → 20대 베이스 메이크업 가이드: 최소 3~4개 제품(스킨케어→프라이머→쿠션→파우더) 조합 권장</span></div>
             </div>
           </div>
@@ -978,7 +1194,7 @@
           <div class="rank-row">
             <span class="rank-badge r3">3순위</span>
             <span class="group-letter">C</span>
-            <span class="warn-note">⚠️ 보완 활용 권장</span>
+            <span class="warn-note">⚠️ 보조 트렌드</span>
           </div>
           <h3>웰니스 뷰티 기반의 스킨케어형 베이스</h3>
         </div>
@@ -990,8 +1206,8 @@
               <div class="m-value" style="font-size:14px;">PDRN · 펩타이드</div>
             </div>
             <div class="metric">
-              <div class="m-label">포지셔닝</div>
-              <div class="m-value" style="font-size:14px;">하이브리드</div>
+              <div class="m-label">기간</div>
+              <div class="m-value" style="font-size:14px;">'26.01–05</div>
             </div>
           </div>
 
@@ -1013,7 +1229,7 @@
           </div>
 
           <div class="block">
-            <div class="block-label"><span class="ico">🎯</span> 매칭이유 <span style="color:var(--warn); font-weight:700;">(오주연)</span></div>
+            <div class="block-label"><span class="ico">🎯</span> 매칭이유</div>
             <ul class="reason-list">
               <li>Z세대·트렌디 톤과 과학적·기능성 강조 트렌드 간 톤앤매너 충돌</li>
               <li>트렌드 키워드가 PDRN·펩타이드 등 성분 중심으로 학술적이어서 브랜드 제형 키워드와 무관</li>
@@ -1026,35 +1242,17 @@
 
     </div>
 
-    <!-- ====== Part III — Reference ====== -->
-    <div class="section-head">
-      <span class="section-badge">PART III</span>
-      <h2 class="section-title">Reference</h2>
-      <span class="section-desc">담당: 오주연 · 이미지 시안 영역</span>
+    <!-- ====== Funnel CTA → Funnel 2 (Reference) ====== -->
+    <div class="funnel-cta">
+      <a href="report-mockup-reference.html" target="_blank" rel="noopener">
+        레퍼런스 추출하기
+        <span class="cta-arrow">→</span>
+      </a>
     </div>
-
-    <div class="reference-card">
-      <div class="ref-grid">
-        <div class="ref-slot">
-          <span class="ref-tag">레퍼런스 시안 A</span>
-          <span class="ref-label">매트 쿠션의 부상</span>
-          <span class="ref-hint">추후 추가 예정</span>
-        </div>
-        <div class="ref-slot">
-          <span class="ref-tag">레퍼런스 시안 B</span>
-          <span class="ref-label">최소 레이어 베이스</span>
-          <span class="ref-hint">추후 추가 예정</span>
-        </div>
-        <div class="ref-slot">
-          <span class="ref-tag">레퍼런스 시안 C</span>
-          <span class="ref-label">스킨케어형 베이스</span>
-          <span class="ref-hint">추후 추가 예정</span>
-        </div>
-      </div>
-    </div>
+    <div class="funnel-step">Funnel 1 / 2 — 버튼 클릭 시 새 창에서 레퍼런스 시안을 확인합니다</div>
 
     <div class="footer">
-      Match Report v0.2 · Generated by Matching Agent · hince × 2026 Beauty Trend
+      Funnel 1/2 — Match Report v0.2 · hince × 2026 Beauty Trend
     </div>
 
   </div>
