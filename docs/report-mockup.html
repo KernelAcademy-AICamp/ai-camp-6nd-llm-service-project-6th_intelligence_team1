@@ -257,12 +257,27 @@
     line-height: 1.55;
   }
   .src-chip {
-    display: inline-flex; align-items: center;
+    display: inline-flex; align-items: center; gap: 4px;
     height: 22px; padding: 0 8px;
     border-radius: 6px;
     font-size: 11px; font-weight: 700; color: #fff;
     white-space: nowrap;
     align-self: flex-start;
+    text-decoration: none;
+    transition: opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+  }
+  .src-chip:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(20, 22, 35, 0.12);
+  }
+  .src-chip:visited { color: #fff; }
+  .src-chip::after {
+    content: '↗';
+    font-size: 10px;
+    opacity: 0.85;
+    margin-left: 1px;
   }
   .src-chip.naver { background: var(--chip-naver); }
   .src-chip.insta { background: var(--chip-insta); }
@@ -567,6 +582,33 @@
     text-align: center;
     font-size: 12px;
     color: var(--text-mute);
+  }
+
+  /* ===== Trend keywords (PART II 카드 제목 아래 칩) ===== */
+  /* 데이터 소스: trend-analysis.json의 trends[].keywords */
+  /* 매핑: 매칭가가 추천한 (rank 1·2·3) 트렌드의 keywords만 표시 */
+  .keyword-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+  }
+  .kw-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    background: var(--primary-soft);
+    color: var(--primary-deep);
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 999px;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+  }
+  .kw-chip::before {
+    content: '#';
+    opacity: 0.55;
+    margin-right: 1px;
   }
 
   /* ===== Match Passes (d) — replaces gauge area ===== */
@@ -1074,6 +1116,13 @@
             <span class="group-letter">A</span>
           </div>
           <h3>매트 쿠션의 부상</h3>
+          <div class="keyword-tags">
+            <span class="kw-chip">매트 쿠션</span>
+            <span class="kw-chip">세미매트</span>
+            <span class="kw-chip">결 살아있는</span>
+            <span class="kw-chip">라네즈 네오 쿠션</span>
+            <span class="kw-chip">자연 매트</span>
+          </div>
         </div>
         <div class="card-body">
 
@@ -1100,9 +1149,9 @@
           <div class="block">
             <div class="block-label"><span class="ico">📚</span> 수집 근거</div>
             <div class="src-list">
-              <div class="src-item"><span class="src-chip naver">Naver Datalab</span><span>검색량 지수 (2026-01 ~ 2026-05) → 매트쿠션 47.4 (5월), 커버쿠션·세미매트쿠션 함께 트렌드</span></div>
-              <div class="src-item"><span class="src-chip insta">Instagram</span><span>관련 콘텐츠 (최근 30일) → 라네즈 네오 쿠션 더 매트, 어바웃톤 디자인 멀티 팔레트 등 신상품 언급 다수</span></div>
-              <div class="src-item"><span class="src-chip tavily">Tavily</span><span>업계 분석 (2026년) → 2026 뷰티 트렌드 보고서에서 '매트와 글로의 대비'를 메이크업의 새로운 균형으로 명시</span></div>
+              <div class="src-item"><a class="src-chip naver" href="https://datalab.naver.com/" target="_blank" rel="noopener noreferrer">Naver Datalab</a><span>검색량 지수 (2026-01 ~ 2026-05) → 매트쿠션 47.4 (5월), 커버쿠션·세미매트쿠션 함께 트렌드</span></div>
+              <div class="src-item"><a class="src-chip insta" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">Instagram</a><span>관련 콘텐츠 (최근 30일) → 라네즈 네오 쿠션 더 매트, 어바웃톤 디자인 멀티 팔레트 등 신상품 언급 다수</span></div>
+              <div class="src-item"><a class="src-chip tavily" href="https://tavily.com/" target="_blank" rel="noopener noreferrer">Tavily</a><span>업계 분석 (2026년) → 2026 뷰티 트렌드 보고서에서 '매트와 글로의 대비'를 메이크업의 새로운 균형으로 명시</span></div>
             </div>
           </div>
 
@@ -1126,6 +1175,13 @@
             <span class="group-letter">B</span>
           </div>
           <h3>최소 레이어 베이스의 '얇고 정밀한' 철학</h3>
+          <div class="keyword-tags">
+            <span class="kw-chip">밀착</span>
+            <span class="kw-chip">최소 레이어</span>
+            <span class="kw-chip">얇은 레이어</span>
+            <span class="kw-chip">피붓결 정리</span>
+            <span class="kw-chip">미니멀 베이스</span>
+          </div>
         </div>
         <div class="card-body">
 
@@ -1151,9 +1207,9 @@
           <div class="block">
             <div class="block-label"><span class="ico">📚</span> 수집 근거</div>
             <div class="src-list">
-              <div class="src-item"><span class="src-chip naver">Naver DataLab</span><span>효능 키워드 (2026년 1분기) → 베이스 제품 리뷰: 밀착(효능 1위), 촉촉하게·수분·지속 등 얇으면서도 밀착력 있는 제품 선호</span></div>
-              <div class="src-item"><span class="src-chip tavily">Tavily</span><span>트렌드 분석 (2026년) → 2026 뷰티 트렌드: 베이스는 완벽한 커버보다 피붓결만 정리한 얇은 레이어가 기준</span></div>
-              <div class="src-item"><span class="src-chip tavily">Tavily</span><span>콘텐츠 (2026년) → 20대 베이스 메이크업 가이드: 최소 3~4개 제품(스킨케어→프라이머→쿠션→파우더) 조합 권장</span></div>
+              <div class="src-item"><a class="src-chip naver" href="https://datalab.naver.com/" target="_blank" rel="noopener noreferrer">Naver DataLab</a><span>효능 키워드 (2026년 1분기) → 베이스 제품 리뷰: 밀착(효능 1위), 촉촉하게·수분·지속 등 얇으면서도 밀착력 있는 제품 선호</span></div>
+              <div class="src-item"><a class="src-chip tavily" href="https://tavily.com/" target="_blank" rel="noopener noreferrer">Tavily</a><span>트렌드 분석 (2026년) → 2026 뷰티 트렌드: 베이스는 완벽한 커버보다 피붓결만 정리한 얇은 레이어가 기준</span></div>
+              <div class="src-item"><a class="src-chip tavily" href="https://tavily.com/" target="_blank" rel="noopener noreferrer">Tavily</a><span>콘텐츠 (2026년) → 20대 베이스 메이크업 가이드: 최소 3~4개 제품(스킨케어→프라이머→쿠션→파우더) 조합 권장</span></div>
             </div>
           </div>
 
@@ -1178,6 +1234,13 @@
             <span class="warn-note">⚠️ 보조 트렌드</span>
           </div>
           <h3>웰니스 뷰티 기반의 스킨케어형 베이스</h3>
+          <div class="keyword-tags">
+            <span class="kw-chip">PDRN</span>
+            <span class="kw-chip">펩타이드</span>
+            <span class="kw-chip">세럼 프라이머</span>
+            <span class="kw-chip">하이브리드 포뮬러</span>
+            <span class="kw-chip">피부 회복</span>
+          </div>
         </div>
         <div class="card-body">
 
@@ -1204,8 +1267,8 @@
           <div class="block">
             <div class="block-label"><span class="ico">📚</span> 수집 근거</div>
             <div class="src-list">
-              <div class="src-item"><span class="src-chip tavily">Tavily</span><span>트렌드 분석 (2026년) → 2026 뷰티 트렌드 분석: 파운데이션·쿠션에 스킨케어 성분 담는 흐름이 기본화, 세럼 프라이머·PDRN 베이스 등 하이브리드 포뮬러 증가</span></div>
-              <div class="src-item"><span class="src-chip tavily">Tavily</span><span>성분 트렌드 (2026년) → PDRN, NAD, 펩타이드, 엑소좀 등 바이오 기술 성분이 핵심 축으로 부상, 세포 에너지 관점의 안티에이징 확장</span></div>
+              <div class="src-item"><a class="src-chip tavily" href="https://tavily.com/" target="_blank" rel="noopener noreferrer">Tavily</a><span>트렌드 분석 (2026년) → 2026 뷰티 트렌드 분석: 파운데이션·쿠션에 스킨케어 성분 담는 흐름이 기본화, 세럼 프라이머·PDRN 베이스 등 하이브리드 포뮬러 증가</span></div>
+              <div class="src-item"><a class="src-chip tavily" href="https://tavily.com/" target="_blank" rel="noopener noreferrer">Tavily</a><span>성분 트렌드 (2026년) → PDRN, NAD, 펩타이드, 엑소좀 등 바이오 기술 성분이 핵심 축으로 부상, 세포 에너지 관점의 안티에이징 확장</span></div>
             </div>
           </div>
 
