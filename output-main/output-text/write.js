@@ -27,6 +27,25 @@ function unwrap(json) {
   return json?.data ?? json;
 }
 
+// 매칭가 summary_reasons 호환 처리:
+//   - 신형(객체): { category, fact, source } → 두 가지 형식으로 변환
+//   - 구형(문자열): 그대로 사용 (하위 호환)
+//
+// formatReason: 마크다운 리포트 불릿용. "**카테고리** — fact" 형식.
+// reasonText:   UI JSON 카피용. 평문 fact만.
+function formatReason(r) {
+  if (r == null) return "";
+  if (typeof r === "string") return r;
+  const cat = r.category ? `**${r.category}** — ` : "";
+  return cat + (r.fact ?? "");
+}
+
+function reasonText(r) {
+  if (r == null) return "";
+  if (typeof r === "string") return r;
+  return r.fact ?? "";
+}
+
 // 타겟 표시: "20대 여성 · Z세대·트렌디" 형식
 // - 연령·성별은 공백으로 묶고, 톤앤매너만 점으로 구분
 function formatTarget(data) {
@@ -162,7 +181,7 @@ export function generateReport({ brand, trend, match } = {}) {
     lines.push("");
 
     lines.push(`**🎯 매칭이유 (오주연)**${rankSuffix}`);
-    (r.summary_reasons ?? []).forEach((s) => lines.push(`- ${s}`));
+    (r.summary_reasons ?? []).forEach((s) => lines.push(`- ${formatReason(s)}`));
     lines.push("");
 
     if (i < top.length - 1) {
@@ -240,10 +259,10 @@ export function generateWriterOutput({ brand, trend, match } = {}) {
     return {
       content_id: id,
       trend_name: r.trend_name,
-      concept: td?.meaning ?? "",                  // 트렌드의 의미 → 콘셉트
-      headline: td?.summary ?? r.trend_name,        // 트렌드 요약 → 헤드라인
-      body_copy: reasons[0] ?? "",                  // 매칭이유 1 → 본문
-      key_message: reasons[1] ?? reasons[0] ?? "",  // 매칭이유 2 → 핵심 메시지
+      concept: td?.meaning ?? "",                       // 트렌드의 의미 → 콘셉트
+      headline: td?.summary ?? r.trend_name,             // 트렌드 요약 → 헤드라인
+      body_copy: reasonText(reasons[0]),                 // 매칭이유 1 (fact 평문) → 본문
+      key_message: reasonText(reasons[1] ?? reasons[0]), // 매칭이유 2 → 핵심 메시지
       channel: primaryChannel,
       mood: tone,
       format_hint: deriveFormatHint(primaryChannel),
