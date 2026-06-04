@@ -1290,14 +1290,13 @@
     <div class="section-head">
       <span class="section-badge data">📊 DATA</span>
       <h2 class="section-title">정량 분석</h2>
-      <span class="section-desc">점수 · 성장률 · 매칭 결과 · 채널 현황</span>
+      <span class="section-desc">점수 · 성장률 · 매칭 결과 · 채널별 현황</span>
     </div>
 
     <!-- Graph 3 — Trend score comparison -->
     <div class="compare-card">
       <div class="db-head">
         트렌드 점수 비교
-        <span class="g-tag">G3</span>
       </div>
       <div class="compare-list">
         <div class="compare-row">
@@ -1342,7 +1341,7 @@
         </div>
 
         <div class="data-block">
-          <div class="db-label">점수 · 성장률 <span class="g-tag">G2</span></div>
+          <div class="db-label">점수 · 성장률</div>
           <div class="score-row">
             <div class="big-score">
               <div class="m-label">매칭 점수</div>
@@ -1357,7 +1356,7 @@
         </div>
 
         <div class="data-block">
-          <div class="db-label">매칭 결과 <span class="g-tag">G5</span></div>
+          <div class="db-label">매칭 결과</div>
           <div class="mp-total">4개 비교 중 4개 통과</div>
           <div class="match-passes-bar strong">
             <div class="mpb-fill" style="width:100%"></div>
@@ -1396,7 +1395,7 @@
         </div>
 
         <div class="data-block">
-          <div class="db-label">채널 현황</div>
+          <div class="db-label">채널별 현황</div>
           <div class="channel-list">
             <div class="channel-row">
               <span class="ch-name"><span class="ch-dot active"></span>Instagram</span>
@@ -1423,7 +1422,7 @@
         </div>
 
         <div class="data-block">
-          <div class="db-label">점수 · 성장률 <span class="g-tag">G2</span></div>
+          <div class="db-label">점수 · 성장률</div>
           <div class="score-row">
             <div class="big-score">
               <div class="m-label">매칭 점수</div>
@@ -1438,7 +1437,7 @@
         </div>
 
         <div class="data-block">
-          <div class="db-label">매칭 결과 <span class="g-tag">G5</span></div>
+          <div class="db-label">매칭 결과</div>
           <div class="mp-total">4개 비교 중 3개 통과</div>
           <div class="match-passes-bar partial">
             <div class="mpb-fill" style="width:75%"></div>
@@ -1477,7 +1476,7 @@
         </div>
 
         <div class="data-block">
-          <div class="db-label">채널 현황</div>
+          <div class="db-label">채널별 현황</div>
           <div class="channel-list">
             <div class="channel-row">
               <span class="ch-name"><span class="ch-dot active"></span>Instagram</span>
@@ -1504,7 +1503,7 @@
         </div>
 
         <div class="data-block">
-          <div class="db-label">점수 · 성장률 <span class="g-tag">G2</span></div>
+          <div class="db-label">점수 · 성장률</div>
           <div class="score-row">
             <div class="big-score">
               <div class="m-label">매칭 점수</div>
@@ -1519,7 +1518,7 @@
         </div>
 
         <div class="data-block">
-          <div class="db-label">매칭 결과 <span class="g-tag">G5</span></div>
+          <div class="db-label">매칭 결과</div>
           <div class="mp-total">4개 비교 중 2개 통과 · 보조 트렌드</div>
           <div class="match-passes-bar weak">
             <div class="mpb-fill" style="width:50%"></div>
@@ -1558,7 +1557,7 @@
         </div>
 
         <div class="data-block">
-          <div class="db-label">채널 현황</div>
+          <div class="db-label">채널별 현황</div>
           <div class="channel-list">
             <div class="channel-row">
               <span class="ch-name"><span class="ch-dot stable"></span>Instagram</span>
@@ -1793,6 +1792,293 @@
       });
       helpClose.addEventListener('click', closeHelp);
       helpBackdrop.addEventListener('click', closeHelp);
+    })();
+  </script>
+
+  <script>
+    // ===== writer-output.json 데이터 바인딩 =====
+    // 작성가 산출물(output-main/output-text/writer-output.json)을 읽어 화면을 채움.
+    // fetch는 HTTP 프로토콜에서만 동작 (file:// 은 CORS로 막힘).
+    // 로드 실패 시 하드코딩된 화면 그대로 유지.
+    (async function bindReportData() {
+      const candidates = [
+        '../output-main/output-text/writer-output.json',
+        '/output-main/output-text/writer-output.json',
+      ];
+
+      let data = null;
+      for (const path of candidates) {
+        try {
+          const res = await fetch(path);
+          if (res.ok) {
+            const json = await res.json();
+            data = json.data;
+            console.log(`[mockup] writer-output.json 로드 성공: ${path}`);
+            break;
+          }
+        } catch (e) { /* try next */ }
+      }
+
+      if (!data) {
+        console.warn(
+          '[mockup] writer-output.json 로드 실패. 하드코딩 화면 유지.\n' +
+          '👉 HTTP 서버로 띄워서 보세요:\n' +
+          '   cd <프로젝트 루트>\n' +
+          '   python3 -m http.server 8000\n' +
+          '   → http://localhost:8000/docs/report-mockup.html'
+        );
+        return;
+      }
+
+      // ===== 헬퍼 =====
+      const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+
+      const letterOf = (i) => ['A', 'B', 'C', 'D', 'E', 'F'][i] ?? String(i + 1);
+      const compareRankClass = (i) => (i === 0 ? 'r1' : i === 1 ? 'r2' : 'r3');
+      const miniBarRankClass = (i) => (i === 0 ? 'r1' : i === 1 ? 'r2' : 'r3');
+      const rankBadgeExtra = (i) => (i === 0 ? '' : i === 1 ? ' r2' : ' r3');
+
+      // growth_rate 0.22 → "+22"
+      const fmtGrowth = (g) => {
+        const n = typeof g === 'number' ? g : parseFloat(g) || 0;
+        const pct = Math.round(n * 100);
+        return (pct >= 0 ? '+' : '') + pct;
+      };
+
+      // "2026-01 ~ 2026-05" → "'26.01–05"
+      const fmtPeriod = (p) => {
+        if (!p) return '';
+        const m = String(p).match(/(\d{4})-(\d{2})\s*~\s*\d{4}-(\d{2})/);
+        return m ? `'${m[1].slice(2)}.${m[2]}–${m[3]}` : p;
+      };
+
+      // source enum → src-chip CSS 클래스 매핑 (현재 mockup 컬러 칩)
+      const SRC_CLASS = {
+        naver_datalab: 'naver',
+        tavily: 'tavily',
+        instagram: 'insta',
+        youtube: 'youtube',
+      };
+
+      // q1·q2 점 indicator (passed개 중 on, 나머지 off)
+      const dots = (passed, total = 2) =>
+        Array.from({ length: total }, (_, k) =>
+          `<span class="mp-dot${k < passed ? ' on' : ''}"></span>`
+        ).join('');
+
+      // ===== 헤더 =====
+      const titleEl = document.querySelector('.report-title');
+      if (titleEl) titleEl.textContent = `${data.brand.name} — 캠페인 트렌드 매칭 리포트`;
+
+      const metaRow = document.querySelector('.meta-row');
+      if (metaRow) {
+        metaRow.innerHTML = `
+          <div class="meta-chip"><span class="dot"></span><strong>제품</strong> ${esc(data.brand.product_name)}</div>
+          <div class="meta-chip"><span class="dot" style="background:var(--accent-pink)"></span><strong>카테고리</strong> ${esc(data.brand.category)}</div>
+          <div class="meta-chip"><span class="dot" style="background:#1FAF6A"></span><strong>타겟</strong> ${esc(data.brand.target_display)}</div>
+        `;
+      }
+
+      const contents = data.contents ?? [];
+
+      // ===== PART I — Trend Summary =====
+      const summaryList = document.querySelector('.summary-list');
+      if (summaryList) {
+        summaryList.innerHTML = contents.map((c, i) => `
+          <div class="summary-item">
+            <div class="summary-letter">${letterOf(i)}</div>
+            <div class="summary-text">
+              <p class="summary-title">${esc(c.trend_name)}</p>
+              <p class="summary-body">${esc(c.summary_bullets?.[0] ?? c.trend_name)}</p>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // ===== G3 — 트렌드 점수 비교 =====
+      const compareList = document.querySelector('.compare-list');
+      if (compareList) {
+        compareList.innerHTML = contents.map((c, i) => {
+          // 매칭 점수 = [트렌드-브랜드] 매칭 통과 수(0~4) × 25 = 0~100
+          const score = Math.round(((c.match_passes?.total ?? 0) / 4) * 100);
+          return `
+            <div class="compare-row">
+              <div class="compare-label">
+                <span class="group-letter">${letterOf(i)}</span>
+                <span class="compare-name">${esc(c.trend_name)}</span>
+              </div>
+              <div class="compare-bar-track">
+                <div class="compare-bar-fill ${compareRankClass(i)}" style="width: ${score}%;"><span>${score}</span></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // ===== 데이터 카드 (G2 + G5 + 채널) =====
+      const dataGrid = document.querySelector('.data-grid');
+      if (dataGrid) {
+        dataGrid.innerHTML = contents.map((c, i) => {
+          // 매칭 점수 = [트렌드-브랜드] 매칭 통과 수(0~4) × 25 = 0~100
+          const score = Math.round(((c.match_passes?.total ?? 0) / 4) * 100);
+          const growth = fmtGrowth(c.metrics?.growth_rate);
+          const cardWarn = c.match_strength === 'weak' ? ' warn' : '';
+          const strength = c.match_strength ?? 'partial';
+          const total = c.match_passes?.total ?? 0;
+          const fillW = (total / 4) * 100;
+          const q1 = c.match_passes?.q1 ?? 0;
+          const q2 = c.match_passes?.q2 ?? 0;
+          const totalText = `4개 비교 중 ${total}개 통과${c.display_variant === 'supplementary' ? ' · 보조 트렌드' : ''}`;
+
+          const channelsHtml = (c.channels ?? []).map((ch) => `
+            <div class="channel-row">
+              <span class="ch-name"><span class="ch-dot"></span>${esc(ch.name)}</span>
+              <span class="ch-status">${esc(ch.status)}</span>
+            </div>
+          `).join('');
+
+          return `
+            <div class="data-card${cardWarn}">
+              <div class="data-card-head">
+                <span class="group-letter">${letterOf(i)}</span>
+                <span class="data-card-name">${esc(c.trend_name)}</span>
+                <span class="rank-badge${rankBadgeExtra(i)}">${c.rank}순위</span>
+              </div>
+
+              <div class="data-block">
+                <div class="db-label">점수 · 성장률</div>
+                <div class="score-row">
+                  <div class="big-score">
+                    <div class="m-label">매칭 점수</div>
+                    <div class="m-value-xl">${score}</div>
+                  </div>
+                  <div class="growth-pill up">
+                    <span><span class="arrow">▲</span>${growth}%</span>
+                    <span class="growth-sub">3개월</span>
+                  </div>
+                </div>
+                <div class="mini-bar"><div class="mini-bar-fill ${miniBarRankClass(i)}" style="width:${score}%"></div></div>
+              </div>
+
+              <div class="data-block">
+                <div class="db-label">매칭 결과</div>
+                <div class="mp-total">${esc(totalText)}</div>
+                <div class="match-passes-bar ${strength}">
+                  <div class="mpb-fill" style="width:${fillW}%"></div>
+                </div>
+                <div class="mp-passes-row ${strength} with-sub">
+                  <span class="mp-q">브랜드 적합성</span>
+                  <span class="mp-dots">${dots(q1)}</span>
+                  <span class="mp-frac">${q1}/2</span>
+                </div>
+                <div class="mp-sub">톤·키워드가 트렌드와 맞는지</div>
+                <div class="mp-passes-row ${strength} with-sub">
+                  <span class="mp-q">타겟 적합성</span>
+                  <span class="mp-dots">${dots(q2)}</span>
+                  <span class="mp-frac">${q2}/2</span>
+                </div>
+                <div class="mp-sub">우리 고객층·라이프스타일이 트렌드와 맞는지</div>
+                <details class="eval-details">
+                  <summary>어떻게 평가했나요?</summary>
+                  <div class="ed-body">
+                    <div class="ed-group">
+                      <div class="ed-group-title">브랜드 적합성 (2개)</div>
+                      <ul>
+                        <li>브랜드 톤앤매너 ↔ 트렌드 흐름</li>
+                        <li>브랜드 키워드·제형 ↔ 트렌드 키워드</li>
+                      </ul>
+                    </div>
+                    <div class="ed-group">
+                      <div class="ed-group-title">타겟 적합성 (2개)</div>
+                      <ul>
+                        <li>우리 타겟 ↔ 트렌드 주 소비층</li>
+                        <li>우리 타겟 ↔ 트렌드 라이프스타일·동기</li>
+                      </ul>
+                    </div>
+                  </div>
+                </details>
+              </div>
+
+              <div class="data-block">
+                <div class="db-label">채널별 현황</div>
+                <div class="channel-list">${channelsHtml}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // ===== PART II — 트렌드 카드 =====
+      const trendGrid = document.querySelector('.trend-grid');
+      if (trendGrid) {
+        trendGrid.innerHTML = contents.map((c, i) => {
+          const cardWarn = c.display_variant === 'supplementary' ? ' warn' : '';
+          const warnNote = c.display_variant === 'supplementary'
+            ? ' <span class="warn-note">⚠️ 보조 트렌드</span>' : '';
+
+          const keywordChips = (c.keywords ?? []).map((k) =>
+            `<span class="kw-chip">${esc(k)}</span>`).join('');
+
+          const hm = c.headline_metric ?? {};
+          const periodShort = fmtPeriod(c.metrics?.period);
+
+          const summaryBullets = (c.summary_bullets ?? []).map((b) => `<li>${esc(b)}</li>`).join('');
+          const reasonBullets = (c.reason_bullets ?? []).map((b) => `<li>${esc(b)}</li>`).join('');
+
+          const evidenceHtml = (c.evidence ?? []).map((e) => {
+            const cls = SRC_CLASS[e.source] || '';
+            const chip = e.url
+              ? `<a class="src-chip ${cls}" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">${esc(e.label)}</a>`
+              : `<span class="src-chip ${cls}">${esc(e.label)}</span>`;
+            return `<div class="src-item">${chip}<span>${esc(e.description)}</span></div>`;
+          }).join('');
+
+          return `
+            <div class="trend-card${cardWarn}">
+              <div class="card-top">
+                <div class="rank-row">
+                  <span class="rank-badge${rankBadgeExtra(i)}">${c.rank}순위</span>
+                  <span class="group-letter">${letterOf(i)}</span>
+                  ${warnNote}
+                </div>
+                <h3>${esc(c.trend_name)}</h3>
+                <div class="keyword-tags">${keywordChips}</div>
+              </div>
+              <div class="card-body">
+
+                <div class="metric-strip">
+                  <div class="metric">
+                    <div class="m-label">${esc(hm.metric ?? '')}</div>
+                    <div class="m-value">${esc(hm.value ?? '')}${hm.delta ? `<span class="m-delta">${esc(hm.delta)}</span>` : ''}</div>
+                  </div>
+                  <div class="metric">
+                    <div class="m-label">기간</div>
+                    <div class="m-value" style="font-size:14px;">${esc(periodShort)}</div>
+                  </div>
+                </div>
+
+                <div class="block">
+                  <div class="block-label"><span class="ico">📊</span> 유행현황 (Status)</div>
+                  <ul class="reason-list">${summaryBullets}</ul>
+                </div>
+
+                <div class="block">
+                  <div class="block-label"><span class="ico">📚</span> 수집 근거</div>
+                  <div class="src-list">${evidenceHtml}</div>
+                </div>
+
+                <div class="block">
+                  <div class="block-label"><span class="ico">🎯</span> 매칭이유</div>
+                  <ul class="reason-list">${reasonBullets}</ul>
+                </div>
+
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
     })();
   </script>
 </body>
