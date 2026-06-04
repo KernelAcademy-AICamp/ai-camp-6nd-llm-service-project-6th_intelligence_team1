@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { LlmMatchDataSchema, InputBrandSchema, InputTrendSchema, ConflictCheckSchema } from "./schemas.js";
+import { computeIngredFit } from "./embedIngredFit.js";
 import { wrap, wrapError } from "../../shared/envelope.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -93,9 +94,9 @@ const STATUS_SAFE_FIT = {
   declining: { result: "❌", reason: "트렌드 하락 중 (declining) — 이미 식는 트렌드" },
 };
 
-function assembleEvaluation(llmEval, trendData) {
+function assembleEvaluation(llmEval, trendData, ingredOverride) {
   const fits = {
-    ingred_fit: llmEval.ingred_fit,
+    ingred_fit: ingredOverride ?? llmEval.ingred_fit,
     visual_fit: llmEval.visual_fit,
     life_fit: llmEval.life_fit,
     safe_fit: llmEval.safe_fit,
@@ -309,7 +310,19 @@ ${JSON.stringify(passedTrendInput, null, 2)}
 
 score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
 
-// 5. Claude API 호출 — 통과 트렌드가 있을 때만. LLM은 data 본체만 생성.
+// 5. Ingred-Fit 임베딩 사전 계산 — LLM 호출 전 features ↔ keywords 유사도 판정
+const brandFeatures = brandAnalysis.data.product_features ?? [];
+const ingredOverrides = new Map();
+if (brandFeatures.length > 0 && passedTrends.length > 0) {
+  console.log("Ingred-Fit 임베딩 계산 중...");
+  for (const t of passedTrends) {
+    const keywords = t.keywords ?? t.core_keywords ?? [];
+    const fit = await computeIngredFit(brandFeatures, keywords);
+    if (fit) ingredOverrides.set(t.trend_name, fit);
+  }
+}
+
+// 6. Claude API 호출 — 통과 트렌드가 있을 때만. LLM은 data 본체만 생성.
 let llmEvaluations = [];
 let usage = null;
 let elapsed = "0.0";
@@ -378,7 +391,9 @@ if (passedTrends.length > 0) {
 
   // LLM 정성 판정(4기준) + 코드 계산(score·verdict)을 조립.
   const passedTrendByName = new Map(passedTrends.map((t) => [t.trend_name, t]));
-  llmEvaluations = dedupedEvals.map((le) => assembleEvaluation(le, passedTrendByName.get(le.trend_name)));
+  llmEvaluations = dedupedEvals.map((le) =>
+    assembleEvaluation(le, passedTrendByName.get(le.trend_name), ingredOverrides.get(le.trend_name))
+  );
   usage = response.usage;
   modelName = response.model;
 } else {
