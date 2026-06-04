@@ -72,6 +72,8 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
       "headline_metric": { "metric": "검색량 지수", "value": "89", "delta": "+45% vs 전월" },
       "meaning": "트렌드의 의미 (2~3문장)",
       "status": "현황 (2~3문장, 수치 포함)",
+      "trend_stage": "peak",
+      "lifespan_estimate": "3-6개월",
       "metrics": { "score": 89, "growth_rate": 0.45, "period": "2026-04 ~ 2026-05" },
       "evidence": [
         { "source": "YouTube", "source_type": "sns_api", "metric": "관련 영상 다수", "value": "무드 메이크업 튜토리얼 다수 관측", "period": "최근 30일" }
@@ -83,6 +85,7 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
         "age_ratio": { "10s": 0.07, "20s": 0.42, "30s": 0.31, "40s": 0.14, "50s+": 0.06 },
         "source": "brand_context 기반 추정"
       },
+      "audience_signal": "여름철 피지·번들거림에 민감한 20-30대 직장인 여성, 데일리 메이크업 지속력을 중시",
       "media_channel_status": [
         { "media_channel": "YouTube", "status": "관련 튜토리얼 콘텐츠 다수" }
       ]
@@ -100,6 +103,9 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
 - **primary_gender**: female / male / all 중 하나
 - **primary_age**: "10s","20s","30s","40s","50s+" 중 비중 높은 것
 - **metrics.score**: 0~100 정수, **metrics.growth_rate**: 소수(0.45 = 45% 상승)
+- **trend_stage**: "emerging"/"peak"/"declining" 중 하나. growth_rate·검색/조회 추세로 판정 — 급상승·신규 부상이면 "emerging", 높고 안정적이면 "peak", 둔화·하락이면 "declining". (서술형 status와 별개의 라벨 필드)
+- **lifespan_estimate**: "3개월 미만"/"3-6개월"/"6개월 이상" 중 하나. 트렌드 지속성 추정 — 일시적 챌린지·시즌성은 짧게, 구조적·라이프스타일 변화는 길게
+- **audience_signal**: 핵심 소비자를 행동·라이프스타일·니즈 중심으로 1~2문장 서술. 연령·성별 수치는 audience_distribution에 있으므로 여기선 행태 묘사 위주
 - 모든 자연어는 한국어
 - 검색·조회수 등 수치는 raw 데이터로 직접 관측되지 않으면 brand_context 기반으로 합리적 추정하되, source에 "추정" 명시
 - **출력은 순수 JSON 하나만.** 코드 블록 표시나 설명 텍스트 없이 JSON만.`;
