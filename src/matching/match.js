@@ -393,9 +393,10 @@ allEvaluations.sort((a, b) => {
 const nonExcluded = allEvaluations.filter((ev) => ev.matching_grade !== "제외");
 let topEvals = [...nonExcluded];
 
-// 충돌 체크 — 추천 트렌드 간 정반대 개념 쌍 감지 + 제거.
-if (topEvals.length >= 2) {
-  const conflictClient = new Anthropic();
+// 충돌 체크 — 충돌 없을 때까지 반복 (최대 5회).
+const MAX_CONFLICT_ROUNDS = 5;
+const conflictClient = new Anthropic();
+for (let round = 0; round < MAX_CONFLICT_ROUNDS && topEvals.length >= 2; round++) {
   const topCtx = topEvals.map((ev) => {
     const t = allTrendByName.get(ev.trend_name);
     return { trend_name: ev.trend_name, keywords: t?.keywords ?? t?.core_keywords ?? [], summary: t?.summary ?? "" };
@@ -423,8 +424,10 @@ ${JSON.stringify(topCtx, null, 2)}
 
   const cd = conflictRes.parsed_output;
   if (cd?.has_conflict && cd.remove) {
-    console.log(`⚠️ 방향성 충돌 감지 — '${cd.remove}' 제거: ${cd.reason}`);
+    console.log(`⚠️ 방향성 충돌 감지 (${round + 1}회) — '${cd.remove}' 제거: ${cd.reason}`);
     topEvals = topEvals.filter((ev) => ev.trend_name !== cd.remove);
+  } else {
+    break;
   }
 }
 
