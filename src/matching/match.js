@@ -86,13 +86,30 @@ function filterVagueReasons(reasons) {
   return kept.length > 0 ? kept : reasons;
 }
 
-function assembleEvaluation(llmEval) {
+// status → Safe-Fit result 매핑
+const STATUS_SAFE_FIT = {
+  emerging: { result: "✅", reason: "트렌드 성장 중 (emerging) — 브랜드 격 손상 위험 낮음" },
+  peak:     { result: "⚠️", reason: "트렌드 정점 (peak) — 곧 하락 가능, 단기 캠페인 적합" },
+  declining: { result: "❌", reason: "트렌드 하락 중 (declining) — 이미 식는 트렌드" },
+};
+
+function assembleEvaluation(llmEval, trendData) {
   const fits = {
     ingred_fit: llmEval.ingred_fit,
     visual_fit: llmEval.visual_fit,
     life_fit: llmEval.life_fit,
     safe_fit: llmEval.safe_fit,
   };
+
+  // Safe-Fit 코드 보정: status 있으면 우선 적용, 둘 다 없으면 ⚠️ 강제
+  const status = trendData?.status;
+  const lifespan = trendData?.lifespan_estimate;
+  if (STATUS_SAFE_FIT[status]) {
+    fits.safe_fit = STATUS_SAFE_FIT[status];
+  } else if (!lifespan) {
+    fits.safe_fit = { result: "⚠️", reason: "트렌드 수명 정보 없음 — 지속 가능성 불확실" };
+  }
+
   const { score, matching_grade } = computeScoreAndGrade(fits);
   return {
     trend_name: llmEval.trend_name,
@@ -360,7 +377,8 @@ if (passedTrends.length > 0) {
   }
 
   // LLM 정성 판정(4기준) + 코드 계산(score·verdict)을 조립.
-  llmEvaluations = dedupedEvals.map((le) => assembleEvaluation(le));
+  const passedTrendByName = new Map(passedTrends.map((t) => [t.trend_name, t]));
+  llmEvaluations = dedupedEvals.map((le) => assembleEvaluation(le, passedTrendByName.get(le.trend_name)));
   usage = response.usage;
   modelName = response.model;
 } else {
