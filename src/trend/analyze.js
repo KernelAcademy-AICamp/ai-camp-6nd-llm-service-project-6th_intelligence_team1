@@ -76,7 +76,7 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
       "lifespan_estimate": "3-6개월",
       "metrics": { "score": 89, "growth_rate": 0.45, "period": "2026-04 ~ 2026-05" },
       "evidence": [
-        { "source": "YouTube", "source_type": "sns_api", "metric": "관련 영상 다수", "value": "무드 메이크업 튜토리얼 다수 관측", "period": "최근 30일" }
+        { "source": "YouTube", "source_type": "sns_api", "metric": "관련 영상 다수", "value": "무드 메이크업 튜토리얼 다수 관측", "period": "최근 30일", "source_ref": [12] }
       ],
       "audience_distribution": {
         "primary_gender": "female",
@@ -106,6 +106,7 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
 - **trend_stage**: "emerging"/"peak"/"declining" 중 하나. growth_rate·검색/조회 추세로 판정 — 급상승·신규 부상이면 "emerging", 높고 안정적이면 "peak", 둔화·하락이면 "declining". (서술형 status와 별개의 라벨 필드)
 - **lifespan_estimate**: "3개월 미만"/"3-6개월"/"6개월 이상" 중 하나. 트렌드 지속성 추정 — 일시적 챌린지·시즌성은 짧게, 구조적·라이프스타일 변화는 길게
 - **audience_signal**: 핵심 소비자를 행동·라이프스타일·니즈 중심으로 1~2문장 서술. 연령·성별 수치는 audience_distribution에 있으므로 여기선 행태 묘사 위주
+- **evidence[].source_ref**: 이 근거를 뒷받침하는 raw_data 항목의 id(위 "수집된 raw 데이터"의 id) 배열을 넣으세요. 실제로 관련된 id만, 최소 1개. **url은 직접 쓰지 마세요** — 코드가 source_ref로 실제 url을 채웁니다.
 - 모든 자연어는 한국어
 - 검색·조회수 등 수치는 raw 데이터로 직접 관측되지 않으면 brand_context 기반으로 합리적 추정하되, source에 "추정" 명시
 - **출력은 순수 JSON 하나만.** 코드 블록 표시나 설명 텍스트 없이 JSON만.`;
@@ -122,6 +123,9 @@ const brandProfile = {
 const targetCategory = brand.category ?? "";
 const targetTexture = (brand.texture_keywords ?? []).join(", ");
 
+// 각 raw 항목에 id 부여 — LLM은 evidence.source_ref로 id만 참조하고, 코드가 그 id로 실제 url을 채움
+const rawForPrompt = rawData.map((r, i) => ({ id: i, ...r }));
+
 const userMessage = `다음 수집 데이터를 분석해서, 이 브랜드/제품에 맞는 트렌드를 산출하세요.
 
 ## 브랜드 프로필 (이 제품 기준으로 트렌드를 정렬·선별하세요)
@@ -136,7 +140,7 @@ ${JSON.stringify(brandContext, null, 2)}
 
 ## 수집된 raw 데이터 (${rawData.length}개)
 \`\`\`json
-${JSON.stringify(rawData, null, 2)}
+${JSON.stringify(rawForPrompt, null, 2)}
 \`\`\`
 
 위 데이터에서 근거가 뚜렷하고 서로 구별되는 트렌드를 최대한 많이 정제해 출력 형식대로 JSON으로 반환하세요.${
@@ -181,6 +185,17 @@ if (!Array.isArray(parsed.trends) || parsed.trends.length === 0) {
   console.error("❌ trends 배열이 비어있거나 형식이 잘못되었습니다.");
   writeOutput(wrapError("트렌드 분석가 LLM 출력에 trends 배열 없음"));
   process.exit(1);
+}
+
+// 6.5 evidence의 url을 수집 raw의 실제 url로 결정론적으로 채움
+//     (LLM이 URL을 지어내지 않도록 source_ref(id)로 매핑)
+for (const t of parsed.trends) {
+  for (const e of (t.evidence ?? [])) {
+    const refs = Array.isArray(e.source_ref) ? e.source_ref : (e.source_ref != null ? [e.source_ref] : []);
+    const hit = refs.map((i) => rawData[i]).find((r) => r && r.url);
+    e.url = hit ? hit.url : null;           // 실제 수집 url (근거 없으면 null)
+    if (hit && !e.source) e.source = hit.source;
+  }
 }
 
 // 7. 메타데이터 추가 + envelope wrap (source·analyzed_at·trend_count는 코드가 부여)
