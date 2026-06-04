@@ -269,6 +269,13 @@ function deriveStrength(grade) {
   return "weak";
 }
 
+// 4기준 fit 객체에서 result·reason만 발췌. 매칭가가 gap/solution을 더 이상
+// 출력하지 않더라도 같은 처리 — 작성가는 둘 다 안 씀.
+function slimFit(f) {
+  if (!f) return null;
+  return { result: f.result, reason: f.reason };
+}
+
 // 4기준(ingred·visual·life·safe) result → 옛 question_1/question_2 passes 호환 매핑.
 // q1=브랜드 적합성(ingred+visual), q2=타겟·격 적합성(life+safe). 4점 만점에서 0/1/2로 압축.
 const FIT_POINT = { "✅": 2, "⚠️": 1, "❌": 0 };
@@ -346,12 +353,12 @@ export function generateWriterOutput({ brand, trend, match } = {}) {
       // 옛 UI 호환: 4기준을 2질문(passes 0/1/2)으로 압축
       match_passes: legacyPasses(fits),
       match_strength: deriveStrength(ev?.matching_grade),
-      // 신 UI용: 4기준 result + reason + gap + solution 그대로 노출
+      // 신 UI용: 4기준 result + reason만 노출. gap/solution은 작성가가 안 씀.
       match_fits: {
-        ingred: fits.ingred_fit ?? null,
-        visual: fits.visual_fit ?? null,
-        life: fits.life_fit ?? null,
-        safe: fits.safe_fit ?? null,
+        ingred: slimFit(fits.ingred_fit),
+        visual: slimFit(fits.visual_fit),
+        life: slimFit(fits.life_fit),
+        safe: slimFit(fits.safe_fit),
         score: ev?.score ?? 0, // 0-8
       },
     };
