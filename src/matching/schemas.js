@@ -60,6 +60,11 @@ export const InputBrandSchema = z
         product_features: z.array(z.string().min(1)).min(1).optional(),
         // 선택: 있으면 Visual-Fit이 매체 매칭 강도 ↑.
         media_channels: z.array(z.string().min(1)).min(1).optional(),
+        // 캠페인 정보 (선택) — 작성가가 카피 생성에 활용. 매칭가는 사용하지 않음.
+        campaign_kpi: z.enum(["신제품 런칭", "시즌 프로모션", "재구매 유도"]).optional(),
+        primary_channels: z.array(z.string().min(1)).optional(),
+        campaign_period: z.enum(["1주", "한달", "3개월", "1년"]).optional(),
+        budget: z.enum(["200만원 미만", "200~500만원", "500~1000만원", "1000만원 초과"]).optional(),
       })
       .passthrough(),
   })
@@ -95,13 +100,9 @@ export const InputTrendSchema = z
 
 // ─── 출력 스키마 ────────────────────────────────────────────────────
 
-// 4기준 단일 결과. ⚠️/❌일 때 gap·solution(컨설팅 제안)을 LLM이 작성.
-// ✅이면 갭 없으므로 gap·solution 생략 또는 null.
 const FitResultSchema = z.object({
   result: z.enum(["✅", "⚠️", "❌"]),
   reason: z.string(),
-  gap: z.string().nullable().optional(), // 어디서 어긋나는지 (⚠️/❌일 때)
-  solution: z.string().nullable().optional(), // 갭을 메우는 액션 (⚠️/❌일 때)
 });
 
 // 데이터 근거 — 입력에서 직접 확인 가능한 사실 + 출처만. 정성 판단은 제외.
@@ -126,6 +127,7 @@ const EvaluationItemSchema = z.object({
 
 const RecommendationSchema = z.object({
   rank: z.number().int().positive(),
+  trend_id: z.string().nullable(),
   trend_name: z.string(),
   summary_reasons: z.array(EvidenceReasonSchema),
 });

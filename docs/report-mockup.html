@@ -44,6 +44,9 @@
     --chip-naver: #03C75A;
     --chip-insta: #E1306C;
     --chip-tavily: #4A90E2;
+    --chip-youtube: #E62117;
+    --chip-naver-olive: #6FA340;
+    --chip-default: #837b6f;
     /* Geometry */
     --radius-lg: 8px;
     --radius-md: 6px;
@@ -279,9 +282,12 @@
     opacity: 0.85;
     margin-left: 1px;
   }
+  .src-chip { background: var(--chip-default); }  /* fallback — 미지정 source는 회색 */
   .src-chip.naver { background: var(--chip-naver); }
   .src-chip.insta { background: var(--chip-insta); }
   .src-chip.tavily { background: var(--chip-tavily); }
+  .src-chip.youtube { background: var(--chip-youtube); }
+  .src-chip.naver-olive { background: var(--chip-naver-olive); }
 
   /* matching reason list */
   .reason-list {
@@ -1797,11 +1803,15 @@
 
   <script>
     // ===== writer-output.json 데이터 바인딩 =====
-    // 작성가 산출물(output-main/output-text/writer-output.json)을 읽어 화면을 채움.
+    // 작성가 산출물(shared/data/writer-output.json)을 읽어 화면을 채움.
+    // 경로 합의: shared/data/ 컨벤션 (브랜드·트렌드·매칭 산출물과 동일 위치).
     // fetch는 HTTP 프로토콜에서만 동작 (file:// 은 CORS로 막힘).
     // 로드 실패 시 하드코딩된 화면 그대로 유지.
     (async function bindReportData() {
       const candidates = [
+        '../shared/data/writer-output.json',
+        '/shared/data/writer-output.json',
+        // legacy fallback — text 담당자가 경로 변경 push 하기 전 환경 호환용
         '../output-main/output-text/writer-output.json',
         '/output-main/output-text/writer-output.json',
       ];
@@ -1855,11 +1865,13 @@
       };
 
       // source enum → src-chip CSS 클래스 매핑 (현재 mockup 컬러 칩)
+      // 미지정 source는 빈 클래스 → CSS의 fallback (.src-chip default) 적용
       const SRC_CLASS = {
         naver_datalab: 'naver',
         tavily: 'tavily',
         instagram: 'insta',
         youtube: 'youtube',
+        'naver/olive young': 'naver-olive',
       };
 
       // q1·q2 점 indicator (passed개 중 on, 나머지 off)
@@ -1881,7 +1893,8 @@
         `;
       }
 
-      const contents = data.contents ?? [];
+      // 매칭가는 추천 트렌드 6개까지 줄 수 있지만, 리포트는 상위 3개만 노출.
+      const contents = (data.contents ?? []).slice(0, 3);
 
       // ===== PART I — Trend Summary =====
       const summaryList = document.querySelector('.summary-list');
