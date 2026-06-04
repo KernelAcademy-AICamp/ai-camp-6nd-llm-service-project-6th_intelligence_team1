@@ -290,10 +290,34 @@ score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 **
 ];
 
 // 4. 사용자 메시지 — 카테고리 게이트 통과 트렌드만 LLM에 전달
+
+// 매체명 정규화 — "Instagram Reels" / "Instagram" 등 동일 매체 통일
+function normalizeChannel(ch) {
+  const s = String(ch ?? "").toLowerCase();
+  if (s.includes("instagram")) return "instagram";
+  if (s.includes("youtube")) return "youtube";
+  if (s.includes("tiktok") || s.includes("틱톡")) return "tiktok";
+  if (s.includes("naver") || s.includes("네이버")) return "naver";
+  if (s.includes("blog") || s.includes("블로그")) return "blog";
+  return s;
+}
+
+// 브랜드 매체 ∩ 트렌드 매체 교집합 사전 계산 — LLM에 팩트로 전달
+const brandChannelNorm = (brandAnalysis.data.media_channels ?? []).map(normalizeChannel);
+const mediaOverlapByTrend = passedTrends.map((t) => {
+  const trendChannelNorm = (t.media_channel_status ?? []).map((s) => normalizeChannel(s.media_channel));
+  const overlap = brandChannelNorm.filter((b) => trendChannelNorm.includes(b));
+  return { trend_name: t.trend_name, overlap, overlap_count: overlap.length };
+});
+
 const passedTrendInput = {
   ...trendAnalysis,
   data: { ...trendAnalysis.data, trends: passedTrends },
 };
+const mediaOverlapBlock = mediaOverlapByTrend.length
+  ? `\n## 매체 교집합 (코드 계산 — 브랜드 매체 ∩ 트렌드 매체)\n${mediaOverlapByTrend.map((m) => `- ${m.trend_name}: 겹치는 매체 ${m.overlap_count}개 [${m.overlap.join(", ") || "없음"}]`).join("\n")}\n`
+  : "";
+
 const userMessage = `다음 입력 데이터로 매칭 평가를 수행하세요.
 
 ## 브랜드 프로필
@@ -305,7 +329,7 @@ ${JSON.stringify(brandAnalysis, null, 2)}
 \`\`\`json
 ${JSON.stringify(passedTrendInput, null, 2)}
 \`\`\`
-
+${mediaOverlapBlock}
 위 모든 트렌드에 대해 **4기준(ingred_fit·visual_fit·life_fit·safe_fit)의 result+reason과 summary_reasons**를 \`evaluations[]\`에 담아 반환하세요.
 
 score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
