@@ -97,7 +97,7 @@ function computePasses(rA, rB) {
 function computeVerdict(q1, q2) {
   if (q1 === 0 || q2 === 0) return "제외";
   const sum = q1 + q2;
-  return sum === 4 ? "상" : sum === 3 ? "중상" : "중하";
+  return sum === 4 ? "상" : sum === 3 ? "중" : "하";
 }
 
 // LLM 정성 판정(1-A·1-B·2-B) + 코드 계산(2-A·passes·verdict)을 최종 구조로 조립.
@@ -397,7 +397,7 @@ const allTrendByName = new Map(
 );
 
 // 정렬: matching_grade(1등급>2등급>3등급>제외) → passes 합 내림 → 트렌드 score 내림.
-const VERDICT_RANK = { "상": 1, "중상": 2, "중": 3, "중하": 4, "하": 5, 제외: 99 };
+const VERDICT_RANK = { "상": 1, "중": 2, "하": 3, 제외: 99 };
 function sortTuple(ev) {
   const vr = VERDICT_RANK[ev.matching_grade] ?? 99;
   const passSum =
