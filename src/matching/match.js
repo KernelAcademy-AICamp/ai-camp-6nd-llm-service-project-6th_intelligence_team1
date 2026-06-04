@@ -428,11 +428,15 @@ ${JSON.stringify(topCtx, null, 2)}
   }
 }
 
-const recommendations = topEvals.map((ev, i) => ({
-  rank: i + 1,
-  trend_name: ev.trend_name,
-  summary_reasons: ev.summary_reasons,
-}));
+const recommendations = topEvals.map((ev, i) => {
+  const trendRaw = allTrendByName.get(ev.trend_name);
+  return {
+    rank: i + 1,
+    trend_id: trendRaw?.trend_id ?? null,
+    trend_name: trendRaw?.trend_name ?? ev.trend_name, // 입력 원본 우선 (LLM 변형 방지)
+    summary_reasons: ev.summary_reasons,
+  };
+});
 
 // envelope은 매칭가가 wrap()으로 추가. brand_name은 입력값을 신뢰(LLM 오타 방지).
 const finalData = {

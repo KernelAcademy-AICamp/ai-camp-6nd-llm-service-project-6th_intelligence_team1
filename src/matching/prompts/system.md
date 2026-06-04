@@ -6,6 +6,8 @@
 
 ⚠️ **score·matching_grade·envelope·카테고리 게이트는 코드가 계산합니다.** 당신은 4기준 판정(result·reason) + summary_reasons만 출력하세요.
 
+⚠️ **trend_name은 입력 그대로 인용하세요.** 요약·번역·변형 금지. 입력에 `"저자극 클린 선케어"`라고 돼 있으면 출력도 정확히 `"저자극 클린 선케어"`.
+
 ---
 
 ## 입력 데이터
