@@ -57,14 +57,20 @@ function formatTarget(data) {
 }
 
 // 출처명 → 원본 링크 (HTML 시안 report-mockup.html의 src-chip 기준)
+// Instagram은 미사용 (브랜드가 캠페인 매체로 안 씀) — 트렌드 evidence에 들어와도 EXCLUDED_SOURCES로 걸러냄.
 const SOURCE_URL = {
   "naver datalab": "https://datalab.naver.com/",
   "naver": "https://datalab.naver.com/",
   "네이버": "https://datalab.naver.com/",
-  "instagram": "https://www.instagram.com/",
-  "인스타그램": "https://www.instagram.com/",
   "tavily": "https://tavily.com/",
 };
+
+// 작성가 출력에서 제외할 source/채널 — 브랜드가 이 매체를 캠페인에 안 씀.
+const EXCLUDED_SOURCES = ["instagram", "인스타그램"];
+function isExcluded(name = "") {
+  const s = String(name).toLowerCase();
+  return EXCLUDED_SOURCES.some((ex) => s.includes(ex));
+}
 
 // 출처 문자열에 매핑 키가 포함되면 해당 URL 반환 (없으면 null)
 function sourceUrl(source = "") {
@@ -230,8 +236,6 @@ const SOURCE_ENUM = {
   "naver_datalab": "naver_datalab",
   "naver": "naver_datalab",
   "네이버": "naver_datalab",
-  "instagram": "instagram",
-  "인스타그램": "instagram",
   "tavily": "tavily",
   "youtube": "youtube",
   "유튜브": "youtube",
@@ -245,7 +249,6 @@ function normalizeSource(source = "") {
 // enum에 맞는 라벨 (UI 표시용)
 const SOURCE_LABEL = {
   naver_datalab: "Naver Datalab",
-  instagram: "Instagram",
   tavily: "Tavily",
   youtube: "YouTube",
 };
@@ -299,26 +302,32 @@ function buildSummaryBullets(td) {
 }
 
 // evidence: 분석가가 만든 원본을 v2 enum 형식으로 정규화
+// Instagram 등 EXCLUDED_SOURCES는 트렌드 측이 보내와도 작성가가 출력에서 제외.
 function buildEvidence(td) {
-  return (td?.evidence ?? []).map((e) => {
-    const src = normalizeSource(e.source);
-    return {
-      source: src,
-      label: SOURCE_LABEL[src] ?? e.source,
-      description: [e.metric, e.period ? `(${e.period})` : null, e.value]
-        .filter(Boolean)
-        .join(" "),
-      url: e.url ?? sourceUrl(e.source) ?? null,
-    };
-  });
+  return (td?.evidence ?? [])
+    .filter((e) => !isExcluded(e.source))
+    .map((e) => {
+      const src = normalizeSource(e.source);
+      return {
+        source: src,
+        label: SOURCE_LABEL[src] ?? e.source,
+        description: [e.metric, e.period ? `(${e.period})` : null, e.value]
+          .filter(Boolean)
+          .join(" "),
+        url: e.url ?? sourceUrl(e.source) ?? null,
+      };
+    });
 }
 
 // channels: trend의 media_channel_status를 그대로 받되 빈 배열 fallback
+// Instagram 등 EXCLUDED_SOURCES는 트렌드 측이 보내와도 작성가가 출력에서 제외.
 function buildChannels(td) {
-  return (td?.media_channel_status ?? []).map((c) => ({
-    name: c.media_channel ?? c.name ?? "",
-    status: c.status ?? "stable",
-  }));
+  return (td?.media_channel_status ?? [])
+    .filter((c) => !isExcluded(c.media_channel ?? c.name))
+    .map((c) => ({
+      name: c.media_channel ?? c.name ?? "",
+      status: c.status ?? "stable",
+    }));
 }
 
 export function generateWriterOutput({ brand, trend, match } = {}) {
