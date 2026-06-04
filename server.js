@@ -108,7 +108,10 @@ async function serveStatic(req, res, urlPath) {
   }
   try {
     const buf = await readFile(filePath);
-    res.writeHead(200, { "Content-Type": MIME[extname(filePath)] || "application/octet-stream" });
+    res.writeHead(200, {
+      "Content-Type": MIME[extname(filePath)] || "application/octet-stream",
+      "Cache-Control": "no-store"  // 로컬 데모 — 항상 최신 파일/데이터 제공 (캐시로 옛 리포트 뜨는 것 방지)
+    });
     res.end(buf);
   } catch {
     res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });

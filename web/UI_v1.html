@@ -443,6 +443,55 @@
             .step-section { padding: 80px 20px; }
             .mockup-grid { grid-template-columns: 1fr; }
         }
+
+        /* ===== 네이티브 리포트 (rp-) ===== */
+        .rp-meta { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:28px; }
+        .rp-chip { background:var(--card-white); border:1px solid rgba(255,255,255,0.8); border-radius:100px; padding:8px 16px; font-size:0.9rem; color:var(--text-secondary); }
+        .rp-chip strong { color:var(--text-primary); margin-right:6px; }
+        .rp-section { margin-bottom:40px; }
+        .rp-section-title { font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:18px; letter-spacing:-0.01em; }
+        .rp-summary-item { display:flex; gap:14px; align-items:flex-start; padding:14px 0; border-bottom:1px solid rgba(126,107,126,0.1); }
+        .rp-letter { flex:none; width:30px; height:30px; border-radius:50%; background:var(--accent); color:#7e6b7e; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:0.9rem; }
+        .rp-summary-title { font-weight:700; color:var(--text-primary); margin:0 0 2px; }
+        .rp-summary-body { font-size:0.92rem; color:var(--text-secondary); margin:0; line-height:1.5; }
+        .rp-compare-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+        .rp-compare-name { flex:none; width:200px; font-size:0.9rem; color:var(--text-primary); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .rp-bar-track { flex:1; height:16px; background:rgba(230,230,250,0.45); border-radius:100px; overflow:hidden; }
+        .rp-bar-fill { height:100%; border-radius:100px; background:linear-gradient(90deg,#f4a8b8,#c9b6f0); display:flex; align-items:center; justify-content:flex-end; padding-right:8px; color:#fff; font-size:0.72rem; font-weight:700; min-width:28px; box-sizing:border-box; }
+        .rp-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+        .rp-card { background:var(--card-white); border:1px solid rgba(255,255,255,0.8); border-radius:var(--radius-md); padding:22px; }
+        .rp-card.warn { border-color:#f4c89a; }
+        .rp-rank { display:inline-block; background:var(--pink); color:#a05a6b; font-size:0.72rem; font-weight:800; padding:3px 10px; border-radius:100px; margin-right:6px; }
+        .rp-warn { font-size:0.72rem; color:#c98a3a; }
+        .rp-card h3 { font-size:1.15rem; font-weight:800; color:var(--text-primary); margin:10px 0 10px; letter-spacing:-0.02em; }
+        .rp-kw { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+        .rp-kw span { background:rgba(230,230,250,0.5); color:#7e6b7e; font-size:0.72rem; padding:3px 9px; border-radius:100px; }
+        .rp-metric { display:flex; gap:12px; margin-bottom:14px; }
+        .rp-metric > div { flex:1; background:rgba(255,255,255,0.6); border-radius:12px; padding:10px 12px; }
+        .rp-m-label { font-size:0.7rem; color:var(--text-secondary); margin-bottom:3px; }
+        .rp-m-value { font-size:1.05rem; font-weight:800; color:var(--text-primary); }
+        .rp-m-delta { font-size:0.72rem; color:#1FAF6A; margin-left:5px; }
+        .rp-score-row { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:8px; }
+        .rp-score { font-size:1.7rem; font-weight:800; color:var(--text-primary); line-height:1; }
+        .rp-score small { font-size:0.78rem; color:var(--text-secondary); font-weight:600; }
+        .rp-growth { font-size:0.82rem; font-weight:700; color:#1FAF6A; }
+        .rp-mini { height:8px; background:rgba(230,230,250,0.45); border-radius:100px; overflow:hidden; margin-bottom:14px; }
+        .rp-mini > div { height:100%; background:linear-gradient(90deg,#f4a8b8,#c9b6f0); border-radius:100px; }
+        .rp-fit-row { display:flex; align-items:center; gap:8px; font-size:0.82rem; color:var(--text-primary); margin-bottom:4px; }
+        .rp-fit-row .lbl { flex:1; }
+        .rp-dots { display:inline-flex; gap:4px; }
+        .rp-dot { width:8px; height:8px; border-radius:50%; background:rgba(126,107,126,0.25); }
+        .rp-dot.on { background:#f4a8b8; }
+        .rp-block { margin-top:16px; }
+        .rp-block-label { font-size:0.82rem; font-weight:700; color:var(--text-primary); margin-bottom:7px; }
+        .rp-list { margin:0; padding-left:18px; }
+        .rp-list li { font-size:0.85rem; color:var(--text-secondary); line-height:1.55; margin-bottom:4px; }
+        .rp-src { display:flex; gap:8px; align-items:flex-start; margin-bottom:7px; font-size:0.82rem; color:var(--text-secondary); line-height:1.5; }
+        .rp-src-chip { flex:none; font-size:0.68rem; font-weight:800; padding:3px 9px; border-radius:100px; text-decoration:none; color:#fff; background:#9b8bb0; }
+        .rp-src-chip.naver { background:#03c75a; } .rp-src-chip.youtube { background:#ff0000; } .rp-src-chip.tavily { background:#6b5bd2; }
+        .rp-ch { display:flex; justify-content:space-between; gap:8px; font-size:0.82rem; color:var(--text-secondary); padding:5px 0; border-bottom:1px solid rgba(126,107,126,0.08); }
+        .rp-empty { font-size:0.85rem; color:var(--text-secondary); opacity:0.6; }
+        @media (max-width: 900px) { .rp-cards { grid-template-columns:1fr; } .rp-compare-name { width:120px; } }
     </style>
 </head>
 <body>
@@ -556,7 +605,7 @@
                 <label class="pill"><input type="radio" name="age" value="10대"><span>10대</span></label>
                 <label class="pill"><input type="radio" name="age" value="20대"><span>20대</span></label>
                 <label class="pill"><input type="radio" name="age" value="30대"><span>30대</span></label>
-                <label class="pill"><input type="radio" name="age" value="40대 이상"><span>40대 이상</span></label>
+                <label class="pill"><input type="radio" name="age" value="40+"><span>40대 이상</span></label>
             </div>
         </div>
 
@@ -657,10 +706,10 @@
             </div>
             <div class="cascade-level hidden" id="level-detail-eye">
                 <div class="pill-group">
-                    <label class="pill"><input type="radio" name="detail" value="shadow" data-label="섀도우" onchange="selectDetail('shadow')"><span>섀도우</span></label>
-                    <label class="pill"><input type="radio" name="detail" value="liner" data-label="라이너" onchange="selectDetail('liner')"><span>라이너</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="shadow" data-label="아이섀도" onchange="selectDetail('shadow')"><span>아이섀도</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="liner" data-label="아이라이너" onchange="selectDetail('liner')"><span>아이라이너</span></label>
                     <label class="pill"><input type="radio" name="detail" value="mascara" data-label="마스카라" onchange="selectDetail('mascara')"><span>마스카라</span></label>
-                    <label class="pill"><input type="radio" name="detail" value="brow" data-label="브로우" onchange="selectDetail('brow')"><span>브로우</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="brow" data-label="아이브로우" onchange="selectDetail('brow')"><span>아이브로우</span></label>
                 </div>
             </div>
             <div class="cascade-level hidden" id="level-features">
@@ -748,8 +797,6 @@
                 <label class="pill"><input type="checkbox" value="유튜브"><span>유튜브</span></label>
                 <label class="pill"><input type="checkbox" value="메타"><span>메타</span></label>
                 <label class="pill"><input type="checkbox" value="카카오"><span>카카오</span></label>
-                <label class="pill"><input type="checkbox" value="틱톡"><span>틱톡</span></label>
-                <label class="pill"><input type="checkbox" value="오프라인 스토어"><span>오프라인 스토어</span></label>
             </div>
         </div>
 
@@ -843,8 +890,9 @@
             <p class="step-desc">딱 맞는 트렌드, 찾았어요.</p>
         </div>
 
-        <div class="report-meta" id="report_meta"></div>
-        <div class="trend-cards" id="report_ranks"></div>
+        <!-- writer-output.json을 우리 디자인으로 네이티브 렌더 -->
+        <div id="report_meta" class="rp-meta"></div>
+        <div id="report_body"></div>
 
         <div class="submit-row">
             <button class="back-button" onclick="goToPage(3)">← 돌아가기</button>
@@ -917,10 +965,10 @@
         foundation: ['매트', '글로우', '촉촉', '지속력', '밀착'],
         cushion: ['매트', '커버력', '세미매트', '촉촉', '밀착'],
         concealer: ['글로우', '촉촉', '톤업', '매트', '커버력'],
-        shadow: ['매트', '쉬머', '글리터', '펄', '벨벳'],
-        liner: ['매트', '롱래스팅', '워터프루프', '브라운', '블랙'],
-        mascara: ['롱래스팅', '볼륨', '컬링', '워터프루프', '블랙'],
-        brow: ['내추럴', '펜슬', '파우더', '마스카라', '틴트']
+        shadow: ['매트', '글로우', '누드', '글리터', '시어'],
+        liner: ['글리터', '지속력', '매트', '펄', '촉촉'],
+        mascara: ['볼륨', '매트'],
+        brow: ['매트', '지속력', '픽싱']
     };
 
     /* ===== 카테고리 캐스케이드 ===== */
@@ -1211,7 +1259,9 @@
             // 모든 단계 완료 → 실제 결과 렌더
             const wr = await fetch('/output-main/output-text/writer-output.json?ts=' + Date.now());
             const writer = await wr.json();
+            // ④ 매칭 리포트 = writer-output.json을 우리 디자인으로 네이티브 렌더
             buildReportReal(writer.data, d);
+            // ⑤ 예상 시안 = placeholder 카드
             buildMockupsReal(writer.data, d);
 
             setTimeout(() => switchPage(4), 450);
@@ -1225,49 +1275,123 @@
     /* ===== 실데이터 렌더 (writer-output.json) ===== */
     function buildReportReal(data, d) {
         const b = (data && data.brand) || {};
-        const contents = ((data && data.contents) || []).slice().sort((a, c) => (a.rank || 9) - (c.rank || 9));
+        const contents = ((data && data.contents) || [])
+            .slice().sort((a, c) => (a.rank || 9) - (c.rank || 9)).slice(0, 3);
 
+        const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
+        const letter = (i) => ['A','B','C','D','E','F'][i] || (i + 1);
+        const fmtGrowth = (g) => { const n = typeof g === 'number' ? g : parseFloat(g) || 0; const p = Math.round(n * 100); return (p >= 0 ? '+' : '') + p; };
+        const srcClass = (s) => /naver/i.test(s) ? 'naver' : /youtube/i.test(s) ? 'youtube' : /tavily/i.test(s) ? 'tavily' : '';
+        const dots = (passed, total = 2) => Array.from({ length: total }, (_, k) => `<span class="rp-dot${k < passed ? ' on' : ''}"></span>`).join('');
+
+        // ── 메타 ──
         document.getElementById('report_meta').innerHTML =
-            '<b>' + (b.name || d.brand_name) + '</b> · ' + (b.product_name || d.product_name) + '<br>'
-            + '카테고리 ' + (b.category || d.category) + (b.target_display ? ' | 타겟 ' + b.target_display : '') + '<br>'
-            + '<span style="opacity:0.7">트렌드 매칭 결과 — 추천 ' + contents.length + '선</span>';
+            `<div class="rp-chip"><strong>브랜드</strong>${esc(b.name || d.brand_name)}</div>`
+          + `<div class="rp-chip"><strong>제품</strong>${esc(b.product_name || d.product_name)}</div>`
+          + `<div class="rp-chip"><strong>카테고리</strong>${esc(b.category || d.category)}</div>`
+          + (b.target_display ? `<div class="rp-chip"><strong>타겟</strong>${esc(b.target_display)}</div>` : '');
 
-        const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
-        document.getElementById('report_ranks').innerHTML = contents.map(c => {
-            const medal = medals[c.rank] || ('#' + (c.rank ?? ''));
-            const grade = c.matching_grade ? ('적합도 ' + c.matching_grade) : (c.verdict || '');
-            const kws = (c.keywords || []).length ? '<div style="margin:6px 0;color:#9b7fb0;font-size:0.85rem">' + c.keywords.map(k => '#' + k).join(' ') + '</div>' : '';
-            const why = (c.summary_bullets || []).length ? '<p>• ' + c.summary_bullets.join('<br>• ') + '</p>'
-                : (c.headline_metric && c.headline_metric.value ? '<p>' + c.headline_metric.metric + ': ' + c.headline_metric.value + ' ' + (c.headline_metric.delta || '') + '</p>'
-                : '<p style="opacity:.55">트렌드 분석 데이터 준비 중</p>');
-            const reason = (c.reason_bullets || []).length ? '<p>• ' + c.reason_bullets.join('<br>• ') + '</p>' : '<p style="opacity:.55">매칭 근거 준비 중</p>';
-            const ev = (c.evidence || []).filter(e => e && e.url);
-            const evHtml = ev.length ? '<div class="trend-section"><div class="trend-section-title">🔗 수집 근거</div><p>'
-                + ev.map(e => '<a href="' + e.url + '" target="_blank" rel="noopener">' + (e.title || e.source || e.url) + '</a>').join('<br>') + '</p></div>' : '';
-            return '<div class="trend-card rank-' + (c.rank || 1) + '">'
-                + '<div class="rank-badge">' + medal + '</div>'
-                + '<div class="trend-header"><div class="trend-title">' + (c.trend_name || c.content_id || '') + '</div><div class="trend-score">' + grade + '</div></div>'
-                + kws
-                + '<div class="trend-section"><div class="trend-section-title">🔍 트렌드 분석 (왜 뜨는지)</div>' + why + '</div>'
-                + '<div class="trend-section"><div class="trend-section-title">🎯 매칭 이유 (어떻게 써먹을지)</div>' + reason + '</div>'
-                + evHtml
-                + '</div>';
+        // ── 요약 ──
+        const summaryHtml = contents.map((c, i) => `
+            <div class="rp-summary-item">
+              <div class="rp-letter">${letter(i)}</div>
+              <div>
+                <p class="rp-summary-title">${esc(c.trend_name)}</p>
+                <p class="rp-summary-body">${esc((c.summary_bullets || [])[0] || (c.reason_bullets || [])[0] || c.trend_name)}</p>
+              </div>
+            </div>`).join('');
+
+        // ── 점수 비교 ──
+        const compareHtml = contents.map((c, i) => {
+            const score = Math.round(((c.match_passes?.total ?? 0) / 4) * 100);
+            return `<div class="rp-compare-row">
+              <span class="rp-compare-name">${letter(i)}. ${esc(c.trend_name)}</span>
+              <div class="rp-bar-track"><div class="rp-bar-fill" style="width:${Math.max(score, 8)}%">${score}</div></div>
+            </div>`;
         }).join('');
+
+        // ── 상세 카드 ──
+        const cardsHtml = contents.map((c, i) => {
+            const score = Math.round(((c.match_passes?.total ?? 0) / 4) * 100);
+            const growth = fmtGrowth(c.metrics?.growth_rate);
+            const warn = c.display_variant === 'supplementary';
+            const kw = (c.keywords || []).map(k => `<span>#${esc(k)}</span>`).join('');
+            const hm = c.headline_metric || {};
+            const metricStrip = (hm.value || c.metrics?.period) ? `
+              <div class="rp-metric">
+                ${hm.value ? `<div><div class="rp-m-label">${esc(hm.metric || '핵심 지표')}</div><div class="rp-m-value">${esc(hm.value)}${hm.delta ? `<span class="rp-m-delta">${esc(hm.delta)}</span>` : ''}</div></div>` : ''}
+                ${c.metrics?.period ? `<div><div class="rp-m-label">기간</div><div class="rp-m-value" style="font-size:0.9rem">${esc(c.metrics.period)}</div></div>` : ''}
+              </div>` : '';
+            const q1 = c.match_passes?.q1 ?? 0, q2 = c.match_passes?.q2 ?? 0;
+            const status = (c.summary_bullets || []).length ? `<div class="rp-block"><div class="rp-block-label">📊 유행현황</div><ul class="rp-list">${c.summary_bullets.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : '';
+            const ev = (c.evidence || []);
+            const evHtml = ev.length ? `<div class="rp-block"><div class="rp-block-label">📚 수집 근거</div>${
+                ev.map(e => {
+                    const cls = srcClass(e.source);
+                    const chip = e.url
+                        ? `<a class="rp-src-chip ${cls}" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">${esc(e.label || e.source || '출처')}</a>`
+                        : `<span class="rp-src-chip ${cls}">${esc(e.label || e.source || '출처')}</span>`;
+                    return `<div class="rp-src">${chip}<span>${esc(e.description || '')}</span></div>`;
+                }).join('')
+            }</div>` : '';
+            const reason = (c.reason_bullets || []).length ? `<div class="rp-block"><div class="rp-block-label">🎯 매칭이유</div><ul class="rp-list">${c.reason_bullets.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : '';
+            const channels = (c.channels || []).length ? `<div class="rp-block"><div class="rp-block-label">📡 채널별 현황</div>${c.channels.map(ch => `<div class="rp-ch"><span>${esc(ch.name)}</span><span>${esc(ch.status)}</span></div>`).join('')}</div>` : '';
+
+            return `<div class="rp-card${warn ? ' warn' : ''}">
+              <div><span class="rp-rank">${c.rank}순위</span>${warn ? '<span class="rp-warn">⚠️ 보조 트렌드</span>' : ''}</div>
+              <h3>${esc(c.trend_name)}</h3>
+              ${kw ? `<div class="rp-kw">${kw}</div>` : ''}
+              ${metricStrip}
+              <div class="rp-score-row"><div class="rp-score">${score}<small> / 100</small></div><div class="rp-growth">▲ ${growth}% <span style="color:var(--text-secondary);font-weight:500">3개월</span></div></div>
+              <div class="rp-mini"><div style="width:${score}%"></div></div>
+              <div class="rp-fit-row"><span class="lbl">브랜드 적합성</span><span class="rp-dots">${dots(q1)}</span><span>${q1}/2</span></div>
+              <div class="rp-fit-row"><span class="lbl">타겟 적합성</span><span class="rp-dots">${dots(q2)}</span><span>${q2}/2</span></div>
+              ${status}${evHtml}${reason}${channels}
+            </div>`;
+        }).join('');
+
+        document.getElementById('report_body').innerHTML =
+            `<div class="rp-section"><div class="rp-section-title">추천 트렌드 ${contents.length}선</div>${summaryHtml}</div>`
+          + `<div class="rp-section"><div class="rp-section-title">매칭 점수 비교</div>${compareHtml}</div>`
+          + `<div class="rp-section"><div class="rp-section-title">트렌드별 상세</div><div class="rp-cards">${cardsHtml}</div></div>`;
     }
 
     function buildMockupsReal(data, d) {
         const contents = ((data && data.contents) || []).slice().sort((a, c) => (a.rank || 9) - (c.rank || 9));
         const tags = ['Key Visual', 'SNS Card', 'Banner'];
-        const classes = ['', 'sns', 'third'];
-        document.getElementById('mock_grid').innerHTML = contents.map((c, i) =>
-            '<div class="mockup-card">'
-            + '<div class="mockup-visual ' + (classes[i] || '') + '"><div class="mockup-tag">' + (tags[i] || 'Visual') + ' · placeholder</div></div>'
-            + '<div class="mockup-body">'
-            + '<div class="mockup-brand">' + d.brand_name + '</div>'
-            + '<h3 class="mockup-headline">' + (c.trend_name || '') + '</h3>'
-            + '<p class="mockup-caption">' + ((c.keywords || []).slice(0, 3).join(' · ') || c.verdict || '') + ' · 예상 시안(자리표시)</p>'
-            + '</div></div>'
-        ).join('');
+        const palettes = [['#ff9ec4', '#c9b6f0'], ['#b9a6f0', '#ffe1c2'], ['#ffd8a8', '#ff9ec4']];
+        const brand = d.brand_name || '';
+        const cat = (d.category || '').split('>').pop().trim();
+        const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+        // 외부 이미지 없이 SVG로 광고 시안 느낌의 가상 이미지 생성
+        function creative(i, head) {
+            const [c1, c2] = palettes[i % palettes.length];
+            const gid = 'mg' + i;
+            return `<svg viewBox="0 0 400 180" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%">`
+                + `<defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>`
+                + `<rect width="400" height="180" fill="url(#${gid})"/>`
+                + `<circle cx="338" cy="34" r="76" fill="#fff" opacity="0.16"/>`
+                + `<circle cx="52" cy="158" r="46" fill="#fff" opacity="0.10"/>`
+                + `<circle cx="322" cy="112" r="44" fill="#fff" opacity="0.92"/>`
+                + `<circle cx="322" cy="112" r="29" fill="none" stroke="${c1}" stroke-width="3" opacity="0.45"/>`
+                + `<circle cx="322" cy="112" r="11" fill="${c1}" opacity="0.4"/>`
+                + `<text x="28" y="58" fill="#fff" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" opacity="0.85" letter-spacing="1.5">${esc(brand)}</text>`
+                + `<text x="26" y="94" fill="#fff" font-family="Pretendard,sans-serif" font-size="21" font-weight="800">${esc(head)}</text>`
+                + `</svg>`;
+        }
+
+        document.getElementById('mock_grid').innerHTML = contents.map((c, i) => {
+            const kw = (c.keywords || [])[0] || (d.texture_keywords || [])[0] || '트렌드';
+            const head = [`"${kw}", 지금`, `내 ${cat || '메이크업'}`, `${d.product_name || brand}`][i] || kw;
+            return `<div class="mockup-card">`
+                + `<div class="mockup-visual">${creative(i, head)}<div class="mockup-tag" style="position:relative;z-index:2">${tags[i] || 'Visual'} · 시안</div></div>`
+                + `<div class="mockup-body">`
+                + `<div class="mockup-brand">${esc(brand)}</div>`
+                + `<h3 class="mockup-headline">${esc(c.trend_name || '')}</h3>`
+                + `<p class="mockup-caption">${esc((c.keywords || []).slice(0, 3).join(' · ') || c.verdict || '')} · 예상 시안(placeholder)</p>`
+                + `</div></div>`;
+        }).join('');
     }
 
     function buildReport(d) {
