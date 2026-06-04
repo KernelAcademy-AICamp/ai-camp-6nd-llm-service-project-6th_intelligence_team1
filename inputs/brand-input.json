@@ -1,26 +1,35 @@
 {
-  "brand_name": "힌스 (hince)",
-  "current_channels": ["인스타그램", "유튜브"],
-  "brand_channel_url": "https://www.youtube.com/@hince_official",
-
-  "product_name": "커버 마스터 핑크 쿠션",
-  "category": "메이크업 > 베이스 > 쿠션",
-  "texture_keywords": ["매트"],
-  "tone_and_manner": ["Z세대·트렌디"],
-
+  "brand_name": "무지개맨션",
+  "current_channels": [
+    "인스타그램"
+  ],
+  "brand_channel_url": "",
+  "product_name": "오브제 리퀴드 틴트",
+  "category": "메이크업 > 립 > 틴트",
+  "texture_keywords": [
+    "글로우"
+  ],
+  "tone_and_manner": [
+    "로맨틱·감성"
+  ],
   "target": {
     "gender": "여성",
-    "age_groups": ["20대"],
+    "age_groups": [
+      "20대"
+    ],
     "involvement": "일상사용자",
-    "motivation": ["자기표현"]
+    "motivation": [
+      "자기표현"
+    ]
   },
   "mood_image_url": "",
-
-  "campaign_kpi": "재구매 유도",
+  "campaign_kpi": "신제품 런칭",
   "campaign_period": "한달",
-  "campaign_budget": "200~500만원",
-  "media_channels": ["유튜브"],
-
+  "campaign_budget": "500~1000만원",
+  "media_channels": [
+    "유튜브",
+    "메타"
+  ],
   "reference_campaign_url": "",
   "competitors": []
 }
