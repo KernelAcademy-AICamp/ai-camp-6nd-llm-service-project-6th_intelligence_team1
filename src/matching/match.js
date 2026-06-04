@@ -315,7 +315,7 @@ const passedTrendInput = {
   data: { ...trendAnalysis.data, trends: passedTrends },
 };
 const mediaOverlapBlock = mediaOverlapByTrend.length
-  ? `\n## 매체 교집합 (코드 계산 — 브랜드 매체 ∩ 트렌드 매체)\n${mediaOverlapByTrend.map((m) => `- ${m.trend_name}: 겹치는 매체 ${m.overlap_count}개 [${m.overlap.join(", ") || "없음"}]`).join("\n")}\n`
+  ? `\n## 매체 교집합 (코드 계산 — 브랜드 매체 ∩ 트렌드 매체)\n${mediaOverlapByTrend.map((m) => `- ${m.trend_name}: 겹치는 매체 ${m.overlap_count}개 [${m.overlap.join(", ") || "없음"}]`).join("\n")}\n\n## 매체 데이터 신뢰도\n- youtube: 직접 수집 데이터 (높음) — Visual-Fit 강신호로 반영\n- instagram·tiktok: 웹 기사 2차 정보 (낮음) — 참고 수준으로만 반영\n- naver·blog: 검색 데이터 기반 (중간)\n`
   : "";
 
 // 관여도·소비동기 의미 테이블 — LLM이 일관된 기준으로 Life-Fit 판단하도록
