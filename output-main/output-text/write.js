@@ -395,9 +395,10 @@ if (isDirectRun) {
   mkdirSync(dirname(mdPath), { recursive: true });
   writeFileSync(mdPath, md);
 
-  // 2) JSON 구조화 산출물 (UI용)
+  // 2) JSON 구조화 산출물 (UI용) — 컨벤션상 shared/data/에 저장 (시안가·mockup이 여기서 읽음)
   const writerJson = generateWriterOutput({ brand, trend, match });
-  const jsonPath = resolve(__dirname, "writer-output.json");
+  const jsonPath = resolve(PROJECT_ROOT, "shared/data/writer-output.json");
+  mkdirSync(dirname(jsonPath), { recursive: true });
   writeFileSync(jsonPath, JSON.stringify(writerJson, null, 2));
 
   console.log(`✅ 작성가 산출물 생성 완료`);
