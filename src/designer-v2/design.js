@@ -7,6 +7,7 @@ import { generateQueriesAndSearch } from "./search.js";
 import { analyzeOneSource } from "./analyze.js";
 import { generatePromptFromSources } from "./prompt.js";
 import { wrap, wrapError } from "../../shared/envelope.js";
+import { generateImage } from "./generateImage.js";
 
 // 시안가 v2 — 매체별 강점 활용 흐름:
 //   1단계 검색 — 트렌드별 매체별 수집 (Pinterest·Instagram·Mintoiro 각 10장)
@@ -143,6 +144,20 @@ for (const c of writerData.contents) {
     continue;
   }
 
+  // 4단계: 이미지 생성 (제품 사진 SUBJECT 레퍼런스)
+  const outputImagePath = `shared/data/images/${brandName}/${c.content_id ?? visuals.length}.png`;
+  let generatedImageUrl = null;
+  try {
+    generatedImageUrl = await generateImage({
+      prompt: generation_prompt,
+      outputPath: outputImagePath,
+      aspectRatio: "3:4",
+    });
+    console.log(`  [4단계] 이미지 저장: ${generatedImageUrl}`);
+  } catch (err) {
+    console.error(`  ❌ [4단계] 실패: ${err.message}`);
+  }
+
   visuals.push({
     content_id: c.content_id,
     trend_name: c.trend_name,
@@ -153,7 +168,7 @@ for (const c of writerData.contents) {
     generation_prompt,
     aspect_ratio: "3:4",
     reference_image_path: productImagePath,
-    generated_image_url: null,
+    generated_image_url: generatedImageUrl,
   });
 }
 
