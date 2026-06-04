@@ -2,11 +2,14 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
+const EMBED_DELAY_MS = 200;
+
 async function embedTexts(texts) {
   const vecs = [];
   for (const text of texts) {
     const result = await ai.models.embedContent({ model: "gemini-embedding-001", contents: text });
     vecs.push(result.embeddings[0].values);
+    await new Promise((r) => setTimeout(r, EMBED_DELAY_MS));
   }
   return vecs;
 }

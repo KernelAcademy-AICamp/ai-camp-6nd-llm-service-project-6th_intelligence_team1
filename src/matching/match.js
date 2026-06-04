@@ -318,6 +318,26 @@ const mediaOverlapBlock = mediaOverlapByTrend.length
   ? `\n## 매체 교집합 (코드 계산 — 브랜드 매체 ∩ 트렌드 매체)\n${mediaOverlapByTrend.map((m) => `- ${m.trend_name}: 겹치는 매체 ${m.overlap_count}개 [${m.overlap.join(", ") || "없음"}]`).join("\n")}\n`
   : "";
 
+// 관여도·소비동기 의미 테이블 — LLM이 일관된 기준으로 Life-Fit 판단하도록
+const INVOLVEMENT_DESC = {
+  "입문자": "뷰티 루틴 막 시작, 간단하고 쉬운 제품 선호, 트렌드보다 기본에 집중",
+  "일상사용자": "데일리 루틴 중심, 기능성·편의성 중시, 안정적 제품 선호",
+  "얼리어답터": "새 트렌드·신제품 빠르게 수용, 실험적 소비, 바이럴 민감",
+};
+const MOTIVATION_DESC = {
+  "자기표현": "개성·스타일 표현, 나를 드러내는 소비",
+  "관리/케어": "피부 건강·유지가 우선, 기능성·성분 중시",
+  "사회적 인정": "타인 시선 의식, 유행 따라가기, 보여지는 것 중요",
+  "가성비·가심비": "가격 대비 가치 중시, 실용적 소비",
+};
+
+const target = brandAnalysis.data.target ?? {};
+const involvementDesc = INVOLVEMENT_DESC[target.involvement] ?? target.involvement ?? "";
+const motivationDescs = (target.motivation ?? []).map((m) => `${m}(${MOTIVATION_DESC[m] ?? m})`).join(", ");
+const lifeFitBlock = (involvementDesc || motivationDescs)
+  ? `\n## 브랜드 타겟 특성 (Life-Fit 판단 기준)\n- 관여도: ${target.involvement} → ${involvementDesc}\n- 소비동기: ${motivationDescs}\n`
+  : "";
+
 const userMessage = `다음 입력 데이터로 매칭 평가를 수행하세요.
 
 ## 브랜드 프로필
@@ -329,7 +349,7 @@ ${JSON.stringify(brandAnalysis, null, 2)}
 \`\`\`json
 ${JSON.stringify(passedTrendInput, null, 2)}
 \`\`\`
-${mediaOverlapBlock}
+${mediaOverlapBlock}${lifeFitBlock}
 위 모든 트렌드에 대해 **4기준(ingred_fit·visual_fit·life_fit·safe_fit)의 result+reason과 summary_reasons**를 \`evaluations[]\`에 담아 반환하세요.
 
 score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
