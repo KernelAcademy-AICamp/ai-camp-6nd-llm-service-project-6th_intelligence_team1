@@ -262,10 +262,23 @@ function deriveVariant(rank) {
   return rank === 3 ? "supplementary" : "primary";
 }
 
-function deriveStrength(total) {
-  if (total >= 4) return "strong";
-  if (total >= 3) return "partial";
+// 매칭가 v0.3 matching_grade(상/중/하/제외) → UI strength enum
+function deriveStrength(grade) {
+  if (grade === "상") return "strong";
+  if (grade === "중") return "partial";
   return "weak";
+}
+
+// 4기준(ingred·visual·life·safe) result → 옛 question_1/question_2 passes 호환 매핑.
+// q1=브랜드 적합성(ingred+visual), q2=타겟·격 적합성(life+safe). 4점 만점에서 0/1/2로 압축.
+const FIT_POINT = { "✅": 2, "⚠️": 1, "❌": 0 };
+function legacyPasses(fits) {
+  const q1Raw = (FIT_POINT[fits?.ingred_fit?.result] ?? 0) + (FIT_POINT[fits?.visual_fit?.result] ?? 0);
+  const q2Raw = (FIT_POINT[fits?.life_fit?.result] ?? 0) + (FIT_POINT[fits?.safe_fit?.result] ?? 0);
+  const compress = (s) => (s >= 4 ? 2 : s >= 2 ? 1 : 0);
+  const q1 = compress(q1Raw);
+  const q2 = compress(q2Raw);
+  return { q1, q2, total: q1 + q2 };
 }
 
 // summary_bullets 룰베이스 생성:
@@ -314,16 +327,14 @@ export function generateWriterOutput({ brand, trend, match } = {}) {
   const contents = top.map((r, i) => {
     const td = findTrend(r.trend_name);
     const ev = findEval(r.trend_name);
-
-    const q1 = ev?.evaluation?.question_1?.passes ?? 0;
-    const q2 = ev?.evaluation?.question_2?.passes ?? 0;
-    const total = q1 + q2;
+    const fits = ev?.evaluation ?? {};
 
     return {
       content_id: `C${String(i + 1).padStart(3, "0")}`,
       trend_name: r.trend_name,
       rank: r.rank,
-      verdict: ev?.verdict ?? `${r.rank}순위`,
+      verdict: `${r.rank}순위`, // recommendations에 들어왔으면 N순위 (제외 트렌드는 애초에 없음)
+      matching_grade: ev?.matching_grade ?? "중", // 매칭가 v0.3 절대 등급
       display_variant: deriveVariant(r.rank),
       keywords: (td?.keywords ?? []).slice(0, 5),
       headline_metric: td?.headline_metric ?? { metric: "", value: "", delta: "" },
@@ -332,8 +343,17 @@ export function generateWriterOutput({ brand, trend, match } = {}) {
       reason_bullets: (r.summary_reasons ?? []).map(reasonText).filter(Boolean),
       evidence: buildEvidence(td),
       channels: buildChannels(td),
-      match_passes: { q1, q2, total },
-      match_strength: deriveStrength(total),
+      // 옛 UI 호환: 4기준을 2질문(passes 0/1/2)으로 압축
+      match_passes: legacyPasses(fits),
+      match_strength: deriveStrength(ev?.matching_grade),
+      // 신 UI용: 4기준 result + reason + gap + solution 그대로 노출
+      match_fits: {
+        ingred: fits.ingred_fit ?? null,
+        visual: fits.visual_fit ?? null,
+        life: fits.life_fit ?? null,
+        safe: fits.safe_fit ?? null,
+        score: ev?.score ?? 0, // 0-8
+      },
     };
   });
 
