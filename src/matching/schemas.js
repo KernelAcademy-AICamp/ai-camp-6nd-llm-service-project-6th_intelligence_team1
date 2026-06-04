@@ -120,7 +120,7 @@ const EvaluationItemSchema = z.object({
     safe_fit: FitResultSchema, // 브랜드 격·톤 ↔ 트렌드 수명·이미지
   }),
   score: z.number().int().min(0).max(8), // ✅=2, ⚠️=1, ❌=0 합산 (max 8)
-  verdict: z.enum(["1순위", "2순위", "3순위", "제외"]),
+  matching_grade: z.enum(["상", "중", "하", "제외"]),
   summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
 });
 
@@ -134,6 +134,13 @@ export const MatchDataSchema = z.object({
   brand_name: z.string(),
   recommendations: z.array(RecommendationSchema),
   evaluations: z.array(EvaluationItemSchema),
+});
+
+// 추천 트렌드 간 방향성 충돌 감지 — 정반대 개념 쌍 있으면 remove 지정
+export const ConflictCheckSchema = z.object({
+  has_conflict: z.boolean(),
+  remove: z.string().nullable(),
+  reason: z.string(),
 });
 
 export const MatchResultSchema = envelopeSchema(MatchDataSchema);

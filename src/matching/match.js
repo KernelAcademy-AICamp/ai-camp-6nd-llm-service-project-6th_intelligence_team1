@@ -4,7 +4,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { LlmMatchDataSchema, InputBrandSchema, InputTrendSchema } from "./schemas.js";
+import { LlmMatchDataSchema, InputBrandSchema, InputTrendSchema, ConflictCheckSchema } from "./schemas.js";
 import { wrap, wrapError } from "../../shared/envelope.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -35,17 +35,17 @@ function ageGroupToRange(group, currentYear) {
   return null;
 }
 
-// ─── 4기준 score·verdict 코드 계산 ────────────────────────────────────
+// ─── 4기준 score·matching_grade 코드 계산 ───────────────────────────────
 // 각 fit: ✅=2, ⚠️=1, ❌=0. 4기준 합산 max 8.
-// verdict 규칙:
+// matching_grade 규칙:
 //   - ❌ 2개 이상 → 제외 (합산 무관)
-//   - score 8 → 1순위
-//   - score 6-7 → 2순위
-//   - score 2-5 → 3순위 (❌ 1개 가능)
+//   - score 8 → 상
+//   - score 6-7 → 중
+//   - score 2-5 → 하 (❌ 1개 가능)
 //   - score < 2 → 제외
 const FIT_POINT = { "✅": 2, "⚠️": 1, "❌": 0 };
 
-function computeScoreAndVerdict(fits /* { ingred_fit, visual_fit, life_fit, safe_fit } */) {
+function computeScoreAndGrade(fits /* { ingred_fit, visual_fit, life_fit, safe_fit } */) {
   const results = [
     fits.ingred_fit?.result,
     fits.visual_fit?.result,
@@ -55,14 +55,14 @@ function computeScoreAndVerdict(fits /* { ingred_fit, visual_fit, life_fit, safe
   const failCount = results.filter((r) => r === "❌").length;
   const score = results.reduce((sum, r) => sum + (FIT_POINT[r] ?? 0), 0);
 
-  let verdict;
-  if (failCount >= 2) verdict = "제외";
-  else if (score === 8) verdict = "1순위";
-  else if (score >= 6) verdict = "2순위";
-  else if (score >= 2) verdict = "3순위";
-  else verdict = "제외";
+  let matching_grade;
+  if (failCount >= 2) matching_grade = "제외";
+  else if (score === 8) matching_grade = "상";
+  else if (score >= 6) matching_grade = "중";
+  else if (score >= 2) matching_grade = "하";
+  else matching_grade = "제외";
 
-  return { score, verdict };
+  return { score, matching_grade };
 }
 
 // LLM 정성 판정(1-A·1-B·2-B) + 코드 계산(2-A·passes·verdict)을 최종 구조로 조립.
@@ -93,12 +93,12 @@ function assembleEvaluation(llmEval) {
     life_fit: llmEval.life_fit,
     safe_fit: llmEval.safe_fit,
   };
-  const { score, verdict } = computeScoreAndVerdict(fits);
+  const { score, matching_grade } = computeScoreAndGrade(fits);
   return {
     trend_name: llmEval.trend_name,
     evaluation: fits,
     score,
-    verdict,
+    matching_grade,
     summary_reasons: filterVagueReasons(llmEval.summary_reasons),
   };
 }
@@ -213,7 +213,7 @@ function makeExcludedByCategory(trend, brandCategory) {
       safe_fit: skip,
     },
     score: 0,
-    verdict: "제외",
+    matching_grade: "제외",
     summary_reasons: [
       {
         category: "카테고리 적합성",
@@ -374,10 +374,10 @@ const allTrendByName = new Map(
   trendAnalysis.data.trends.map((t) => [t.trend_name, t]),
 );
 
-// 정렬: verdict 순위 → 4기준 score 내림 → 트렌드 metrics.score 내림.
-const VERDICT_RANK = { "1순위": 1, "2순위": 2, "3순위": 3, 제외: 99 };
+// 정렬: matching_grade → 4기준 score 내림 → 트렌드 metrics.score 내림.
+const GRADE_RANK = { "상": 1, "중": 2, "하": 3, 제외: 99 };
 function sortTuple(ev) {
-  const vr = VERDICT_RANK[ev.verdict] ?? 99;
+  const vr = GRADE_RANK[ev.matching_grade] ?? 99;
   const fitScore = ev.score ?? 0;
   const trendScore = allTrendByName.get(ev.trend_name)?.metrics?.score ?? 0;
   return [vr, -fitScore, -trendScore];
@@ -389,16 +389,50 @@ allEvaluations.sort((a, b) => {
   return 0;
 });
 
-// 추천: 제외가 아닌 것 중 상위 3개 (맞는 게 3개 미만이면 있는 만큼만).
-const RECOMMEND_COUNT = 3;
-const recommendations = allEvaluations
-  .filter((ev) => ev.verdict !== "제외")
-  .slice(0, RECOMMEND_COUNT)
-  .map((ev, i) => ({
-    rank: i + 1,
-    trend_name: ev.trend_name,
-    summary_reasons: ev.summary_reasons,
-  }));
+// 추천: 제외가 아닌 것 전부 (최소 3개 기준, 있는 만큼 다양하게).
+const nonExcluded = allEvaluations.filter((ev) => ev.matching_grade !== "제외");
+let topEvals = [...nonExcluded];
+
+// 충돌 체크 — 추천 트렌드 간 정반대 개념 쌍 감지 + 제거.
+if (topEvals.length >= 2) {
+  const conflictClient = new Anthropic();
+  const topCtx = topEvals.map((ev) => {
+    const t = allTrendByName.get(ev.trend_name);
+    return { trend_name: ev.trend_name, keywords: t?.keywords ?? t?.core_keywords ?? [], summary: t?.summary ?? "" };
+  });
+
+  const conflictMsg = `추천 트렌드 간 핵심 방향성을 비교하세요.
+
+## 추천 트렌드 전체
+${JSON.stringify(topCtx, null, 2)}
+
+핵심 개념이 정반대인 쌍(예: 글로우 vs 매트, 쿨톤 vs 웜톤)이 있으면:
+- has_conflict: true
+- remove: 나머지 트렌드들과의 방향성 비교해 덜 일치하는 트렌드명 (정확히 trend_name 그대로)
+- reason: 한 줄 이유
+
+충돌 없으면 has_conflict: false, remove: null.`;
+
+  const conflictRes = await conflictClient.messages.parse({
+    model: "claude-haiku-4-5",
+    max_tokens: 256,
+    temperature: 0,
+    messages: [{ role: "user", content: conflictMsg }],
+    output_config: { format: zodOutputFormat(ConflictCheckSchema) },
+  });
+
+  const cd = conflictRes.parsed_output;
+  if (cd?.has_conflict && cd.remove) {
+    console.log(`⚠️ 방향성 충돌 감지 — '${cd.remove}' 제거: ${cd.reason}`);
+    topEvals = topEvals.filter((ev) => ev.trend_name !== cd.remove);
+  }
+}
+
+const recommendations = topEvals.map((ev, i) => ({
+  rank: i + 1,
+  trend_name: ev.trend_name,
+  summary_reasons: ev.summary_reasons,
+}));
 
 // envelope은 매칭가가 wrap()으로 추가. brand_name은 입력값을 신뢰(LLM 오타 방지).
 const finalData = {
