@@ -64,7 +64,7 @@ async function fetchTrendingVideos(query) {
     description: item.snippet.description,
     view_count: parseInt(statsMap[item.id.videoId]?.viewCount || 0),
     like_count: parseInt(statsMap[item.id.videoId]?.likeCount || 0),
-    url: null
+    url: `https://www.youtube.com/watch?v=${item.id.videoId}`  // ← videoId로 근거 링크 생성
   }));
 }
 

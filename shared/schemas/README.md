@@ -92,7 +92,15 @@ Python 등 다른 언어 에이전트는 동일 구조를 직접 구현하되, `
 | `data.trends[].audience_distribution` 또는 평문 `metrics` | 연령·성별 비중 | **2-A 필수**. 객체면 `age_ratio["20s"]: 0.39` / `gender_ratio.female: 0.87` 영문 비율, 평문이면 "20대 39%, 여성 87%" |
 | `data.trends[].channel_status` 또는 `media_channel_status` | 문자열 또는 배열 | 2-B 페르소나 보강용 |
 
-부가 필드(`meaning`, `status`, `evidence`, `headline_metric` 등)는 자유 — 매칭가가 reason 보강에 참고.
+**판정 품질 향상용 (있으면 좋음, 없으면 해당 항목 ⚠️ 고정 처리)**
+
+| 필드 | 형식 | 비고 |
+|---|---|---|
+| `data.trends[].trend_stage` | `"emerging"`/`"peak"`/`"declining"` | Safe-Fit 보조 라벨. **서술형 `status`와 별개 필드** (status는 현황 텍스트, trend_stage는 enum). 매칭가는 enum을 `trend_stage`에서 읽음 |
+| `data.trends[].lifespan_estimate` | `"3개월 미만"`/`"3-6개월"`/`"6개월 이상"` | Safe-Fit 보조 (트렌드 지속성 추정) |
+| `data.trends[].audience_signal` | string (페르소나 서술) | 2-B Life-Fit 보강 (행동·라이프스타일·니즈 묘사) |
+
+부가 필드(`meaning`, `status`, `evidence`, `headline_metric` 등)는 자유 — 매칭가가 reason 보강에 참고. (`status`는 서술형 현황 텍스트이며, 라이프사이클 enum은 `trend_stage`를 사용.)
 
 ### 카테고리 게이트 (포함 관계)
 
@@ -138,4 +146,4 @@ Zod 스키마(코드 진실 공급원)는 [`src/matching/schemas.js`](../../src/
 
 - 브랜드 입력은 마케터가 직접 입력하는 최소 필드(brand_name·target·tone_and_manner)만 유지
 - 트렌드 metrics는 평문 텍스트 (연령 비중·성별 비중·검색량·조회수 자연어 포함)
-- 카테고리·lifecycle 필드 등 부가 정보는 후속 단계에서 추가 검토
+- 라이프사이클(`trend_stage`)·지속성(`lifespan_estimate`)·페르소나 신호(`audience_signal`)는 판정 품질 향상용 선택 필드로 추가됨

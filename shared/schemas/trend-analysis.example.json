@@ -19,6 +19,8 @@
         },
         "meaning": "",
         "status": "",
+        "trend_stage": "",
+        "lifespan_estimate": "",
         "metrics": {
           "score": 0,
           "growth_rate": 0,
@@ -50,6 +52,7 @@
           },
           "source": ""
         },
+        "audience_signal": "",
         "media_channel_status": [
           {
             "media_channel": "",
