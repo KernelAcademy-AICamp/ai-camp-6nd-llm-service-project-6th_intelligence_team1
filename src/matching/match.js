@@ -93,11 +93,11 @@ function computePasses(rA, rB) {
   return 1;
 }
 
-// 최종 verdict: q1·q2 passes 매트릭스. 하나라도 0이면 제외.
+// 최종 matching_grade: q1·q2 passes 매트릭스. 하나라도 0이면 제외.
 function computeVerdict(q1, q2) {
   if (q1 === 0 || q2 === 0) return "제외";
   const sum = q1 + q2;
-  return sum === 4 ? "1순위" : sum === 3 ? "2순위" : "3순위";
+  return sum === 4 ? "상" : sum === 3 ? "중상" : "중하";
 }
 
 // LLM 정성 판정(1-A·1-B·2-B) + 코드 계산(2-A·passes·verdict)을 최종 구조로 조립.
@@ -140,7 +140,7 @@ function assembleEvaluation(llmEval, trend, brandTarget) {
         passes: q2passes,
       },
     },
-    verdict: computeVerdict(q1passes, q2passes),
+    matching_grade: computeVerdict(q1passes, q2passes),
     summary_reasons: filterVagueReasons(llmEval.summary_reasons),
   };
 }
@@ -252,7 +252,7 @@ function makeExcludedByCategory(trend, brandCategory) {
       question_1: { label: "브랜드 적합성", comparisons: { "1-A": skip, "1-B": skip }, passes: 0 },
       question_2: { label: "타겟 적합성", comparisons: { "2-A": skip, "2-B": skip }, passes: 0 },
     },
-    verdict: "제외",
+    matching_grade: "제외",
     summary_reasons: [
       {
         category: "카테고리 적합성",
@@ -396,10 +396,10 @@ const allTrendByName = new Map(
   trendAnalysis.data.trends.map((t) => [t.trend_name, t]),
 );
 
-// 정렬: verdict 순위(1순위>2순위>3순위>제외) → passes 합 내림 → 트렌드 score 내림.
-const VERDICT_RANK = { "1순위": 1, "2순위": 2, "3순위": 3, 제외: 99 };
+// 정렬: matching_grade(1등급>2등급>3등급>제외) → passes 합 내림 → 트렌드 score 내림.
+const VERDICT_RANK = { "상": 1, "중상": 2, "중": 3, "중하": 4, "하": 5, 제외: 99 };
 function sortTuple(ev) {
-  const vr = VERDICT_RANK[ev.verdict] ?? 99;
+  const vr = VERDICT_RANK[ev.matching_grade] ?? 99;
   const passSum =
     ev.evaluation.question_1.passes + ev.evaluation.question_2.passes;
   const score = allTrendByName.get(ev.trend_name)?.metrics?.score ?? 0;
@@ -414,7 +414,7 @@ allEvaluations.sort((a, b) => {
 
 // 추천: 제외가 아닌 것 중 상위 3개 (맞는 게 3개 미만이면 있는 만큼만).
 const RECOMMEND_COUNT = 3;
-const nonExcluded = allEvaluations.filter((ev) => ev.verdict !== "제외");
+const nonExcluded = allEvaluations.filter((ev) => ev.matching_grade !== "제외");
 let topEvals = nonExcluded.slice(0, RECOMMEND_COUNT);
 const spares = nonExcluded.slice(RECOMMEND_COUNT);
 
@@ -427,7 +427,7 @@ if (topEvals.length >= 2 && spares.length > 0) {
   });
   const spareCtx = spares.map((ev) => {
     const t = allTrendByName.get(ev.trend_name);
-    return { trend_name: ev.trend_name, keywords: t?.keywords ?? t?.core_keywords ?? [], summary: t?.summary ?? "", verdict: ev.verdict };
+    return { trend_name: ev.trend_name, keywords: t?.keywords ?? t?.core_keywords ?? [], summary: t?.summary ?? "", matching_grade: ev.matching_grade };
   });
 
   const conflictMsg = `상위 추천 트렌드 간 핵심 방향성을 비교하세요.

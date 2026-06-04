@@ -165,7 +165,7 @@ const EvaluationItemSchema = z.object({
     question_1: Question1Schema,
     question_2: Question2Schema,
   }),
-  verdict: z.enum(["1순위", "2순위", "3순위", "제외"]),
+  matching_grade: z.enum(["상", "중상", "중", "중하", "하", "제외"]),
   summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
 });
 
