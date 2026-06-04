@@ -44,6 +44,9 @@
     --chip-naver: #03C75A;
     --chip-insta: #E1306C;
     --chip-tavily: #4A90E2;
+    --chip-youtube: #E62117;
+    --chip-naver-olive: #6FA340;
+    --chip-default: #837b6f;
     /* Geometry */
     --radius-lg: 8px;
     --radius-md: 6px;
@@ -279,9 +282,12 @@
     opacity: 0.85;
     margin-left: 1px;
   }
+  .src-chip { background: var(--chip-default); }  /* fallback — 미지정 source는 회색 */
   .src-chip.naver { background: var(--chip-naver); }
   .src-chip.insta { background: var(--chip-insta); }
   .src-chip.tavily { background: var(--chip-tavily); }
+  .src-chip.youtube { background: var(--chip-youtube); }
+  .src-chip.naver-olive { background: var(--chip-naver-olive); }
 
   /* matching reason list */
   .reason-list {
@@ -1855,11 +1861,13 @@
       };
 
       // source enum → src-chip CSS 클래스 매핑 (현재 mockup 컬러 칩)
+      // 미지정 source는 빈 클래스 → CSS의 fallback (.src-chip default) 적용
       const SRC_CLASS = {
         naver_datalab: 'naver',
         tavily: 'tavily',
         instagram: 'insta',
         youtube: 'youtube',
+        'naver/olive young': 'naver-olive',
       };
 
       // q1·q2 점 indicator (passed개 중 on, 나머지 off)
