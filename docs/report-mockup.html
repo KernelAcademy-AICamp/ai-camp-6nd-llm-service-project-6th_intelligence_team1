@@ -29,17 +29,17 @@
     --primary-deep: #d98ba0;
     --accent-pink: #e6e6fa;     /* lavender accent */
     --accent-pink-soft: #f0f0fc;
-    /* Status (의미 보존) */
-    --warn: #c79a3e;
-    --warn-soft: #f5ebd3;
-    --ok: #5b7a52;
-    --ok-soft: #e8efe5;
-    --danger: #a94e4e;
-    --danger-soft: #f1e0e0;
+    /* Status (핑크-라벤더 톤으로 재정의 — 의미는 색 강도로 표현) */
+    --warn: #b8a8d8;            /* lavender-deep (중간 강조) */
+    --warn-soft: #ece8f7;
+    --ok: #d98ba0;              /* pink-deep wine (강한 강조) */
+    --ok-soft: #ffe5ec;
+    --danger: #c98a96;          /* tone-down pink (약한 강조) */
+    --danger-soft: #f5dde3;
     /* Rank colors */
-    --rank1: #f4a8b8;
-    --rank2: #e6e6fa;
-    --rank3: #c79a3e;
+    --rank1: #f4a8b8;           /* pink */
+    --rank2: #e6e6fa;           /* lavender */
+    --rank3: #ffd1dc;           /* pink-soft */
     /* External chips (브랜드 색 유지) */
     --chip-naver: #03C75A;
     --chip-insta: #E1306C;
@@ -122,7 +122,7 @@
   .meta-row { display: flex; flex-wrap: wrap; gap: 10px; }
   .meta-chip {
     display: inline-flex; align-items: center; gap: 8px;
-    background: #f6f3ed; border: 1px solid var(--border);
+    background: #fef0f5; border: 1px solid var(--border);
     padding: 8px 12px; border-radius: 10px;
     font-size: 13px; color: var(--text-sub);
   }
@@ -162,7 +162,7 @@
     gap: 16px;
     padding: 16px 18px;
     border-radius: var(--radius-md);
-    background: #f6f3ed;
+    background: #fef0f5;
     border: 1px solid var(--border);
   }
   .summary-letter {
@@ -195,7 +195,7 @@
   .trend-card .card-top {
     padding: 18px 20px 14px;
     border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, #f6f3ed 0%, #fbfaf7 100%);
+    background: linear-gradient(180deg, #fef0f5 0%, #ffffff 100%);
   }
   .rank-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .rank-badge {
@@ -236,14 +236,14 @@
   }
   .metric {
     flex: 1;
-    background: #f6f3ed;
+    background: #fef0f5;
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 10px 12px;
   }
   .metric .m-label { font-size: 11px; color: var(--text-mute); font-weight: 600; margin-bottom: 2px; }
   .metric .m-value { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
-  .metric .m-delta { font-size: 11px; font-weight: 700; color: #5b7a52; margin-left: 4px; }
+  .metric .m-delta { font-size: 11px; font-weight: 700; color: var(--ok); margin-left: 4px; }
 
   /* sources */
   .src-list { display: flex; flex-direction: column; gap: 8px; }
@@ -252,7 +252,7 @@
     flex-direction: column;
     gap: 6px;
     padding: 12px 14px;
-    background: #f6f3ed;
+    background: #fef0f5;
     border: 1px solid var(--border);
     border-radius: 10px;
     font-size: 12.5px;
@@ -308,7 +308,7 @@
   .trend-card.warn .reason-list li::before { background: var(--warn); }
 
   /* warn variant for 3rd card */
-  .trend-card.warn .card-top { background: linear-gradient(180deg, var(--warn-soft) 0%, #fbfaf7 100%); }
+  .trend-card.warn .card-top { background: linear-gradient(180deg, var(--warn-soft) 0%, #ffffff 100%); }
   .warn-note {
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 11.5px; font-weight: 700; color: var(--warn);
@@ -333,12 +333,12 @@
   .ref-slot {
     aspect-ratio: 4 / 5;
     border-radius: var(--radius-md);
-    border: 1.5px dashed #cdc4b4;
+    border: 1.5px dashed #d9bccd;
     background:
-      linear-gradient(135deg, #f6f3ed 25%, transparent 25%) -10px 0/20px 20px,
-      linear-gradient(225deg, #f6f3ed 25%, transparent 25%) -10px 0/20px 20px,
-      linear-gradient(315deg, #f6f3ed 25%, #fbfaf7 25%) 0 0/20px 20px,
-      linear-gradient(45deg,  #f6f3ed 25%, #fbfaf7 25%) 0 0/20px 20px;
+      linear-gradient(135deg, #fef0f5 25%, transparent 25%) -10px 0/20px 20px,
+      linear-gradient(225deg, #fef0f5 25%, transparent 25%) -10px 0/20px 20px,
+      linear-gradient(315deg, #fef0f5 25%, #ffffff 25%) 0 0/20px 20px,
+      linear-gradient(45deg,  #fef0f5 25%, #ffffff 25%) 0 0/20px 20px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 8px;
     color: var(--text-mute);
@@ -402,7 +402,7 @@
   }
   .compare-bar-track {
     height: 28px; border-radius: 8px;
-    background: #e8e3d8;
+    background: var(--border);
     position: relative; overflow: hidden;
   }
   .compare-bar-fill {
@@ -412,9 +412,9 @@
     padding-right: 12px;
     font-weight: 800; font-size: 13px; color: #fff;
   }
-  .compare-bar-fill.r1 { background: linear-gradient(90deg, #5b86ad 0%, #436384 100%); }
-  .compare-bar-fill.r2 { background: linear-gradient(90deg, #436384 0%, #a9c9e6 100%); }
-  .compare-bar-fill.r3 { background: linear-gradient(90deg, #c79a3e 0%, #e0c283 100%); }
+  .compare-bar-fill.r1 { background: linear-gradient(90deg, var(--primary-soft) 0%, var(--primary) 100%); }
+  .compare-bar-fill.r2 { background: linear-gradient(90deg, var(--accent-pink-soft) 0%, var(--accent-pink) 100%); color: var(--text); }
+  .compare-bar-fill.r3 { background: linear-gradient(90deg, #fef0f5 0%, var(--rank3) 100%); color: var(--text); }
 
   /* Per-trend data cards grid */
   .data-grid {
@@ -466,18 +466,18 @@
     font-weight: 800; font-size: 14px;
     line-height: 1.2;
   }
-  .growth-pill.up { color: #5b7a52; background: #e8efe5; }
-  .growth-pill.down { color: #a94e4e; background: #f1e0e0; }
+  .growth-pill.up { color: var(--ok); background: var(--ok-soft); }
+  .growth-pill.down { color: var(--danger); background: var(--danger-soft); }
   .growth-pill .arrow { font-size: 10px; margin-right: 2px; }
   .growth-pill .growth-sub { font-size: 10px; font-weight: 600; color: var(--text-mute); margin-top: 2px; }
   .mini-bar {
     height: 6px; border-radius: 4px;
-    background: #e8e3d8; overflow: hidden;
+    background: var(--border); overflow: hidden;
   }
   .mini-bar-fill { height: 100%; border-radius: 4px; }
-  .mini-bar-fill.r1 { background: var(--primary); }
+  .mini-bar-fill.r1 { background: var(--rank1); }
   .mini-bar-fill.r2 { background: var(--rank2); }
-  .mini-bar-fill.r3 { background: var(--warn); }
+  .mini-bar-fill.r3 { background: var(--rank3); }
 
   /* Graph 1 — Age/Gender stacked bars */
   .stack-row {
@@ -491,15 +491,15 @@
     height: 14px; border-radius: 4px;
     overflow: hidden;
     display: flex;
-    background: #e8e3d8;
+    background: var(--border);
   }
   .seg { height: 100%; }
-  .seg-age1 { background: #ece4d5; }
-  .seg-age2 { background: #5b86ad; }
-  .seg-age3 { background: #a9c9e6; }
-  .seg-age4 { background: #436384; }
-  .seg-f { background: #5b86ad; }
-  .seg-m { background: #a9c9e6; }
+  .seg-age1 { background: var(--accent-pink-soft); }
+  .seg-age2 { background: var(--primary); }
+  .seg-age3 { background: var(--accent-pink); }
+  .seg-age4 { background: var(--primary-deep); }
+  .seg-f { background: var(--primary); }
+  .seg-m { background: var(--accent-pink); }
   .stack-legend {
     display: flex; flex-wrap: wrap; gap: 6px 12px;
     margin-top: 10px;
@@ -521,23 +521,23 @@
   .gauge-name { font-size: 11px; font-weight: 700; color: var(--text-mute); }
   .gauge-track {
     height: 12px; border-radius: 4px;
-    background: #e8e3d8;
+    background: var(--border);
     position: relative; overflow: hidden;
   }
   .gauge-fill { height: 100%; border-radius: 4px; }
-  .gauge-fill.pass { background: linear-gradient(90deg, #5b7a52 0%, #7a9970 100%); }
-  .gauge-fill.warn { background: linear-gradient(90deg, #c79a3e 0%, #e0c283 100%); }
+  .gauge-fill.pass { background: linear-gradient(90deg, var(--primary) 0%, var(--ok) 100%); }
+  .gauge-fill.warn { background: linear-gradient(90deg, var(--accent-pink) 0%, var(--warn) 100%); }
   .gauge-track .threshold {
     position: absolute; top: -2px; bottom: -2px;
     width: 0;
-    border-left: 2px dashed #a94e4e;
+    border-left: 2px dashed var(--danger);
     z-index: 2;
   }
   .gauge-val {
     text-align: right;
     font-size: 13px; font-weight: 800;
   }
-  .gauge-val.pass { color: #5b7a52; }
+  .gauge-val.pass { color: var(--ok); }
   .gauge-val.warn { color: var(--warn); }
   .threshold-note {
     font-size: 10.5px; color: var(--text-mute);
@@ -548,7 +548,7 @@
     content: '';
     display: inline-block;
     width: 14px; height: 0;
-    border-top: 2px dashed #a94e4e;
+    border-top: 2px dashed var(--danger);
   }
 
   /* ===== Funnel CTA Button (Funnel 1 → Funnel 2) ===== */
@@ -562,7 +562,7 @@
     align-items: center;
     gap: 12px;
     padding: 20px 44px;
-    background: linear-gradient(135deg, var(--primary) 0%, #436384 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-deep) 100%);
     color: #fff;
     font-weight: 800;
     font-size: 16px;
@@ -627,7 +627,7 @@
   .match-passes-bar {
     height: 8px;
     border-radius: 4px;
-    background: #ece4d5;
+    background: var(--border);
     overflow: hidden;
     margin-bottom: 14px;
   }
@@ -655,7 +655,7 @@
   .mp-dots { display: inline-flex; gap: 4px; }
   .mp-dot {
     width: 9px; height: 9px; border-radius: 50%;
-    background: #ece4d5;
+    background: var(--border);
   }
   .mp-passes-row.strong .mp-dot.on { background: var(--ok); }
   .mp-passes-row.partial .mp-dot.on { background: var(--warn); }
@@ -679,7 +679,7 @@
   /* ===== Match passes expandable details (γ) ===== */
   details.eval-details {
     margin-top: 14px;
-    background: #f6f3ed;
+    background: #fef0f5;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
   }
@@ -727,7 +727,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
-    background: #f6f3ed;
+    background: #fef0f5;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     font-size: 12px;
@@ -754,7 +754,7 @@
   .ch-dot.rising { background: var(--primary); }
   .ch-status.rising { background: var(--primary-soft); color: var(--primary-deep); }
   .ch-dot.stable { background: var(--line-strong); }
-  .ch-status.stable { background: #fbfaf7; color: var(--text-sub); border: 1px solid var(--border); }
+  .ch-status.stable { background: #ffffff; color: var(--text-sub); border: 1px solid var(--border); }
   .ch-dot.decline { background: var(--warn); }
   .ch-status.decline { background: var(--warn-soft); color: var(--warn); }
 
@@ -922,7 +922,7 @@
     border-radius: var(--radius-sm);
     font-family: inherit;
   }
-  .help-modal-close:hover { background: #f6f3ed; color: var(--text); }
+  .help-modal-close:hover { background: #fef0f5; color: var(--text); }
   .help-modal-body {
     padding: 20px 22px;
     font-size: 13px;
@@ -939,7 +939,7 @@
   .help-steps li {
     counter-increment: step;
     padding: 10px 12px 10px 38px;
-    background: #f6f3ed;
+    background: #fef0f5;
     border-radius: var(--radius-sm);
     margin-bottom: 6px;
     position: relative;
@@ -1064,7 +1064,7 @@
       <div class="meta-row">
         <div class="meta-chip"><span class="dot"></span><strong>제품</strong> 커버 마스터 핑크 쿠션</div>
         <div class="meta-chip"><span class="dot" style="background:var(--accent-pink)"></span><strong>카테고리</strong> 메이크업 &gt; 베이스</div>
-        <div class="meta-chip"><span class="dot" style="background:#5b7a52"></span><strong>타겟</strong> 20대 여성 · Z세대·트렌디</div>
+        <div class="meta-chip"><span class="dot" style="background:var(--ok)"></span><strong>타겟</strong> 20대 여성 · Z세대·트렌디</div>
       </div>
     </div>
 
