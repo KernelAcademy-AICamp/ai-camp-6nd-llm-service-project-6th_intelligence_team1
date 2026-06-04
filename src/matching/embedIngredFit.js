@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-const EMBED_DELAY_MS = 200;
+const EMBED_DELAY_MS = 500;
 
 async function embedTexts(texts) {
   const vecs = [];

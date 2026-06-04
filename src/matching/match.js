@@ -470,10 +470,53 @@ allEvaluations.sort((a, b) => {
 const nonExcluded = allEvaluations.filter((ev) => ev.matching_grade !== "제외");
 let topEvals = [...nonExcluded];
 
-// 충돌 체크 — 충돌 없을 때까지 반복 (최대 5회).
+// 뷰티 카테고리 정반대 개념 쌍 — 코드 1차 감지용
+const KEYWORD_CONFLICT_PAIRS = [
+  ["글로우", "매트"],
+  ["광채", "매트"],
+  ["글로시", "매트"],
+  ["쿨톤", "웜톤"],
+];
+
+function detectKeywordConflict(evs) {
+  for (const [keyA, keyB] of KEYWORD_CONFLICT_PAIRS) {
+    const hasA = (ev) => {
+      const t = allTrendByName.get(ev.trend_name);
+      return [...(t?.keywords ?? []), ...(t?.core_keywords ?? [])]
+        .some((k) => k.toLowerCase().includes(keyA));
+    };
+    const hasB = (ev) => {
+      const t = allTrendByName.get(ev.trend_name);
+      return [...(t?.keywords ?? []), ...(t?.core_keywords ?? [])]
+        .some((k) => k.toLowerCase().includes(keyB));
+    };
+    const groupA = evs.filter(hasA);
+    const groupB = evs.filter(hasB);
+    if (groupA.length > 0 && groupB.length > 0) {
+      // 이미 정렬된 상태 — 가장 낮은 순위(인덱스 큰 것) 제거
+      const conflicting = [...groupA, ...groupB];
+      const toRemove = conflicting.reduce((worst, ev) =>
+        evs.indexOf(ev) > evs.indexOf(worst) ? ev : worst
+      );
+      return { remove: toRemove.trend_name, reason: `키워드 충돌: '${keyA}' vs '${keyB}'` };
+    }
+  }
+  return null;
+}
+
+// 충돌 체크 — 코드 감지 우선, 못 잡으면 LLM. 충돌 없을 때까지 반복 (최대 5회).
 const MAX_CONFLICT_ROUNDS = 5;
 const conflictClient = new Anthropic();
 for (let round = 0; round < MAX_CONFLICT_ROUNDS && topEvals.length >= 2; round++) {
+  // 1차: 코드 키워드 감지
+  const codeConflict = detectKeywordConflict(topEvals);
+  if (codeConflict) {
+    console.log(`⚠️ 방향성 충돌 감지 (${round + 1}회, 코드) — '${codeConflict.remove}' 제거: ${codeConflict.reason}`);
+    topEvals = topEvals.filter((ev) => ev.trend_name !== codeConflict.remove);
+    continue;
+  }
+
+  // 2차: LLM 감지 (코드가 못 잡은 경우)
   const topCtx = topEvals.map((ev) => {
     const t = allTrendByName.get(ev.trend_name);
     return { trend_name: ev.trend_name, keywords: t?.keywords ?? t?.core_keywords ?? [], summary: t?.summary ?? "" };
@@ -501,7 +544,7 @@ ${JSON.stringify(topCtx, null, 2)}
 
   const cd = conflictRes.parsed_output;
   if (cd?.has_conflict && cd.remove) {
-    console.log(`⚠️ 방향성 충돌 감지 (${round + 1}회) — '${cd.remove}' 제거: ${cd.reason}`);
+    console.log(`⚠️ 방향성 충돌 감지 (${round + 1}회, LLM) — '${cd.remove}' 제거: ${cd.reason}`);
     topEvals = topEvals.filter((ev) => ev.trend_name !== cd.remove);
   } else {
     break;
