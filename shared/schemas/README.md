@@ -9,6 +9,7 @@
 | `brand-analysis.example.json` | 마케터 입력 / 브랜드 분석가 | 매칭가 | 브랜드 프로필 (brand_name·target·tone_and_manner) |
 | `trend-analysis.example.json` | 트렌드 분석가 | 매칭가 | 트렌드 데이터 배열 (가변 개수) |
 | `match-result.example.json` | 매칭가 | 작성가 | 트렌드별 4비교 평가 + 최종 verdict |
+| `writer-output.example.json` | 작성가 | 디자이너 (리포트 렌더러) | 리포트 mockup 단일 데이터 소스 (3개 입력 JSON 통합 + 가공) |
 
 ## 공통 규칙
 
@@ -131,6 +132,58 @@ envelope `data` 안에:
 Zod 스키마(코드 진실 공급원)는 [`src/matching/schemas.js`](../../src/matching/schemas.js)의 `MatchDataSchema`.
 
 평가 로직(4비교 기준, passes 산정, verdict 매트릭스)은 [`src/matching/README.md`](../../src/matching/README.md) 참고.
+
+### 출력 규약 (작성가가 디자이너에게 줄 것)
+
+**writer-output.json**
+
+작성가는 `brand-analysis.json` + `trend-analysis.json` + `match-result.json` 세 입력을 `trend_name` 기준으로 조인해서 **리포트 mockup이 필요한 모든 데이터를 단일 JSON으로 출력**한다. 디자이너 렌더러는 이 한 파일만 읽어 화면 전체를 그린다.
+
+envelope `data` 안에:
+
+| 필드 | 형식 | 비고 |
+|---|---|---|
+| `source` | string | 고정값 `"작성가"` |
+| `brand` | `{ name, product_name, category, target_display }` | 브랜드 헤더용 (target_display는 "20대 여성 · Z세대·트렌디" 형태로 합성) |
+| `contents[]` | 배열 (0~3개 가변) | 매칭가 `recommendations` 길이에 의존. **카피 필드 없음** — 리포트 렌더링용 메타데이터만 |
+
+각 `contents[]` 항목:
+
+| 필드 | 형식 | 출처 |
+|---|---|---|
+| `content_id` | string (`"C001"` 형식) | 작성가가 sequential 발급 |
+| `trend_name` | string | `match-result.recommendations[].trend_name` |
+| `rank` | `1 \| 2 \| 3` | `match-result.recommendations[].rank` |
+| `verdict` | `"1순위" \| "2순위" \| "3순위"` | `match-result.evaluations[].verdict` (trend_name 조인) |
+| `display_variant` | `"primary" \| "supplementary"` | rank===3 → supplementary, 그 외 primary |
+| `keywords` | string[] (보통 5개) | `trend-analysis.trends[].keywords` |
+| `headline_metric` | `{ metric, value, delta }` | `trend-analysis.trends[].headline_metric` |
+| `metrics` | `{ score, growth_rate, period }` | `trend-analysis.trends[].metrics` |
+| `summary_bullets` | string[] (1~5개) | `trend-analysis.trends[].summary` + `meaning` + `status` 가공 |
+| `reason_bullets` | string[] (1~3개) | `match-result.recommendations[].summary_reasons[].fact` |
+| `evidence[]` | `{ source, label, description, url }` 배열 | `trend-analysis.trends[].evidence[]` 변환 |
+| `channels[]` | `{ name, status }` 배열 | `trend-analysis.trends[].media_channel_status[]` |
+| `match_passes` | `{ q1, q2, total }` | `match-result.evaluations[].evaluation.question_1/2.passes` |
+| `match_strength` | `"strong" \| "partial" \| "weak"` | total 기반 derive: 4→strong / 3→partial / ≤2→weak |
+
+**Enum 값**:
+
+| 필드 | 값 |
+|---|---|
+| `evidence[].source` | `"naver_datalab" \| "tavily" \| "instagram" \| "youtube"` |
+| `channels[].status` | `"active" \| "rising" \| "stable" \| "decline"` |
+| `verdict` | `"1순위" \| "2순위" \| "3순위" \| "제외"` |
+| `display_variant` | `"primary" \| "supplementary"` |
+| `match_strength` | `"strong" \| "partial" \| "weak"` |
+
+**가변·옵셔널 처리**:
+- `contents[]` 길이: 매칭가 추천이 0개면 빈 배열. 디자이너 측에서 분기 처리.
+- `evidence[].url`: nullable (Naver/YouTube 출처는 현재 null 가능, Tavily는 채워짐)
+- `headline_metric.delta`: optional (없으면 빈 문자열)
+
+전체 구조 예시는 [`writer-output.example.json`](writer-output.example.json).
+
+자세한 합의 배경·매핑 근거는 [`docs/writer-output-v2-spec.md`](../../docs/writer-output-v2-spec.md) 참고.
 
 ## 상태: v0.2 (MVP)
 
