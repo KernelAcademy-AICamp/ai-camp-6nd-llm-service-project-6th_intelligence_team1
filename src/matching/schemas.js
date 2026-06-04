@@ -186,6 +186,13 @@ export const MatchDataSchema = z.object({
   evaluations: z.array(EvaluationItemSchema),
 });
 
+// 상위 추천 간 방향성 충돌 감지 — 정반대 개념 쌍 있으면 remove 지정
+export const ConflictCheckSchema = z.object({
+  has_conflict: z.boolean(),
+  remove: z.string().nullable(),
+  reason: z.string(),
+});
+
 // 저장된 결과 전체를 검증할 때 사용 (envelope 포함)
 export const MatchResultSchema = envelopeSchema(MatchDataSchema);
 

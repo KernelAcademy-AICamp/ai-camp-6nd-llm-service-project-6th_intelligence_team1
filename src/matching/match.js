@@ -4,7 +4,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { LlmMatchDataSchema, InputBrandSchema, InputTrendSchema } from "./schemas.js";
+import { LlmMatchDataSchema, InputBrandSchema, InputTrendSchema, ConflictCheckSchema } from "./schemas.js";
 import { wrap, wrapError } from "../../shared/envelope.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -414,14 +414,59 @@ allEvaluations.sort((a, b) => {
 
 // 추천: 제외가 아닌 것 중 상위 3개 (맞는 게 3개 미만이면 있는 만큼만).
 const RECOMMEND_COUNT = 3;
-const recommendations = allEvaluations
-  .filter((ev) => ev.verdict !== "제외")
-  .slice(0, RECOMMEND_COUNT)
-  .map((ev, i) => ({
-    rank: i + 1,
-    trend_name: ev.trend_name,
-    summary_reasons: ev.summary_reasons,
-  }));
+const nonExcluded = allEvaluations.filter((ev) => ev.verdict !== "제외");
+let topEvals = nonExcluded.slice(0, RECOMMEND_COUNT);
+const spares = nonExcluded.slice(RECOMMEND_COUNT);
+
+// 충돌 체크 — 상위 추천 간 정반대 개념 쌍 감지 + 교체 후보 중 더 근접한 것으로 대체
+if (topEvals.length >= 2 && spares.length > 0) {
+  const conflictClient = new Anthropic();
+  const topCtx = topEvals.map((ev) => {
+    const t = allTrendByName.get(ev.trend_name);
+    return { trend_name: ev.trend_name, keywords: t?.keywords ?? t?.core_keywords ?? [], summary: t?.summary ?? "" };
+  });
+  const spareCtx = spares.map((ev) => {
+    const t = allTrendByName.get(ev.trend_name);
+    return { trend_name: ev.trend_name, keywords: t?.keywords ?? t?.core_keywords ?? [], summary: t?.summary ?? "", verdict: ev.verdict };
+  });
+
+  const conflictMsg = `상위 추천 트렌드 간 핵심 방향성을 비교하세요.
+
+## 상위 추천
+${JSON.stringify(topCtx, null, 2)}
+
+## 교체 후보 (다음 순위)
+${JSON.stringify(spareCtx, null, 2)}
+
+상위 추천 중 핵심 개념이 정반대인 쌍(예: 글로우 vs 매트, 쿨톤 vs 웜톤)이 있으면:
+- has_conflict: true
+- remove: 교체 후보들의 방향성과 비교해 덜 일치하는 트렌드명 (정확히 trend_name 그대로)
+- reason: 한 줄 이유
+
+충돌 없으면 has_conflict: false, remove: null.`;
+
+  const conflictRes = await conflictClient.messages.parse({
+    model: "claude-haiku-4-5",
+    max_tokens: 256,
+    temperature: 0,
+    messages: [{ role: "user", content: conflictMsg }],
+    output_config: { format: zodOutputFormat(ConflictCheckSchema) },
+  });
+
+  const cd = conflictRes.parsed_output;
+  if (cd?.has_conflict && cd.remove) {
+    console.log(`⚠️ 방향성 충돌 감지 — '${cd.remove}' 제거: ${cd.reason}`);
+    const filtered = topEvals.filter((ev) => ev.trend_name !== cd.remove);
+    if (spares[0]) filtered.push(spares[0]);
+    topEvals = filtered;
+  }
+}
+
+const recommendations = topEvals.map((ev, i) => ({
+  rank: i + 1,
+  trend_name: ev.trend_name,
+  summary_reasons: ev.summary_reasons,
+}));
 
 // envelope은 매칭가가 wrap()으로 추가. brand_name은 입력값을 신뢰(LLM 오타 방지).
 const finalData = {
