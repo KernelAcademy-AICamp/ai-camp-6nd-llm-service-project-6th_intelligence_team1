@@ -107,8 +107,8 @@ function assembleEvaluation(llmEval, trendData, ingredOverride) {
     fits.life_fit = { result: "⚠️", reason: "타겟 페르소나 정보 없음 — 비교 불가" };
   }
 
-  // Safe-Fit 코드 보정: status 있으면 우선 적용, 둘 다 없으면 ⚠️ 강제
-  const status = trendData?.status;
+  // Safe-Fit 코드 보정: trend_stage 우선, 없으면 status fallback. 둘 다 없으면 ⚠️ 강제
+  const status = trendData?.trend_stage ?? trendData?.status;
   const lifespan = trendData?.lifespan_estimate;
   if (STATUS_SAFE_FIT[status]) {
     fits.safe_fit = STATUS_SAFE_FIT[status];
