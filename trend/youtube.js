@@ -14,7 +14,7 @@ const brandAnalysis = JSON.parse(
 );
 
 // search_keywords를 검색어로 사용 (하드코딩 대신 동적으로)
-const QUERIES = brandAnalysis.data.short_keywords;
+const QUERIES = brandAnalysis.data.search_keywords;
 
 // brand_context도 brand-analysis.json에서 가져옴
 const brandContext = {
@@ -64,7 +64,7 @@ async function fetchTrendingVideos(query) {
     description: item.snippet.description,
     view_count: parseInt(statsMap[item.id.videoId]?.viewCount || 0),
     like_count: parseInt(statsMap[item.id.videoId]?.likeCount || 0),
-    url: null
+    url: `https://www.youtube.com/watch?v=${item.id.videoId}`  // ← videoId로 근거 링크 생성
   }));
 }
 
