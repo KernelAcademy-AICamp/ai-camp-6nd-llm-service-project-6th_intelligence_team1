@@ -171,9 +171,9 @@ export function generateReport({ brand, trend, match } = {}) {
     }
     lines.push("");
 
-    // 📚 수집 근거 — 출처 링크 (HTML src-chip 등가)
+    // 📚 수집 근거 — 출처 링크 (HTML src-chip 등가). Instagram 등 EXCLUDED는 제외.
     lines.push("**📚 수집 근거**");
-    const evidence = td?.evidence ?? [];
+    const evidence = (td?.evidence ?? []).filter((e) => !isExcluded(e.source));
     if (evidence.length === 0) {
       lines.push("*(수집된 evidence 없음)*");
     } else {
