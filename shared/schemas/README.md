@@ -9,6 +9,7 @@
 | `brand-analysis.example.json` | 마케터 입력 / 브랜드 분석가 | 매칭가 | 브랜드 프로필 (brand_name·target·tone_and_manner) |
 | `trend-analysis.example.json` | 트렌드 분석가 | 매칭가 | 트렌드 데이터 배열 (가변 개수) |
 | `match-result.example.json` | 매칭가 | 작성가 | 트렌드별 4비교 평가 + 최종 verdict |
+| `writer-output.example.json` | 작성가 | 디자이너 (리포트 렌더러) | 리포트 mockup 단일 데이터 소스 (3개 입력 JSON 통합 + 가공) |
 
 ## 공통 규칙
 
@@ -92,7 +93,15 @@ Python 등 다른 언어 에이전트는 동일 구조를 직접 구현하되, `
 | `data.trends[].audience_distribution` 또는 평문 `metrics` | 연령·성별 비중 | **2-A 필수**. 객체면 `age_ratio["20s"]: 0.39` / `gender_ratio.female: 0.87` 영문 비율, 평문이면 "20대 39%, 여성 87%" |
 | `data.trends[].channel_status` 또는 `media_channel_status` | 문자열 또는 배열 | 2-B 페르소나 보강용 |
 
-부가 필드(`meaning`, `status`, `evidence`, `headline_metric` 등)는 자유 — 매칭가가 reason 보강에 참고.
+**판정 품질 향상용 (있으면 좋음, 없으면 해당 항목 ⚠️ 고정 처리)**
+
+| 필드 | 형식 | 비고 |
+|---|---|---|
+| `data.trends[].trend_stage` | `"emerging"`/`"peak"`/`"declining"` | Safe-Fit 보조 라벨. **서술형 `status`와 별개 필드** (status는 현황 텍스트, trend_stage는 enum). 매칭가는 enum을 `trend_stage`에서 읽음 |
+| `data.trends[].lifespan_estimate` | `"3개월 미만"`/`"3-6개월"`/`"6개월 이상"` | Safe-Fit 보조 (트렌드 지속성 추정) |
+| `data.trends[].audience_signal` | string (페르소나 서술) | 2-B Life-Fit 보강 (행동·라이프스타일·니즈 묘사) |
+
+부가 필드(`meaning`, `status`, `evidence`, `headline_metric` 등)는 자유 — 매칭가가 reason 보강에 참고. (`status`는 서술형 현황 텍스트이며, 라이프사이클 enum은 `trend_stage`를 사용.)
 
 ### 카테고리 게이트 (포함 관계)
 
@@ -132,10 +141,62 @@ Zod 스키마(코드 진실 공급원)는 [`src/matching/schemas.js`](../../src/
 
 평가 로직(4비교 기준, passes 산정, verdict 매트릭스)은 [`src/matching/README.md`](../../src/matching/README.md) 참고.
 
+### 출력 규약 (작성가가 디자이너에게 줄 것)
+
+**writer-output.json**
+
+작성가는 `brand-analysis.json` + `trend-analysis.json` + `match-result.json` 세 입력을 `trend_name` 기준으로 조인해서 **리포트 mockup이 필요한 모든 데이터를 단일 JSON으로 출력**한다. 디자이너 렌더러는 이 한 파일만 읽어 화면 전체를 그린다.
+
+envelope `data` 안에:
+
+| 필드 | 형식 | 비고 |
+|---|---|---|
+| `source` | string | 고정값 `"작성가"` |
+| `brand` | `{ name, product_name, category, target_display }` | 브랜드 헤더용 (target_display는 "20대 여성 · Z세대·트렌디" 형태로 합성) |
+| `contents[]` | 배열 (0~3개 가변) | 매칭가 `recommendations` 길이에 의존. **카피 필드 없음** — 리포트 렌더링용 메타데이터만 |
+
+각 `contents[]` 항목:
+
+| 필드 | 형식 | 출처 |
+|---|---|---|
+| `content_id` | string (`"C001"` 형식) | 작성가가 sequential 발급 |
+| `trend_name` | string | `match-result.recommendations[].trend_name` |
+| `rank` | `1 \| 2 \| 3` | `match-result.recommendations[].rank` |
+| `verdict` | `"1순위" \| "2순위" \| "3순위"` | `match-result.evaluations[].verdict` (trend_name 조인) |
+| `display_variant` | `"primary" \| "supplementary"` | rank===3 → supplementary, 그 외 primary |
+| `keywords` | string[] (보통 5개) | `trend-analysis.trends[].keywords` |
+| `headline_metric` | `{ metric, value, delta }` | `trend-analysis.trends[].headline_metric` |
+| `metrics` | `{ score, growth_rate, period }` | `trend-analysis.trends[].metrics` |
+| `summary_bullets` | string[] (1~5개) | `trend-analysis.trends[].summary` + `meaning` + `status` 가공 |
+| `reason_bullets` | string[] (1~3개) | `match-result.recommendations[].summary_reasons[].fact` |
+| `evidence[]` | `{ source, label, description, url }` 배열 | `trend-analysis.trends[].evidence[]` 변환 |
+| `channels[]` | `{ name, status }` 배열 | `trend-analysis.trends[].media_channel_status[]` |
+| `match_passes` | `{ q1, q2, total }` | `match-result.evaluations[].evaluation.question_1/2.passes` |
+| `match_strength` | `"strong" \| "partial" \| "weak"` | total 기반 derive: 4→strong / 3→partial / ≤2→weak |
+
+**Enum 값**:
+
+| 필드 | 값 |
+|---|---|
+| `evidence[].source` | `"naver_datalab" \| "tavily" \| "instagram" \| "youtube"` |
+| `channels[].status` | `"active" \| "rising" \| "stable" \| "decline"` |
+| `verdict` | `"1순위" \| "2순위" \| "3순위" \| "제외"` |
+| `display_variant` | `"primary" \| "supplementary"` |
+| `match_strength` | `"strong" \| "partial" \| "weak"` |
+
+**가변·옵셔널 처리**:
+- `contents[]` 길이: 매칭가 추천이 0개면 빈 배열. 디자이너 측에서 분기 처리.
+- `evidence[].url`: nullable (Naver/YouTube 출처는 현재 null 가능, Tavily는 채워짐)
+- `headline_metric.delta`: optional (없으면 빈 문자열)
+
+전체 구조 예시는 [`writer-output.example.json`](writer-output.example.json).
+
+자세한 합의 배경·매핑 근거는 [`docs/writer-output-v2-spec.md`](../../docs/writer-output-v2-spec.md) 참고.
+
 ## 상태: v0.2 (MVP)
 
 매칭가 v0.2 스펙(2질문 × 2비교) 기준으로 단순화한 입력 형식.
 
 - 브랜드 입력은 마케터가 직접 입력하는 최소 필드(brand_name·target·tone_and_manner)만 유지
 - 트렌드 metrics는 평문 텍스트 (연령 비중·성별 비중·검색량·조회수 자연어 포함)
-- 카테고리·lifecycle 필드 등 부가 정보는 후속 단계에서 추가 검토
+- 라이프사이클(`trend_stage`)·지속성(`lifespan_estimate`)·페르소나 신호(`audience_signal`)는 판정 품질 향상용 선택 필드로 추가됨
