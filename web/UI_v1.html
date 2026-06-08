@@ -1243,7 +1243,13 @@
                 barEl.style.width = (i / n * 100) + '%';
 
                 // 첫 단계(brand)에만 입력값을 함께 보냄 → 서버가 brand-input.json 저장
-                const payload = (i === 0) ? Object.assign({ stage: st.key }, d) : { stage: st.key };
+                // [추가] 주소창에 ?fresh=1 이 있으면 YouTube 캐시 무시하고 새로 받기
+                //   평소(http://localhost:3000/)      → 캐싱 사용, units 절약
+                //   데모 직전(.../?fresh=1)            → 최신 트렌드로 새로 수집
+                const isFresh = new URLSearchParams(location.search).has('fresh');
+                const payload = (i === 0)
+                    ? Object.assign({ stage: st.key, fresh: isFresh }, d)
+                    : { stage: st.key, fresh: isFresh };
                 const res = await fetch('/run', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
