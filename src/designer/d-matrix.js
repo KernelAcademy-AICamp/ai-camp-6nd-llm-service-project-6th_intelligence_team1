@@ -4,6 +4,9 @@
 // 입력에서 카테고리는 "대분류 > 소분류" 형식 (예: "메이크업 > 립", "클렌징 > 클렌징오일")
 // - 인물 샷: 소분류로 룩업 (소분류 없으면 대분류 기본값)
 // - 제품 샷: 대분류로 룩업, 소분류가 옵션의 "추천" 리스트에 있으면 그 옵션 우선
+//
+// ⚠️ 제품 형태·재질·색 어휘 금지 (튜브·병·컴팩트·스틱·foam·gel·beige·rosy 등).
+//    제품 외형은 첨부 사진이 담당. 매트릭스는 동작·자세·구도·앵글·환경·라이팅만.
 
 // 시안가가 지원하는 5대분류만 허용. 그 외(바디·헤어·기타)는 입력 단계에서 거부.
 export const SUPPORTED_MAJOR_CATEGORIES = ["클렌징", "스킨케어", "메이크업"];
@@ -15,7 +18,7 @@ export const SUPPORTED_MAKEUP_MINOR = [
 
 // ─── 인물 샷 [A: 모델 특징] 매트릭스 (톤앤매너 기반) ─────────────────
 // 톤별 1개 고정 — 같은 브랜드면 카테고리 무관하게 모델·헤어·메이크업 무드 동일.
-// 표정·시선·자세는 [D]에서 처리, 구체 립 컬러는 [B]에서 처리하므로 여기선 제외.
+// 표정·시선·자세는 [D]에서, 제품 자체는 첨부 사진(reference_image_path)이 담당하므로 여기선 제외.
 // 조명·배경·마무리 어구는 고정 틀과 [C]에서 처리하므로 여기선 제외.
 export const PERSON_A_MATRIX = {
   "클린뷰티":
@@ -42,270 +45,260 @@ export function pickPersonA(toneAndManner) {
 
 // ─── 인물 샷 [D] 매트릭스 (소분류 기반) ─────────────────────────────
 // 키: 소분류 이름 — 입력 "클렌징 > 클렌징폼"의 "클렌징폼" 부분 매칭
-// 값: 자세·구도 옵션 3개 (인물 자세 + 손동작 + 제품 동작이 한 줄로)
+// 값: 자세·구도 옵션 3개 (자세 + 손동작·표정).
+// ⚠️ 제품 형태·재질·색 어휘 금지. "the product"로 일반화.
 export const PERSON_POSE_MATRIX = {
   // 클렌징
   "클렌징폼": [
-    "massage pose with soft white foam on fingertips",
-    "holding a squeeze tube, small dollop of foam on palm",
-    "showing creamy lather on cheeks with a playful smile",
+    "gentle massaging motion with both hands on the cheeks, soft smile",
+    "scooping the product into the cupped palm with one hand, looking down softly",
+    "raising the product near the chin with a fresh confident expression",
   ],
   "클렌징오일": [
-    "pressing a transparent oil pump bottle with one hand",
-    "rubbing hands gently with a glossy oil texture",
-    "holding a bottle near the cheek, showing glowing skin",
+    "pressing the top of the product with one hand near the cheek",
+    "rubbing both palms gently together near the chin, soft smile",
+    "holding the product near the cheek with a calm glowing expression",
   ],
   "클렌징밤": [
-    "holding a small cosmetic spatula with a scoop of balm",
-    "touching a soft sherbet-textured balm inside the jar",
-    "applying melting balm onto the forehead gently",
+    "scooping a small amount with a cosmetic spatula, looking down delicately",
+    "touching the inside of the product softly with a fingertip",
+    "gently applying onto the forehead with light fingertip pressure",
   ],
   "클렌징밀크": [
-    "holding a white dispenser bottle with a clean hand",
-    "showing a smooth milky lotion texture on fingers",
-    "resting chin on hand next to a clean white bottle",
+    "holding the product with one clean hand near the cheek",
+    "fingertip touching the cheek with a smooth wiping motion",
+    "resting chin on hand next to the product, calm serene expression",
   ],
   "클렌징워터": [
-    "soaking a round cosmetic cotton pad with clear liquid",
-    "holding a clear water bottle, looking at camera",
-    "tilting a large water bottle slightly forward",
+    "soaking a round cosmetic cotton pad with the product",
+    "holding the product in one hand, looking softly at the camera",
+    "tilting the product slightly forward in one hand, fresh expression",
   ],
   "클렌징티슈": [
-    "wiping makeup gently from the cheek with a tissue pad",
-    "holding a soft cleansing tissue unfolded with both hands",
-    "resting a folded white tissue pad on a bare shoulder",
+    "wiping the cheek gently with the product, eyes softly closed",
+    "holding the product unfolded with both hands close to the chin",
+    "resting the product on a bare shoulder, looking sideways",
   ],
   "필링제품": [
-    "holding a peeling gel tube, showing a smooth exfoliating gel",
+    "holding the product with one hand near the temple, gentle expression",
     "massaging the nose area gently with bare fingertips",
-    "showing clean translucent gel texture on a hand back",
+    "one hand resting on the cheek with a clean fresh expression",
   ],
   "립앤아이리무버": [
-    "shaking a bi-phase dual-layered liquid bottle gently",
+    "shaking the product gently with one hand near the face",
     "pressing a soaked cotton pad gently against one eye",
-    "holding a small remover bottle near pouty lips",
+    "holding the product near pouty lips, soft gaze",
   ],
 
   // 스킨케어
   "선케어": [
-    "holding a sun cream tube, small amount of white sunscreen on a fingertip",
-    "dotting white sunscreen cream on cheek and nose",
-    "shading eyes with one hand, holding a sun stick in the other",
+    "fingertip touching the cheek with a delicate dabbing motion",
+    "smoothing the cheek with the back of two fingers in a delicate motion",
+    "shading her eyes with one hand and holding the product softly in the other",
   ],
   "토너": [
-    "holding a clear bottle, gently dabbing a cotton pad on skin",
-    "pouring clear liquid toner onto a cupped palm",
-    "resting cheek against a cool glass toner bottle",
+    "holding the product, gently dabbing a cotton pad on the skin",
+    "pouring the product onto a cupped palm carefully",
+    "resting cheek against the product with a soft sleepy expression",
   ],
   "에센스": [
-    "holding a glass serum dropper with a clear hanging droplet",
-    "squeezing a dropper gently over the cheek",
-    "cupping a luxurious serum bottle with both hands close to the chest",
+    "holding the product close to the cheek with one hand",
+    "gentle dropping motion with one hand over the cheek",
+    "cupping the product with both hands close to the chest",
   ],
   "세럼": [
-    "holding a glass serum dropper with a clear hanging droplet",
-    "squeezing a dropper gently over the cheek",
-    "cupping a luxurious serum bottle with both hands close to the chest",
+    "holding the product close to the cheek with one hand",
+    "gentle dropping motion with one hand over the cheek",
+    "cupping the product with both hands close to the chest",
   ],
   "오일": [
-    "holding a glass serum dropper with a clear hanging droplet",
-    "squeezing a dropper gently over the cheek",
-    "cupping a luxurious serum bottle with both hands close to the chest",
+    "holding the product close to the cheek with one hand",
+    "gentle dropping motion with one hand over the cheek",
+    "cupping the product with both hands close to the chest",
   ],
   "크림": [
-    "holding a premium cosmetic cream jar, rich texture visible",
-    "scooping a tiny amount of white cream with an index finger",
-    "applying a thick layer of cream onto the cheek smoothly",
+    "holding the product elegantly with one hand near the cheek",
+    "applying a small amount on an index finger with a gentle motion",
+    "applying onto the cheek smoothly with two fingertips",
   ],
   "미스트": [
-    "holding a sleek mist spray bottle, eyes gently closed",
-    "spraying fine mist particles around the face",
-    "extending one arm forward holding a glossy spray bottle",
+    "holding the product with eyes gently closed, peaceful expression",
+    "spraying motion around the face with one hand",
+    "extending one arm forward holding the product, confident gaze",
   ],
   "로션": [
-    "holding a neat lotion pump bottle, pressing the top",
-    "rubbing smooth lotion texture into the palms",
-    "holding a bottle near the collarbone line",
+    "holding the product with one hand, pressing the top",
+    "rubbing both palms together softly with a gentle motion",
+    "holding the product near the collarbone line with a calm gaze",
   ],
   "에멀전": [
-    "holding a neat lotion pump bottle, pressing the top",
-    "rubbing smooth lotion texture into the palms",
-    "holding a bottle near the collarbone line",
+    "holding the product with one hand, pressing the top",
+    "rubbing both palms together softly with a gentle motion",
+    "holding the product near the collarbone line with a calm gaze",
   ],
   "마스크팩": [
-    "wearing a translucent wet sheet mask on face, lying back loosely",
-    "peeling off a corner of a hydrating sheet mask from the cheek",
-    "holding a sealed colorful mask sheet pouch near the face",
+    "wearing the product on the face, lying back loosely with eyes closed",
+    "peeling off a corner from the cheek, looking at the camera",
+    "holding the product near the face with a fresh expression",
   ],
 
   // 메이크업
   "립": [
-    "holding a sleek lipstick tube close to smiling lips",
-    "applying lip gloss with an applicator, soft pouty lips",
-    "biting a clear lip tint gloss tube gently with teeth",
+    "holding the product close to smiling lips",
+    "applying gently onto soft pouty lips, focused gaze",
+    "biting the product gently between the teeth, playful expression",
   ],
   "치크": [
-    "holding a blush compact with a fluffy makeup brush",
-    "sweeping a powder brush gently across the rosy cheek",
-    "holding a liquid blush dropper near the high cheekbone",
+    "holding the product with a fluffy makeup brush in one hand",
+    "sweeping a powder brush gently across the cheek, soft focused expression",
+    "holding the product near the high cheekbone with a confident gaze",
   ],
   "파운데이션": [
-    "holding a luxury glass liquid foundation bottle elegantly",
-    "pumping a small droplet of beige foundation onto the back of hand",
+    "holding the product elegantly with one hand near the jaw",
+    "tapping a small amount onto the back of the hand with a focused gaze",
     "holding a wet beauty blender sponge near the jawline",
   ],
   "비비": [
-    "holding a luxury glass liquid foundation bottle elegantly",
-    "pumping a small droplet of beige foundation onto the back of hand",
+    "holding the product elegantly with one hand near the jaw",
+    "tapping a small amount onto the back of the hand with a focused gaze",
     "holding a wet beauty blender sponge near the jawline",
   ],
   "쿠션": [
-    "holding an open premium cushion compact with a reflection in the mirror",
-    "dabbing a brand powder puff gently onto the center of cheek",
-    "slipping two fingers into the cushion puff strap, looking proud",
+    "holding the product open with a soft reflection in the mirror",
+    "dabbing a powder puff gently onto the center of the cheek",
+    "slipping two fingers into the puff strap, looking proud",
   ],
   "아이": [
-    "holding a multi-color eyeshadow palette open under the chin",
-    "holding a black mascara wand close to long fluttering eyelashes",
-    "drawing a sharp line with a sleek liquid eyeliner pen",
+    "holding the product open under the chin, looking up gently",
+    "holding the product close to long fluttering eyelashes",
+    "drawing a sharp line near the eye with the product",
   ],
 };
 
 // ─── 제품 샷 [D] 매트릭스 (대분류 기반, 추천 소분류 우선) ──────────────
-// 각 대분류마다 3옵션, 옵션에 "추천" 소분류 목록이 있으면 매칭 우선.
+// 각 대분류마다 옵션 1-3개, 옵션에 "추천" 소분류 목록이 있으면 매칭 우선.
 // recommends가 비어있으면 모든 소분류에 동일 가중치.
 //
 // 옵션 객체: { recommends: [...소분류], a_slot, d_slot }
-//   - a_slot: 제품 용기/제형 묘사 (인물 샷의 [A]와 달리 매트릭스가 직접 채움)
-//   - d_slot: 배치/카메라 앵글
+//   - a_slot: 제품 자체는 사진이 담당하므로 "the product as the focal point"로 통일.
+//   - d_slot: 배치·카메라 앵글·환경·라이팅. 제품 형태·재질·색 어휘 금지.
+const A_SLOT_PRODUCT = "the product as the focal point";
+
 export const PRODUCT_SHOT_MATRIX = {
   "클렌징": [
     {
       recommends: ["클렌징오일", "클렌징워터", "립앤아이리무버"],
-      a_slot: "a transparent glass cleansing bottle with clear liquid inside",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "resting on a wet glass surface with realistic water splashes, close-up shot, eye-level angle, sharp focus",
+        "resting on a wet glass surface with realistic water splashes around, close-up shot, eye-level angle, sharp focus",
     },
     {
       recommends: ["클렌징폼", "클렌징밀크", "필링제품"],
-      a_slot:
-        "a minimalist squeeze tube package, a dollop of rich fluffy white cream lather next to the product",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
         "centered composition, top-down flat lay view, clean white studio background",
     },
     {
       recommends: ["클렌징밤", "클렌징티슈"],
-      a_slot:
-        "a neat cosmetic jar with its lid slightly open, revealing smooth sherbet texture balm inside",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "placed on a smooth travertine stone pedestal, side angle shot, soft directional sunlight with harsh shadows",
+        "placed on a smooth travertine stone pedestal, side angle shot, hard sunlight casting dramatic shadows",
     },
   ],
   "스킨케어": [
     {
       recommends: ["세럼", "에센스", "오일"],
-      a_slot:
-        "a luxurious frosted glass serum bottle, a glass dropper hovering above with a single thick clear droplet hanging",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "macro close-up shot, centered layout, floating particles of light, extremely shallow depth of field",
+        "macro close-up shot, centered layout, floating particles of light around, extremely shallow depth of field",
     },
     {
       recommends: ["크림", "마스크팩"],
-      a_slot:
-        "an elegant luxury cream jar, an artistic smear of thick white moisturizing cream texture on the floor next to it",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
         "three-quarter angle view, elegant high-fashion product layout, clean minimalist background",
     },
     {
       recommends: ["미스트", "토너", "선케어", "로션", "에멀전"],
-      a_slot: "a sleek translucent facial spray bottle",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "captured at the exact moment of spraying ultra-fine mist particles in the air, backlit commercial lighting, dramatic look",
+        "clean front-facing composition, subtle dewy water droplets scattered around for a hydrated mood, calm bright studio environment",
     },
   ],
   "메이크업 > 립": [
     {
       recommends: [],
-      a_slot:
-        "a sleek metallic lipstick tube open, revealing a sharp-cut vibrant red lipstick bullet",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "lying diagonally on a smooth reflective mirror surface, extreme close-up shot, dramatic studio lighting",
+        "lying diagonally on a smooth reflective mirror surface, extreme close-up shot, dramatic studio mood",
     },
     {
       recommends: [],
-      a_slot:
-        "a clear acrylic lip gloss container with a brand applicator wand resting beside it",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "surrounded by glossy colorful liquid puddles, top-down view, bright pop lighting with clear reflections",
+        "surrounded by glossy colorful liquid puddles on the floor, top-down view, bright pop studio environment with clear reflections",
     },
     {
       recommends: [],
-      a_slot:
-        "three different shades of sleek lip tint tubes standing in a neat diagonal row",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "rhythmic composition, low-angle shot looking up, clean negative space for brand logo",
+        "rhythmic composition with multiple repeated arrangements, low-angle shot looking up, clean negative space for brand logo",
     },
   ],
-  // 베이스 — 액체 제형 (파운데이션·비비). 치크는 별도 그룹으로 분리.
+  // 베이스 — 액체 제형(파운데이션·비비)·팩트(쿠션) 그룹 분리 유지.
+  // a_slot은 통일됐지만 d_slot의 무드·구도가 카테고리별로 다름.
   "메이크업 > 베이스-액체": [
     {
       recommends: [],
-      a_slot: "a heavy luxury glass liquid foundation bottle standing elegantly",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "a smooth artistic swirl of beige liquid foundation texture wrapping around the base of the bottle, soft commercial lighting",
+        "elegant centered upright composition, soft commercial highlights and gentle reflections, sophisticated studio environment",
     },
     {
       recommends: [],
-      a_slot: "a minimalist square foundation bottle",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "placed on top of stacked transparent geometric acrylic blocks, refracting soft studio lights, cinematic depth of field",
+        "placed on top of stacked transparent geometric acrylic blocks, refracting studio lights subtly, cinematic depth of field",
     },
   ],
-  // 베이스 — 팩트/쿠션 (쿠션 전용). 가루·팩트 형태.
   "메이크업 > 베이스-팩트": [
     {
       recommends: [],
-      a_slot:
-        "an open premium cushion compact, showing the internal mirror and a pristine cushion puff with brand logo",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "perfectly centered symmetrical composition, eye-level shot, sharp focus on the puff strap",
+        "perfectly centered symmetrical composition, eye-level shot, balanced clean studio environment",
     },
   ],
-  // 치크 (블러셔) — 팩트/리퀴드 두 옵션. 사용자 정의 시안.
   "메이크업 > 치크": [
     {
       recommends: [],
-      a_slot:
-        "an open premium blush compact, revealing a pristine soft rosy pink powder textured pan with a subtle splash of fine blush powder next to it",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "asymmetrical composition, high-angle view, a fluffy aesthetic makeup brush resting beside the product, soft diffusion studio lighting",
+        "asymmetrical composition, high-angle view, a fluffy aesthetic makeup brush resting beside, soft studio environment",
     },
     {
       recommends: [],
-      a_slot:
-        "a minimalist aesthetic liquid blush dropper bottle standing elegantly, an artistic translucent smear of soft coral blush texture on the floor",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "centered composition, eye-level shot, casting soft organic leaf shadows on the background, bright commercial studio lighting",
+        "centered composition, eye-level shot, soft organic leaf shadows cast across the background, bright commercial studio environment",
     },
   ],
   "메이크업 > 아이": [
     {
       recommends: [],
-      a_slot:
-        "a multi-color eyeshadow palette wide open, showing pristine colorful powder textured pans",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "isometric high-angle view, minimalist layout, sharp focus on all corners, hard studio light",
+        "isometric high-angle view, minimalist layout, sharp focus across all corners, crisp studio environment",
     },
     {
       recommends: [],
-      a_slot:
-        "a sleek black mascara tube lying horizontally with its spiral wand applicator resting on top",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
-        "extreme macro shot focusing on the fine bristles of the wand, creamy bokeh background, dark sophisticated mood",
+        "extreme macro shot focusing on the fine details, creamy bokeh background, dark sophisticated mood",
     },
     {
       recommends: [],
-      a_slot: "an eye makeup palette standing vertically on its edge",
+      a_slot: A_SLOT_PRODUCT,
       d_slot:
         "asymmetrical composition, dramatic elongated shadow stretching across a warm beige backdrop, artistic layout",
     },
@@ -355,7 +348,7 @@ export function pickPersonPose(category, seed) {
 }
 
 // 메이크업 소분류 → 제품 샷 매트릭스 그룹 키 매핑.
-// 제형이 달라 시각적으로 충돌하지 않도록 베이스를 액체/팩트로 분리, 치크는 별도 그룹.
+// 제형이 달라 d_slot 무드·구도가 다르도록 베이스를 액체/팩트로 분리, 치크는 별도 그룹.
 const PRODUCT_GROUP_KEY = {
   "립":       "메이크업 > 립",
   "파운데이션": "메이크업 > 베이스-액체",
@@ -365,22 +358,13 @@ const PRODUCT_GROUP_KEY = {
   "아이":     "메이크업 > 아이",
 };
 
-// 비비는 액체 제형 그룹을 공유하지만 제품명은 BB cream으로 표기돼야 함.
-// 정확한 단어만 치환 (foundation → BB cream). 다른 표현 안 깨짐.
-const PRODUCT_TEXT_REPLACE = {
-  "비비": [{ from: /\bfoundation\b/gi, to: "BB cream" }],
-};
-function applyTextReplace(text, rules) {
-  if (!text || !rules) return text;
-  return rules.reduce((acc, r) => acc.replace(r.from, r.to), text);
-}
-
 // ─── 제품 샷 [D]+[A] 결정 ───────────────────────────────────────────
 // 대분류 기반 + 옵션의 recommends에 소분류 있으면 그 옵션 우선 (있으면 후보 좁힘).
 // 좁힌 후보 안에서 시드 기반 선택. 좁힐 게 없으면 전체 옵션에서 시드 선택.
+// a_slot은 모든 옵션에서 통일됐고, d_slot이 구도·무드·환경을 결정한다.
 export function pickProductShot(category, seed) {
   const { major, minor } = parseCategory(category);
-  // 메이크업은 소분류를 그룹 키("메이크업 > 베이스" 등)로 변환, 그 외는 대분류 그대로.
+  // 메이크업은 소분류를 그룹 키("메이크업 > 베이스-액체" 등)로 변환, 그 외는 대분류 그대로.
   const key =
     major === "메이크업" ? PRODUCT_GROUP_KEY[minor] : major;
   if (!key) return null;
@@ -391,11 +375,5 @@ export function pickProductShot(category, seed) {
     ? options.filter((o) => o.recommends.includes(minor))
     : [];
   const pool = narrowed.length > 0 ? narrowed : options;
-  const chosen = pickBySeed(pool, `product::${key}::${seed}`);
-  if (!chosen) return null;
-  // 소분류별 단어 치환 (비비 → BB cream 등)
-  const rules = PRODUCT_TEXT_REPLACE[minor];
-  return rules
-    ? { a_slot: applyTextReplace(chosen.a_slot, rules), d_slot: applyTextReplace(chosen.d_slot, rules) }
-    : chosen;
+  return pickBySeed(pool, `product::${key}::${seed}`);
 }

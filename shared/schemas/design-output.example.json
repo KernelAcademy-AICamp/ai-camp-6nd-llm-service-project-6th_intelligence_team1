@@ -1,53 +1,49 @@
 {
   "schema_version": "0.2",
-  "generated_at": "2026-06-01T06:14:19.648Z",
+  "generated_at": "2026-06-01T08:40:57.774Z",
   "status": "success",
   "data": {
-    "brand_name": "힌스 (hince)",
+    "brand_name": "식물나라",
     "visuals": [
       {
         "content_id": "C001",
-        "trend_name": "글로우 누드립",
+        "trend_name": "수분 선케어",
         "shot_type": "person",
-        "concept": "맨입술 같은데 더 예쁜, 데일리 글로우 누드립으로 완성하는 자연스러운 자기표현",
-        "visual_direction": "청량하고 투명한 분위기 속에서 물광 젤 틴트의 윤기감을 강조. 자연스러운 데일리 무드로 꾸민 듯 안 꾸민 입술의 광택을 부각하며, Z세대의 트렌디한 뉘앙스를 담아낸다.",
-        "generation_prompt": "1girl, korean beauty influencer, 21-year-old cool gen-z korean influencer, messy wet-hair look with long undone hippie curls and micro-braids, trendy Y2K beauty makeup, icy metallic eyeshadow highlight, sharp cat-eye eyeliner, slipping two fingers into the cushion puff strap, looking proud, soft white seamless backdrop with subtle warm undertone, high-fashion cosmetic advertising composition, directional beauty lighting, skin sheen, soft catchlights in the eyes, sharp focus, shallow depth of field, creamy bokeh, cinematic lighting, photorealistic, hyper-detailed, masterpiece, best quality, 8k wallpaper",
-        "negative_prompt": "distorted lips, asymmetric face, extra fingers, deformed hands, text, watermark, low quality, blurry, matte finish, dry lips, cakey texture",
-        "aspect_ratio": "9:16",
-        "reference_image_path": "inputs/product-images/힌스 (hince).jpg"
+        "concept": "자작나무 수분의 촉촉함이 살아나는 맑고 건강한 피부",
+        "visual_direction": "한여름 햇빛 아래에서도 생기 있는 피부결을 표현. 자연스러운 광채와 수분감이 도드라지는 클로즈업 포트레이트로, 순수하고 투명한 뷰티 감성을 전달합니다.",
+        "generation_prompt": "1girl, korean beauty influencer, 20-year-old korean beauty model, long straight natural black hair cascading softly down her shoulders with gentle flyaways, minimalist clean beauty makeup, ultra-transparent and hydrated glass skin, bare shoulders, shading her eyes with one hand and holding the product softly in the other, soft white seamless backdrop with subtle cool undertone, minimalist clean aesthetic, high-fashion cosmetic advertising composition, directional beauty lighting, skin sheen, soft catchlights in the eyes, sharp focus, shallow depth of field, creamy bokeh, cinematic lighting, photorealistic, hyper-detailed, masterpiece, best quality, 8k wallpaper, vertical 3:4 portrait composition. Avoid: distorted lips, asymmetric face, extra fingers, text, watermark, low quality, blurry, matte finish, dry skin appearance, cakey makeup, oversaturated colors, duplicate hands, duplicated hands, two left hands, two right hands, mirrored hands, extra hands, extra arms, missing hands, fused hands, deformed hands, more than two hands, multiple hands, asymmetrical hands.",
+        "aspect_ratio": "3:4",
+        "reference_image_path": "inputs/product-images/식물나라.png"
       },
       {
         "content_id": "C001",
-        "trend_name": "글로우 누드립",
+        "trend_name": "수분 선케어",
         "shot_type": "product",
-        "concept": "물광 가득 젤 틴트 한 번이면, 꾸민 듯 안 꾸민 데일리 무드 완성",
-        "visual_direction": "제품의 투명한 젤 텍스처와 윤기감을 극대화하여 표현. 미니 사이즈의 컴팩트함을 강조하면서도 프리미엄한 글로우 틴트의 고급스러움을 담아낸다.",
-        "generation_prompt": "product still life photography, no human, no model, an open premium cushion compact, showing the internal mirror and a pristine cushion puff with brand logo, perfectly centered symmetrical composition, eye-level shot, sharp focus on the puff strap, clean white background with soft neutral tone, premium cosmetic advertising composition, commercial product shot, sharp focus, hyper-detailed product texture, soft reflections, photorealistic, masterpiece, best quality, 8k wallpaper",
-        "negative_prompt": "text, watermark, low quality, blurry, oversaturated, deformed packaging, matte appearance, dull finish",
-        "aspect_ratio": "1:1",
-        "reference_image_path": "inputs/product-images/힌스 (hince).jpg"
+        "concept": "자작나무 수분 선케어의 산뜻한 보호 기능을 강조",
+        "visual_direction": "제품을 중심으로 물방울이나 수분감을 암시하는 환경 요소를 배치. 클린하고 미니멀한 구성으로 제품의 순수성과 수분 보습 기능을 직관적으로 표현합니다.",
+        "generation_prompt": "product still life photography, no human, no model, the product as the focal point, clean front-facing composition, subtle dewy water droplets scattered around for a hydrated mood, calm bright studio environment, pale blue-white gradient background, fresh and hydrating mood, light diffusion effect, premium cosmetic advertising composition, commercial product shot, sharp focus, hyper-detailed product texture, soft reflections, photorealistic, masterpiece, best quality, 8k wallpaper, vertical 3:4 portrait composition. Avoid: text, watermark, low quality, blurry, oversaturated, deformed packaging, matte appearance, dry aesthetic, cluttered composition.",
+        "aspect_ratio": "3:4",
+        "reference_image_path": "inputs/product-images/식물나라.png"
       },
       {
         "content_id": "C002",
-        "trend_name": "MLBB 무드 틴트",
+        "trend_name": "클린 자연 유래 선케어",
         "shot_type": "person",
-        "concept": "내 입술인 듯 자연스러운 MLBB 컬러로 어디에나 어울리는 데일리 픽",
-        "visual_direction": "차분하고 세련된 캐주얼 무드 속에서 MLBB 컬러의 자연스러운 발색을 표현. 실패 없는 데일리 완성도를 강조하며, 트렌디한 Z세대의 미니멀한 뷰티 철학을 담아낸다.",
-        "generation_prompt": "1girl, korean beauty influencer, 21-year-old cool gen-z korean influencer, messy wet-hair look with long undone hippie curls and micro-braids, trendy Y2K beauty makeup, icy metallic eyeshadow highlight, sharp cat-eye eyeliner, slipping two fingers into the cushion puff strap, looking proud, warm beige neutral background, high-fashion cosmetic advertising composition, directional beauty lighting, skin sheen, soft catchlights in the eyes, sharp focus, shallow depth of field, creamy bokeh, cinematic lighting, photorealistic, hyper-detailed, masterpiece, best quality, 8k wallpaper",
-        "negative_prompt": "distorted lips, asymmetric face, extra fingers, deformed hands, text, watermark, low quality, blurry, oversaturated, unnatural color",
-        "aspect_ratio": "4:5",
-        "reference_image_path": "inputs/product-images/힌스 (hince).jpg"
+        "concept": "식물 유래 성분의 순한 보호로 민감한 피부까지 안심하는 클린 뷰티",
+        "visual_direction": "자연 친화적이고 부드러운 톤의 배경에서 피부의 건강함과 안정감을 표현. 민감성 피부도 편안하게 받아들일 수 있는 순수하고 신뢰감 있는 뷰티 이미지를 연출합니다.",
+        "generation_prompt": "1girl, korean beauty influencer, 20-year-old korean beauty model, long straight natural black hair cascading softly down her shoulders with gentle flyaways, minimalist clean beauty makeup, ultra-transparent and hydrated glass skin, bare shoulders, shading her eyes with one hand and holding the product softly in the other, warm cream beige background with natural earthy undertone, organic and gentle aesthetic, high-fashion cosmetic advertising composition, directional beauty lighting, skin sheen, soft catchlights in the eyes, sharp focus, shallow depth of field, creamy bokeh, cinematic lighting, photorealistic, hyper-detailed, masterpiece, best quality, 8k wallpaper, vertical 3:4 portrait composition. Avoid: distorted lips, asymmetric face, extra fingers, text, watermark, low quality, blurry, harsh lighting, irritated skin appearance, chemical-looking finish, oversaturated tones, duplicate hands, duplicated hands, two left hands, two right hands, mirrored hands, extra hands, extra arms, missing hands, fused hands, deformed hands, more than two hands, multiple hands, asymmetrical hands.",
+        "aspect_ratio": "3:4",
+        "reference_image_path": "inputs/product-images/식물나라.png"
       },
       {
         "content_id": "C002",
-        "trend_name": "MLBB 무드 틴트",
+        "trend_name": "클린 자연 유래 선케어",
         "shot_type": "product",
-        "concept": "고민 없이 매일 손이 가는 컬러, MLBB 무드 틴트로 데일리 완성",
-        "visual_direction": "MLBB 컬러의 자연스러운 톤을 돋보이게 하면서 젤 틴트의 부드러운 텍스처를 강조. 미니 사이즈의 휴대성과 프리미엄한 제품감을 동시에 표현한다.",
-        "generation_prompt": "product still life photography, no human, no model, an open premium cushion compact, showing the internal mirror and a pristine cushion puff with brand logo, perfectly centered symmetrical composition, eye-level shot, sharp focus on the puff strap, warm beige seamless backdrop, premium cosmetic advertising composition, commercial product shot, sharp focus, hyper-detailed product texture, soft reflections, photorealistic, masterpiece, best quality, 8k wallpaper",
-        "negative_prompt": "text, watermark, low quality, blurry, oversaturated, deformed packaging, artificial appearance, harsh lighting",
-        "aspect_ratio": "1:1",
-        "reference_image_path": "inputs/product-images/힌스 (hince).jpg"
+        "concept": "식물 유래 성분 중심의 클린 선케어 제품의 자연스러운 신뢰감",
+        "visual_direction": "제품을 식물 요소나 자연 재료와 함께 배치하여 클린하고 자연 유래 성분임을 시각적으로 강조. 미니멀하면서도 따뜻한 톤으로 민감한 피부를 위한 안심감을 전달합니다.",
+        "generation_prompt": "product still life photography, no human, no model, the product as the focal point, clean front-facing composition, subtle dewy water droplets scattered around for a hydrated mood, calm bright studio environment, soft sage green and cream layered background, natural botanical aesthetic, warm ambient lighting suggestion, premium cosmetic advertising composition, commercial product shot, sharp focus, hyper-detailed product texture, soft reflections, photorealistic, masterpiece, best quality, 8k wallpaper, vertical 3:4 portrait composition. Avoid: text, watermark, low quality, blurry, oversaturated, deformed packaging, synthetic appearance, harsh shadows, chemical-looking elements, cluttered background.",
+        "aspect_ratio": "3:4",
+        "reference_image_path": "inputs/product-images/식물나라.png"
       }
     ]
   }
