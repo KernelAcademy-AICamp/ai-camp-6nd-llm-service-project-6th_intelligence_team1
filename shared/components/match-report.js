@@ -13,15 +13,41 @@
 (function (global) {
   "use strict";
 
-  // 출처 식별자 → src-chip 색상 클래스 (브랜드 색). 매핑 없으면 회색(default).
-  var SRC_CHIP_CLASS = {
-    naver_datalab: "naver",
-    naver: "naver",
-    naver_olive: "naver-olive",
-    instagram: "insta",
-    tavily: "tavily",
-    youtube: "youtube",
+  // 출처 식별자 → 칩 색상 클래스(브랜드 색) + 표시 라벨.
+  var SRC_CHIP = {
+    naver_datalab: { cls: "naver", label: "Naver Datalab" },
+    naver: { cls: "naver", label: "Naver" },
+    naver_blog: { cls: "naver", label: "Naver 블로그" },
+    naver_news: { cls: "naver", label: "Naver 뉴스" },
+    naver_olive: { cls: "naver-olive", label: "Naver 올리브영" },
+    instagram: { cls: "insta", label: "Instagram" },
+    tavily: { cls: "tavily", label: "Tavily" },
+    youtube: { cls: "youtube", label: "YouTube" },
   };
+
+  // source 문자열을 보기 좋게: "naver_cafe" → "Naver Cafe"
+  function prettifySource(s) {
+    return String(s || "")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, function (c) { return c.toUpperCase(); })
+      .trim();
+  }
+
+  // 출처 → { cls, label }. generic fallback 보장:
+  //  - 알려진 source → 지정 색·라벨
+  //  - 모르는 source라도 naver 계열이면 naver 색, 그 외엔 회색 기본 칩
+  //  - 라벨은 항상 읽을 수 있게 (data label → 없으면 prettify → 최후 "출처")
+  //  → 빈 아이콘이 절대 안 뜨고, 새 source가 들어와도 회색 칩으로 안전하게 표시됨
+  function chipFor(source, dataLabel) {
+    var known = SRC_CHIP[source];
+    if (known) return known;
+    // dataLabel이 원문 source 그대로면(작성가가 라벨 못 붙인 경우) prettify
+    var hasRealLabel = dataLabel && dataLabel !== source;
+    return {
+      cls: /naver/i.test(String(source)) ? "naver" : "",
+      label: (hasRealLabel ? dataLabel : prettifySource(source)) || "출처",
+    };
+  }
 
   // innerHTML 주입 전 텍스트 이스케이프 (데이터에 <, & 등 있어도 깨지지 않게)
   function esc(s) {
@@ -79,13 +105,13 @@
     if (!arr.length) return '<div class="mr-empty">—</div>';
     var items = arr
       .map(function (e) {
-        var cls = SRC_CHIP_CLASS[e.source] || "";
-        var clsAttr = cls ? "mr-src-chip " + cls : "mr-src-chip";
-        var chip = e.url
+        var chip = chipFor(e.source, e.label);
+        var clsAttr = chip.cls ? "mr-src-chip " + chip.cls : "mr-src-chip";
+        var inner = e.url
           ? '<a class="' + clsAttr + '" href="' + esc(e.url) +
-            '" target="_blank" rel="noopener noreferrer">' + esc(e.label) + "</a>"
-          : '<span class="' + clsAttr + '">' + esc(e.label) + "</span>";
-        return '<div class="mr-src-item">' + chip + "<span>" + esc(e.description) + "</span></div>";
+            '" target="_blank" rel="noopener noreferrer">' + esc(chip.label) + "</a>"
+          : '<span class="' + clsAttr + '">' + esc(chip.label) + "</span>";
+        return '<div class="mr-src-item">' + inner + "<span>" + esc(e.description) + "</span></div>";
       })
       .join("");
     return '<div class="mr-src-list">' + items + "</div>";
