@@ -360,7 +360,7 @@ ${mediaOverlapBlock}${lifeFitBlock}
 score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
 
 // 5. Ingred-Fit 임베딩 사전 계산 — LLM 호출 전 features ↔ keywords 유사도 판정
-const brandFeatures = brandAnalysis.data.product_features ?? [];
+const brandFeatures = brandAnalysis.data.product_features ?? brandAnalysis.data.texture_keywords ?? [];
 const ingredOverrides = new Map();
 if (brandFeatures.length > 0 && passedTrends.length > 0) {
   console.log("Ingred-Fit 임베딩 계산 중...");
