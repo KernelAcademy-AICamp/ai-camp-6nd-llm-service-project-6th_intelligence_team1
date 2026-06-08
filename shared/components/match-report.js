@@ -17,9 +17,9 @@
   var SRC_CHIP = {
     naver_datalab: { cls: "naver", label: "Naver Datalab" },
     naver: { cls: "naver", label: "Naver" },
-    naver_blog: { cls: "naver", label: "Naver 블로그" },
-    naver_news: { cls: "naver", label: "Naver 뉴스" },
-    naver_olive: { cls: "naver-olive", label: "Naver 올리브영" },
+    naver_blog: { cls: "naver", label: "Naver Blog" },
+    naver_news: { cls: "naver", label: "Naver News" },
+    naver_olive: { cls: "naver-olive", label: "Naver Olive Young" },
     instagram: { cls: "insta", label: "Instagram" },
     tavily: { cls: "tavily", label: "Tavily" },
     youtube: { cls: "youtube", label: "YouTube" },
@@ -40,13 +40,14 @@
   //  → 빈 아이콘이 절대 안 뜨고, 새 source가 들어와도 회색 칩으로 안전하게 표시됨
   function chipFor(source, dataLabel) {
     var known = SRC_CHIP[source];
-    if (known) return known;
-    // dataLabel이 원문 source 그대로면(작성가가 라벨 못 붙인 경우) prettify
+    var cls = known ? known.cls : (/naver/i.test(String(source)) ? "naver" : "");
+    // 라벨은 output-text(write.js)가 보낸 dataLabel을 우선 따름 (단일 소스).
+    // 라벨이 없거나 원문 source 그대로면 → 컴포넌트 기본(known) → prettify 순 fallback.
     var hasRealLabel = dataLabel && dataLabel !== source;
-    return {
-      cls: /naver/i.test(String(source)) ? "naver" : "",
-      label: (hasRealLabel ? dataLabel : prettifySource(source)) || "출처",
-    };
+    var label = hasRealLabel
+      ? dataLabel
+      : (known ? known.label : prettifySource(source)) || "출처";
+    return { cls: cls, label: label };
   }
 
   // innerHTML 주입 전 텍스트 이스케이프 (데이터에 <, & 등 있어도 깨지지 않게)
