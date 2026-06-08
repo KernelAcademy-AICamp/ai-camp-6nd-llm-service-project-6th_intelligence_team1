@@ -230,12 +230,19 @@ export function generateReport({ brand, trend, match } = {}) {
 // 카피 필드(concept·headline·body_copy·key_message·mood·format_hint)는
 // 모두 제거됨. mockup이 필요로 하는 리포트 메타데이터 필드만 출력.
 
-// evidence source 한국어/영문 표기를 enum으로 정규화
+// evidence source 한국어/영문 표기를 enum으로 정규화.
+// naver blog(UGC)·naver news(기사)·naver_datalab(검색지수)은 출처 성격이 달라 별도 enum.
 const SOURCE_ENUM = {
   "naver datalab": "naver_datalab",
   "naver_datalab": "naver_datalab",
   "naver": "naver_datalab",
   "네이버": "naver_datalab",
+  "naver blog": "naver_blog",
+  "naver_blog": "naver_blog",
+  "네이버 블로그": "naver_blog",
+  "naver news": "naver_news",
+  "naver_news": "naver_news",
+  "네이버 뉴스": "naver_news",
   "tavily": "tavily",
   "youtube": "youtube",
   "유튜브": "youtube",
@@ -249,6 +256,8 @@ function normalizeSource(source = "") {
 // enum에 맞는 라벨 (UI 표시용)
 const SOURCE_LABEL = {
   naver_datalab: "Naver Datalab",
+  naver_blog: "Naver Blog",
+  naver_news: "Naver News",
   tavily: "Tavily",
   youtube: "YouTube",
 };
