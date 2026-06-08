@@ -161,32 +161,39 @@ envelope `data` 안에:
 |---|---|---|
 | `content_id` | string (`"C001"` 형식) | 작성가가 sequential 발급 |
 | `trend_name` | string | `match-result.recommendations[].trend_name` |
-| `rank` | `1 \| 2 \| 3` | `match-result.recommendations[].rank` |
-| `verdict` | `"1순위" \| "2순위" \| "3순위"` | `match-result.evaluations[].verdict` (trend_name 조인) |
-| `display_variant` | `"primary" \| "supplementary"` | rank===3 → supplementary, 그 외 primary |
+| `rank` | 양의 정수 (1~N, 매칭가 결정) | `match-result.recommendations[].rank` |
+| `verdict` | `"{rank}순위"` 형식 문자열 | recommendations에 들어온 트렌드는 모두 "{N}순위"로 표기 (제외 트렌드는 포함되지 않음) |
+| `matching_grade` | `"상" \| "중" \| "하"` | `match-result.evaluations[].matching_grade` (trend_name 조인) |
+| `display_variant` | `"primary" \| "supplementary"` | rank===3 → supplementary, 그 외 primary (옛 규칙, 매칭가 v0.3 이후 가변 추천에서는 재정의 필요) |
 | `keywords` | string[] (보통 5개) | `trend-analysis.trends[].keywords` |
 | `headline_metric` | `{ metric, value, delta }` | `trend-analysis.trends[].headline_metric` |
 | `metrics` | `{ score, growth_rate, period }` | `trend-analysis.trends[].metrics` |
 | `summary_bullets` | string[] (1~5개) | `trend-analysis.trends[].summary` + `meaning` + `status` 가공 |
 | `reason_bullets` | string[] (1~3개) | `match-result.recommendations[].summary_reasons[].fact` |
-| `evidence[]` | `{ source, label, description, url }` 배열 | `trend-analysis.trends[].evidence[]` 변환 |
+| `evidence[]` | `{ source, label, description, url }` 배열 (가변 개수) | `trend-analysis.trends[].evidence[]` 변환. 길이 상한 없음 — 트렌드 분석가가 결정 |
 | `channels[]` | `{ name, status }` 배열 | `trend-analysis.trends[].media_channel_status[]` |
-| `match_passes` | `{ q1, q2, total }` | `match-result.evaluations[].evaluation.question_1/2.passes` |
-| `match_strength` | `"strong" \| "partial" \| "weak"` | total 기반 derive: 4→strong / 3→partial / ≤2→weak |
+| `match_passes` | `{ q1, q2, total }` | 매칭가 v0.3 4기준(ingred·visual·life·safe)을 옛 q1/q2 passes(0/1/2)로 압축 매핑 |
+| `match_strength` | `"strong" \| "partial" \| "weak"` | `matching_grade` 기반 derive: 상→strong / 중→partial / 하→weak |
+| `match_fits` | `{ ingred, visual, life, safe, score }` | 매칭가 4기준 결과를 그대로 노출 (각 fit은 `{result, reason}`, score는 0-8) |
 
 **Enum 값**:
 
 | 필드 | 값 |
 |---|---|
-| `evidence[].source` | `"naver_datalab" \| "tavily" \| "instagram" \| "youtube"` |
+| `evidence[].source` | `"naver_datalab" \| "naver_blog" \| "naver_news" \| "tavily" \| "youtube"` (확장 가능, 매핑 없는 source는 raw 그대로 통과) |
 | `channels[].status` | `"active" \| "rising" \| "stable" \| "decline"` |
-| `verdict` | `"1순위" \| "2순위" \| "3순위" \| "제외"` |
+| `verdict` | `"{N}순위"` 형식 (N = rank) — 매칭가 v0.3에서 추천 상한 폐지 후 가변. "제외"는 recommendations에 포함되지 않음 |
+| `matching_grade` | `"상" \| "중" \| "하"` |
 | `display_variant` | `"primary" \| "supplementary"` |
 | `match_strength` | `"strong" \| "partial" \| "weak"` |
 
+> **source enum 정책**: `naver_datalab`(검색지수)·`naver_blog`(UGC)·`naver_news`(기사)는 출처 성격이 달라 별도 enum으로 유지. Instagram은 의도적으로 제외(브랜드 미사용 매체 — EXCLUDED_SOURCES).
+
 **가변·옵셔널 처리**:
-- `contents[]` 길이: 매칭가 추천이 0개면 빈 배열. 디자이너 측에서 분기 처리.
-- `evidence[].url`: nullable (Naver/YouTube 출처는 현재 null 가능, Tavily는 채워짐)
+- `contents[]` 길이: 매칭가 추천 개수에 따라 가변(보통 3~8개). 매칭가 v0.3 commit `7f69cb4` 이후 추천 상한 제거 — 트렌드 분석가가 N개 트렌드 주면 제외 안 된 트렌드 전체가 추천에 들어감. 디자이너 UI는 가변 개수 레이아웃 지원 필요.
+- `evidence[]` 길이: 트렌드 분석가의 evidence 개수가 그대로 통과됨. 보통 2~5개, 상한 없음. UI는 가변 개수 대응 필요.
+- `evidence[].url`: nullable (DataLab·Tavily만 매핑 채워짐, 그 외 source는 null 가능)
+- `evidence[].source`: 위 enum 목록에 없는 값도 들어올 수 있음 — UI는 알 수 없는 source에 대해 fallback 아이콘·라벨 처리 필요
 - `headline_metric.delta`: optional (없으면 빈 문자열)
 
 전체 구조 예시는 [`writer-output.example.json`](writer-output.example.json).
