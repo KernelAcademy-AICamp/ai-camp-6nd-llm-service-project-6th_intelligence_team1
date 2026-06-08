@@ -556,7 +556,7 @@ ${JSON.stringify(topCtx, null, 2)}
   }
 }
 
-const recommendations = topEvals.map((ev, i) => {
+const recommendations = topEvals.slice(0, 3).map((ev, i) => {
   const trendRaw = allTrendByName.get(ev.trend_name);
   return {
     rank: i + 1,
