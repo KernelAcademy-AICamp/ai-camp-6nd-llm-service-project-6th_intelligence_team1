@@ -36,34 +36,17 @@ function ageGroupToRange(group, currentYear) {
   return null;
 }
 
-// ─── 4기준 score·matching_grade 코드 계산 ───────────────────────────────
-// 각 fit: ✅=2, ⚠️=1, ❌=0. 4기준 합산 max 8.
-// matching_grade 규칙:
-//   - ❌ 2개 이상 → 제외 (합산 무관)
-//   - score 8 → 상
-//   - score 6-7 → 중
-//   - score 2-5 → 하 (❌ 1개 가능)
-//   - score < 2 → 제외
-const FIT_POINT = { "✅": 2, "⚠️": 1, "❌": 0 };
+// ─── 3단계 허들 평가 ─────────────────────────────────────────────────
+// 0순위: ingred_fit ❌ → 탈락 (성분/텍스처 불일치)
+// 1순위: visual_fit ❌ → 탈락 (톤앤매너 충돌)
+// 2순위: life_fit 점수로 순위 결정 (✅=2, ⚠️=1, ❌=0)
+// safe_fit: 시급성 참고 정보 (순위에 미포함)
+const LIFE_SCORE = { "✅": 2, "⚠️": 1, "❌": 0 };
 
-function computeScoreAndGrade(fits /* { ingred_fit, visual_fit, life_fit, safe_fit } */) {
-  const results = [
-    fits.ingred_fit?.result,
-    fits.visual_fit?.result,
-    fits.life_fit?.result,
-    fits.safe_fit?.result,
-  ];
-  const failCount = results.filter((r) => r === "❌").length;
-  const score = results.reduce((sum, r) => sum + (FIT_POINT[r] ?? 0), 0);
-
-  let matching_grade;
-  if (failCount >= 2) matching_grade = "제외";
-  else if (score === 8) matching_grade = "상";
-  else if (score >= 6) matching_grade = "중";
-  else if (score >= 2) matching_grade = "하";
-  else matching_grade = "제외";
-
-  return { score, matching_grade };
+function computeHurdle(fits) {
+  if (fits.ingred_fit?.result === "❌") return { eliminated_by: "ingred", life_score: 0 };
+  if (fits.visual_fit?.result === "❌") return { eliminated_by: "tone", life_score: 0 };
+  return { eliminated_by: null, life_score: LIFE_SCORE[fits.life_fit?.result] ?? 0 };
 }
 
 // LLM 정성 판정(1-A·1-B·2-B) + 코드 계산(2-A·passes·verdict)을 최종 구조로 조립.
@@ -102,8 +85,13 @@ function assembleEvaluation(llmEval, trendData, ingredOverride) {
     safe_fit: llmEval.safe_fit,
   };
 
-  // Safe-Fit 코드 보정: status 있으면 우선 적용, 둘 다 없으면 ⚠️ 강제
-  const status = trendData?.status;
+  // Life-Fit 코드 보정: audience_signal 없으면 ⚠️ 강제
+  if (!trendData?.audience_signal) {
+    fits.life_fit = { result: "⚠️", reason: "타겟 페르소나 정보 없음 — 비교 불가" };
+  }
+
+  // Safe-Fit 코드 보정: trend_stage 우선, 없으면 status fallback. 둘 다 없으면 ⚠️ 강제
+  const status = trendData?.trend_stage ?? trendData?.status;
   const lifespan = trendData?.lifespan_estimate;
   if (STATUS_SAFE_FIT[status]) {
     fits.safe_fit = STATUS_SAFE_FIT[status];
@@ -111,12 +99,12 @@ function assembleEvaluation(llmEval, trendData, ingredOverride) {
     fits.safe_fit = { result: "⚠️", reason: "트렌드 수명 정보 없음 — 지속 가능성 불확실" };
   }
 
-  const { score, matching_grade } = computeScoreAndGrade(fits);
+  const { eliminated_by, life_score } = computeHurdle(fits);
   return {
     trend_name: llmEval.trend_name,
     evaluation: fits,
-    score,
-    matching_grade,
+    life_score,
+    eliminated_by,
     summary_reasons: filterVagueReasons(llmEval.summary_reasons),
   };
 }
@@ -230,8 +218,8 @@ function makeExcludedByCategory(trend, brandCategory) {
       life_fit: skip,
       safe_fit: skip,
     },
-    score: 0,
-    matching_grade: "제외",
+    life_score: 0,
+    eliminated_by: "category",
     summary_reasons: [
       {
         category: "카테고리 적합성",
@@ -290,6 +278,18 @@ score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 **
 ];
 
 // 4. 사용자 메시지 — 카테고리 게이트 통과 트렌드만 LLM에 전달
+
+// keywords 정규화 — flat array(구형) / {ingred, life} 객체(신형) 둘 다 지원
+function getKeywords(trend, type = "all") {
+  const kw = trend.keywords;
+  if (Array.isArray(kw)) return kw;
+  if (kw != null && typeof kw === "object") {
+    if (type === "ingred") return kw.ingred ?? [];
+    if (type === "life") return kw.life ?? [];
+    return [...(kw.ingred ?? []), ...(kw.life ?? [])];
+  }
+  return trend.core_keywords ?? [];
+}
 
 // 매체명 정규화 — "Instagram Reels" / "Instagram" 등 동일 매체 통일
 function normalizeChannel(ch) {
@@ -355,12 +355,12 @@ ${mediaOverlapBlock}${lifeFitBlock}
 score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
 
 // 5. Ingred-Fit 임베딩 사전 계산 — LLM 호출 전 features ↔ keywords 유사도 판정
-const brandFeatures = brandAnalysis.data.product_features ?? [];
+const brandFeatures = brandAnalysis.data.product_features ?? brandAnalysis.data.texture_keywords ?? [];
 const ingredOverrides = new Map();
 if (brandFeatures.length > 0 && passedTrends.length > 0) {
   console.log("Ingred-Fit 임베딩 계산 중...");
   for (const t of passedTrends) {
-    const keywords = t.keywords ?? t.core_keywords ?? [];
+    const keywords = getKeywords(t, "ingred");
     const fit = await computeIngredFit(brandFeatures, keywords);
     if (fit) ingredOverrides.set(t.trend_name, fit);
   }
@@ -451,13 +451,12 @@ const allTrendByName = new Map(
   trendAnalysis.data.trends.map((t) => [t.trend_name, t]),
 );
 
-// 정렬: matching_grade → 4기준 score 내림 → 트렌드 metrics.score 내림.
-const GRADE_RANK = { "상": 1, "중": 2, "하": 3, 제외: 99 };
+// 정렬: 탈락 여부 → life_score 내림 → 트렌드 metrics.score 내림.
 function sortTuple(ev) {
-  const vr = GRADE_RANK[ev.matching_grade] ?? 99;
-  const fitScore = ev.score ?? 0;
+  const eliminated = ev.eliminated_by !== null ? 1 : 0;
+  const lifeScore = ev.life_score ?? 0;
   const trendScore = allTrendByName.get(ev.trend_name)?.metrics?.score ?? 0;
-  return [vr, -fitScore, -trendScore];
+  return [eliminated, -lifeScore, -trendScore];
 }
 allEvaluations.sort((a, b) => {
   const ka = sortTuple(a);
@@ -467,7 +466,7 @@ allEvaluations.sort((a, b) => {
 });
 
 // 추천: 제외가 아닌 것 전부 (최소 3개 기준, 있는 만큼 다양하게).
-const nonExcluded = allEvaluations.filter((ev) => ev.matching_grade !== "제외");
+const nonExcluded = allEvaluations.filter((ev) => ev.eliminated_by === null);
 let topEvals = [...nonExcluded];
 
 // 뷰티 카테고리 정반대 개념 쌍 — 코드 1차 감지용
@@ -482,12 +481,12 @@ function detectKeywordConflict(evs) {
   for (const [keyA, keyB] of KEYWORD_CONFLICT_PAIRS) {
     const hasA = (ev) => {
       const t = allTrendByName.get(ev.trend_name);
-      return [...(t?.keywords ?? []), ...(t?.core_keywords ?? [])]
+      return getKeywords(t)
         .some((k) => k.toLowerCase().includes(keyA));
     };
     const hasB = (ev) => {
       const t = allTrendByName.get(ev.trend_name);
-      return [...(t?.keywords ?? []), ...(t?.core_keywords ?? [])]
+      return getKeywords(t)
         .some((k) => k.toLowerCase().includes(keyB));
     };
     const groupA = evs.filter(hasA);
@@ -519,7 +518,7 @@ for (let round = 0; round < MAX_CONFLICT_ROUNDS && topEvals.length >= 2; round++
   // 2차: LLM 감지 (코드가 못 잡은 경우)
   const topCtx = topEvals.map((ev) => {
     const t = allTrendByName.get(ev.trend_name);
-    return { trend_name: ev.trend_name, keywords: t?.keywords ?? t?.core_keywords ?? [], summary: t?.summary ?? "" };
+    return { trend_name: ev.trend_name, keywords: getKeywords(t), summary: t?.summary ?? "" };
   });
 
   const conflictMsg = `추천 트렌드 간 핵심 방향성을 비교하세요.
@@ -551,7 +550,7 @@ ${JSON.stringify(topCtx, null, 2)}
   }
 }
 
-const recommendations = topEvals.map((ev, i) => {
+const recommendations = topEvals.slice(0, 3).map((ev, i) => {
   const trendRaw = allTrendByName.get(ev.trend_name);
   return {
     rank: i + 1,
