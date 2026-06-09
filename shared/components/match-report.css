@@ -23,6 +23,7 @@
   --mr-ok: #d98ba0;
   --mr-ok-soft: #fbe9ef;
   --mr-danger: #c98a98;
+  --mr-danger-soft: #f5dde3;
   --mr-line-strong: #cbb8c5;
   --mr-rank2: #e6e6fa;
   --mr-card-top: #fef0f5;
@@ -33,6 +34,7 @@
   --mr-chip-naver-olive: #6fa340;
   --mr-chip-default: #7e6b7e;
   --mr-radius-lg: 8px;
+  --mr-radius-md: 10px;
   --mr-shadow-card: 0 1px 2px rgba(120, 80, 100, 0.05), 0 4px 12px rgba(120, 80, 100, 0.05);
 
   color: var(--mr-text);
@@ -379,3 +381,203 @@ a.mr-src-chip[href]::after { content: '↗'; font-size: 10px; opacity: 0.85; mar
 .mr-ch-status.mr-stable { background: #ffffff; color: var(--mr-text-sub); border: 1px solid var(--mr-border); }
 .mr-ch-dot.mr-decline { background: var(--mr-warn); }
 .mr-ch-status.mr-decline { background: var(--mr-warn-soft); color: var(--mr-warn); }
+
+/* ===== 섹션 헤더 (PART I/II · DATA) ===== */
+.mr-section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 32px 0 14px;
+}
+.mr-report > .mr-section-head:first-child { margin-top: 0; }
+.mr-section-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--mr-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+.mr-section-badge.mr-data { background: var(--mr-primary-soft); color: var(--mr-primary-deep); }
+.mr-section-title { font-size: 20px; font-weight: 800; margin: 0; letter-spacing: -0.01em; color: var(--mr-text); }
+.mr-section-desc { color: var(--mr-text-mute); font-size: 13px; margin-left: auto; }
+
+/* ===== PART I — Trend Summary (요약 리스트) ===== */
+.mr-summary-card {
+  background: var(--mr-surface);
+  border-radius: var(--mr-radius-lg);
+  border: 1px solid var(--mr-border);
+  padding: 24px 28px;
+  box-shadow: var(--mr-shadow-card);
+}
+.mr-summary-list { display: flex; flex-direction: column; gap: 16px; }
+.mr-summary-item {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: var(--mr-radius-md);
+  background: var(--mr-card-top);
+  border: 1px solid var(--mr-border);
+}
+.mr-summary-letter {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--mr-primary-soft);
+  color: var(--mr-primary-deep);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 18px;
+}
+.mr-summary-title { font-size: 15px; font-weight: 700; margin: 0 0 4px; color: var(--mr-text); }
+.mr-summary-body { font-size: 13.5px; color: var(--mr-text-sub); margin: 0; line-height: 1.55; }
+
+/* ===== DATA — 트렌드 점수 비교 그래프 ===== */
+.mr-compare-card {
+  background: var(--mr-surface);
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--mr-shadow-card);
+}
+.mr-compare-head { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--mr-text); }
+.mr-compare-list { display: flex; flex-direction: column; gap: 12px; }
+.mr-compare-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  align-items: center;
+  gap: 16px;
+}
+.mr-compare-label { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.mr-compare-name { font-weight: 600; color: var(--mr-text); }
+.mr-compare-bar-track {
+  height: 28px;
+  border-radius: 8px;
+  background: var(--mr-border);
+  position: relative;
+  overflow: hidden;
+}
+.mr-compare-bar-fill {
+  height: 100%;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+  font-weight: 800;
+  font-size: 13px;
+  color: #fff;
+  min-width: 2em;
+}
+.mr-compare-bar-fill.mr-r1 { background: linear-gradient(90deg, var(--mr-primary-soft) 0%, var(--mr-primary) 100%); }
+.mr-compare-bar-fill.mr-r2 { background: linear-gradient(90deg, #eeeefb 0%, var(--mr-rank2) 100%); color: var(--mr-text); }
+.mr-compare-bar-fill.mr-r3 { background: linear-gradient(90deg, var(--mr-card-top) 0%, var(--mr-primary-soft) 100%); color: var(--mr-text); }
+
+/* 좁은 폭 — 비교 행 라벨/바 세로 적층 */
+@media (max-width: 560px) {
+  .mr-compare-row { grid-template-columns: 1fr; gap: 6px; }
+}
+
+/* ===== 최상단 리포트 헤더 (브랜드 정보) ===== */
+.mr-report-header {
+  background: var(--mr-surface);
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius-lg);
+  padding: 28px 32px;
+  margin-bottom: 20px;
+  box-shadow: var(--mr-shadow-card);
+}
+.mr-report-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mr-primary);
+  background: var(--mr-primary-soft);
+  padding: 5px 10px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+.mr-report-title { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 6px; color: var(--mr-text); }
+.mr-report-sub { color: var(--mr-text-sub); font-size: 14px; margin: 0 0 18px; }
+.mr-meta-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.mr-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--mr-card-top);
+  border: 1px solid var(--mr-border);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--mr-text-sub);
+}
+.mr-meta-chip strong { color: var(--mr-text); font-weight: 600; }
+.mr-meta-chip .mr-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mr-primary); }
+.mr-meta-chip .mr-dot-b { background: var(--mr-primary-deep); }
+.mr-meta-chip .mr-dot-c { background: var(--mr-ok); }
+
+/* ===== DATA — 트렌드별 데이터카드 ===== */
+.mr-data-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+.mr-data-card {
+  background: var(--mr-surface);
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--mr-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.mr-data-card.mr-warn { border-color: var(--mr-warn); }
+.mr-data-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mr-border);
+}
+.mr-data-card-name { flex: 1; font-size: 14px; font-weight: 700; color: var(--mr-text); }
+.mr-db-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mr-text-sub);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mr-score-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.mr-big-score { flex: 1; }
+.mr-m-value-xl { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; color: var(--mr-text); }
+.mr-growth-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 1.2;
+}
+.mr-growth-pill.mr-up { color: var(--mr-ok); background: var(--mr-ok-soft); }
+.mr-growth-pill.mr-down { color: var(--mr-danger); background: var(--mr-danger-soft); }
+.mr-growth-pill .mr-arrow { font-size: 10px; margin-right: 2px; }
+.mr-growth-sub { font-size: 10px; font-weight: 600; color: var(--mr-text-mute); margin-top: 2px; }
+.mr-mini-bar { height: 6px; border-radius: 4px; background: var(--mr-border); overflow: hidden; }
+.mr-mini-bar-fill { height: 100%; border-radius: 4px; }
+.mr-mini-bar-fill.mr-r1 { background: var(--mr-primary); }
+.mr-mini-bar-fill.mr-r2 { background: var(--mr-rank2); }
+.mr-mini-bar-fill.mr-r3 { background: var(--mr-primary-soft); }

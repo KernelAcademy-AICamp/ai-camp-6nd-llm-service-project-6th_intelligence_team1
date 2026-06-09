@@ -226,10 +226,6 @@
         '<div class="mr-card-body">' +
           metricStrip(c) +
           '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">✅</span> 매칭 결과</div>' +
-            passesBlock(c) +
-          "</div>" +
-          '<div class="mr-block">' +
             '<div class="mr-block-label"><span class="mr-ico">📊</span> 유행현황 (Status)</div>' +
             bulletList(c.summary_bullets) +
           "</div>" +
@@ -241,17 +237,146 @@
             '<div class="mr-block-label"><span class="mr-ico">🎯</span> 매칭이유</div>' +
             bulletList(c.reason_bullets) +
           "</div>" +
-          '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">📡</span> 채널별 현황</div>' +
-            channelList(c.channels) +
-          "</div>" +
         "</div>" +
       "</div>"
     );
   }
 
+  function letterOf(i) { return String.fromCharCode(65 + i); } // 0→A, 1→B
+  function rankClass(i) { return i === 0 ? "mr-r1" : i === 1 ? "mr-r2" : "mr-r3"; }
+
+  // 섹션 헤더 — badge + title + (선택)desc. isData면 DATA 배지 스타일.
+  function sectionHead(badge, title, desc, isData) {
+    return (
+      '<div class="mr-section-head">' +
+        '<span class="mr-section-badge' + (isData ? " mr-data" : "") + '">' + esc(badge) + "</span>" +
+        '<h2 class="mr-section-title">' + esc(title) + "</h2>" +
+        (desc ? '<span class="mr-section-desc">' + esc(desc) + "</span>" : "") +
+      "</div>"
+    );
+  }
+
+  // PART I — Trend Summary (A/B/C + 트렌드명 + 한 줄 요약)
+  function summarySection(contents) {
+    var items = contents
+      .map(function (c, i) {
+        var body = (c.summary_bullets && c.summary_bullets[0]) || c.trend_name;
+        return (
+          '<div class="mr-summary-item">' +
+            '<div class="mr-summary-letter">' + letterOf(i) + "</div>" +
+            '<div class="mr-summary-text">' +
+              '<p class="mr-summary-title">' + esc(c.trend_name) + "</p>" +
+              '<p class="mr-summary-body">' + esc(body) + "</p>" +
+            "</div>" +
+          "</div>"
+        );
+      })
+      .join("");
+    return (
+      sectionHead("PART I", "Trend Summary", "트렌드 요약") +
+      '<div class="mr-summary-card"><div class="mr-summary-list">' + items + "</div></div>"
+    );
+  }
+
+  // DATA G3 — 트렌드 점수 비교 그래프 (매칭 통과수 total/4 × 100 = 0~100점)
+  function compareCard(contents) {
+    var rows = contents
+      .map(function (c, i) {
+        var mp = c.match_passes || {};
+        var total = mp.total != null ? mp.total : (mp.q1 || 0) + (mp.q2 || 0);
+        var score = Math.round((total / 4) * 100);
+        return (
+          '<div class="mr-compare-row">' +
+            '<div class="mr-compare-label">' +
+              '<span class="mr-group-letter">' + letterOf(i) + "</span>" +
+              '<span class="mr-compare-name">' + esc(c.trend_name) + "</span>" +
+            "</div>" +
+            '<div class="mr-compare-bar-track">' +
+              '<div class="mr-compare-bar-fill ' + rankClass(i) + '" style="width:' + score + '%"><span>' + score + "</span></div>" +
+            "</div>" +
+          "</div>"
+        );
+      })
+      .join("");
+    return (
+      '<div class="mr-compare-card"><div class="mr-compare-head">트렌드 점수 비교 (매칭 점수)</div>' +
+        '<div class="mr-compare-list">' + rows + "</div>" +
+      "</div>"
+    );
+  }
+
+  // growth_rate(소수 0.22) → 정수 퍼센트(22). 부호 유지, 숫자 아니면 null.
+  function growthPct(g) {
+    if (typeof g !== "number") return null;
+    return Math.round(g * 100);
+  }
+
+  // DATA — 트렌드별 데이터카드 (점수·성장률 + 매칭결과 + 채널별현황)
+  function dataCard(c, i) {
+    var mp = c.match_passes || {};
+    var total = mp.total != null ? mp.total : (mp.q1 || 0) + (mp.q2 || 0);
+    var score = Math.round((total / 4) * 100);
+    var gp = growthPct(c.metrics && c.metrics.growth_rate);
+    var warnCls =
+      c.match_strength === "weak" || c.display_variant === "supplementary" ? " mr-warn" : "";
+    var growthHtml =
+      gp == null
+        ? ""
+        : '<div class="mr-growth-pill ' + (gp >= 0 ? "mr-up" : "mr-down") + '">' +
+          '<span><span class="mr-arrow">' + (gp >= 0 ? "▲" : "▼") + "</span>" +
+          (gp >= 0 ? "+" : "") + gp + "%</span>" +
+          '<span class="mr-growth-sub">3개월</span>' +
+          "</div>";
+    return (
+      '<div class="mr-data-card' + warnCls + '">' +
+        '<div class="mr-data-card-head">' +
+          '<span class="mr-group-letter">' + letterOf(i) + "</span>" +
+          '<span class="mr-data-card-name">' + esc(c.trend_name) + "</span>" +
+          '<span class="mr-rank-badge' + rankBadgeClass(c.rank) + '">' + esc(c.rank) + "순위</span>" +
+        "</div>" +
+        '<div class="mr-data-block">' +
+          '<div class="mr-db-label">점수 · 성장률</div>' +
+          '<div class="mr-score-row">' +
+            '<div class="mr-big-score"><div class="mr-m-label">매칭 점수</div><div class="mr-m-value-xl">' + score + "</div></div>" +
+            growthHtml +
+          "</div>" +
+          '<div class="mr-mini-bar"><div class="mr-mini-bar-fill ' + rankClass(i) + '" style="width:' + score + '%"></div></div>' +
+        "</div>" +
+        '<div class="mr-data-block">' +
+          '<div class="mr-db-label">매칭 결과</div>' +
+          passesBlock(c) +
+        "</div>" +
+        '<div class="mr-data-block">' +
+          '<div class="mr-db-label">채널별 현황</div>' +
+          channelList(c.channels) +
+        "</div>" +
+      "</div>"
+    );
+  }
+
+  // 최상단 리포트 헤더 (브랜드·제품·카테고리·타겟). brand 객체 또는 평평한 필드 모두 허용.
+  function headerSection(b) {
+    b = b || {};
+    var name = b.name || b.brand_name || "";
+    var product = b.product_name || "";
+    var category = b.category || "";
+    var target = b.target_display || b.target || "";
+    var chips = "";
+    if (product) chips += '<div class="mr-meta-chip"><span class="mr-dot"></span><strong>제품</strong> ' + esc(product) + "</div>";
+    if (category) chips += '<div class="mr-meta-chip"><span class="mr-dot mr-dot-b"></span><strong>카테고리</strong> ' + esc(category) + "</div>";
+    if (target) chips += '<div class="mr-meta-chip"><span class="mr-dot mr-dot-c"></span><strong>타겟</strong> ' + esc(target) + "</div>";
+    return (
+      '<div class="mr-report-header">' +
+        '<span class="mr-report-eyebrow">● Beauty × Trend Matching</span>' +
+        '<h1 class="mr-report-title">' + esc(name) + " — 캠페인 트렌드 매칭 리포트</h1>" +
+        '<p class="mr-report-sub">브랜드 톤·타겟과 트렌드의 적합도를 분석했습니다.</p>' +
+        (chips ? '<div class="mr-meta-row">' + chips + "</div>" : "") +
+      "</div>"
+    );
+  }
+
   /**
-   * 트렌드 카드 리포트를 el 안에 렌더.
+   * full 매칭 리포트 렌더 (헤더 → PART I 요약 → PART II 카드 → DATA 점수비교+데이터카드).
    * @param {HTMLElement} el  - 마운트 대상
    * @param {object} data     - writer-output 의 `data` (또는 envelope 전체도 방어적으로 허용)
    */
@@ -260,10 +385,21 @@
     // envelope({data:{...}}) 통째로 들어와도 방어적으로 언래핑
     var d = data && data.data ? data.data : data || {};
     var contents = d.contents || [];
-    var cards = contents.length
-      ? contents.map(card).join("")
-      : '<div class="mr-empty">—</div>';
-    el.innerHTML = '<div class="mr-report"><div class="mr-trend-grid">' + cards + "</div></div>";
+    var brand = d.brand || d;
+    if (!contents.length) {
+      el.innerHTML = '<div class="mr-report">' + headerSection(brand) + '<div class="mr-empty">—</div></div>';
+      return el;
+    }
+    el.innerHTML =
+      '<div class="mr-report">' +
+        headerSection(brand) +
+        summarySection(contents) +
+        sectionHead("PART II", "트렌드 카드", "유행현황 · 수집 근거 · 매칭이유") +
+        '<div class="mr-trend-grid">' + contents.map(card).join("") + "</div>" +
+        sectionHead("📊 DATA", "정량 분석", "점수 · 성장률 · 매칭 결과 · 채널별 현황", true) +
+        compareCard(contents) +
+        '<div class="mr-data-grid">' + contents.map(dataCard).join("") + "</div>" +
+      "</div>";
     return el;
   }
 
