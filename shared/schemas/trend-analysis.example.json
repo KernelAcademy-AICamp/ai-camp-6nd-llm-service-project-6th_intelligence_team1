@@ -36,7 +36,8 @@
             "metric": "",
             "value": "",
             "raw_value": 0,
-            "period": ""
+            "period": "",
+            "url": ""
           }
         ],
         "audience_distribution": {
