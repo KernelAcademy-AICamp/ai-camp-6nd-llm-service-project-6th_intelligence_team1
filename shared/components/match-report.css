@@ -325,6 +325,24 @@ a.mr-src-chip[href]::after { content: '↗'; font-size: 10px; opacity: 0.85; mar
   transition: transform 0.15s;
 }
 .mr-eval-details[open] summary::before { transform: rotate(90deg); }
+
+/* 수집 근거 토글 (카드 내 접기/펼치기) */
+.mr-evidence-details > summary {
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  margin-bottom: 0;
+}
+.mr-evidence-details > summary::-webkit-details-marker { display: none; }
+.mr-evidence-details > summary::after {
+  content: '▶';
+  font-size: 9px;
+  color: var(--mr-primary);
+  margin-left: 4px;
+  transition: transform 0.15s;
+}
+.mr-evidence-details[open] > summary { margin-bottom: 8px; }
+.mr-evidence-details[open] > summary::after { transform: rotate(90deg); }
 .mr-ed-body {
   padding: 4px 14px 14px;
   font-size: 11.5px;

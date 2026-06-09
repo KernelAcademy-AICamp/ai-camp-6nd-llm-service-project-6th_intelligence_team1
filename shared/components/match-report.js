@@ -220,8 +220,7 @@
     );
   }
 
-  function card(c, i) {
-    var letter = String.fromCharCode(65 + i); // 0→A, 1→B, 2→C
+  function card(c) {
     var isWarn = c.rank === 3 || c.display_variant === "supplementary";
     var warnCls = isWarn ? " mr-warn" : "";
     var warnNote = c.rank === 3 ? '<span class="mr-warn-note">⚠️ 보완 활용 권장</span>' : "";
@@ -231,7 +230,6 @@
         '<div class="mr-card-top">' +
           '<div class="mr-rank-row">' +
             '<span class="mr-rank-badge' + rankBadgeClass(c.rank) + '">' + esc(c.rank) + "순위</span>" +
-            '<span class="mr-group-letter">' + letter + "</span>" +
             warnNote +
           "</div>" +
           '<h3 class="mr-h3">' + esc(c.trend_name) + "</h3>" +
@@ -240,23 +238,22 @@
         '<div class="mr-card-body">' +
           metricStrip(c) +
           '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">📊</span> 유행현황 (Status)</div>' +
-            bulletList(c.summary_bullets) +
-          "</div>" +
-          '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">📚</span> 수집 근거</div>' +
-            evidenceList(c.evidence) +
-          "</div>" +
-          '<div class="mr-block">' +
             '<div class="mr-block-label"><span class="mr-ico">🎯</span> 매칭이유</div>' +
             bulletList(c.reason_bullets) +
           "</div>" +
+          '<div class="mr-block">' +
+            '<div class="mr-block-label"><span class="mr-ico">📊</span> 유행현황 (Status)</div>' +
+            bulletList(c.summary_bullets) +
+          "</div>" +
+          '<details class="mr-block mr-evidence-details">' +
+            '<summary class="mr-block-label"><span class="mr-ico">📚</span> 수집 근거</summary>' +
+            evidenceList(c.evidence) +
+          "</details>" +
         "</div>" +
       "</div>"
     );
   }
 
-  function letterOf(i) { return String.fromCharCode(65 + i); } // 0→A, 1→B
   function rankClass(i) { return i === 0 ? "mr-r1" : i === 1 ? "mr-r2" : "mr-r3"; }
 
   // 섹션 헤더 — badge + title + (선택)desc. isData면 DATA 배지 스타일.
@@ -270,14 +267,14 @@
     );
   }
 
-  // PART I — Trend Summary (A/B/C + 트렌드명 + 한 줄 요약)
+  // PART I — 트렌드 요약 (순위 + 트렌드명 + 한 줄 요약)
   function summarySection(contents) {
     var items = contents
-      .map(function (c, i) {
+      .map(function (c) {
         var body = (c.summary_bullets && c.summary_bullets[0]) || c.trend_name;
         return (
           '<div class="mr-summary-item">' +
-            '<div class="mr-summary-letter">' + letterOf(i) + "</div>" +
+            '<div class="mr-summary-letter">' + esc(c.rank) + "</div>" +
             '<div class="mr-summary-text">' +
               '<p class="mr-summary-title">' + esc(c.trend_name) + "</p>" +
               '<p class="mr-summary-body">' + esc(body) + "</p>" +
@@ -287,35 +284,8 @@
       })
       .join("");
     return (
-      sectionHead("PART I", "Trend Summary", "트렌드 요약") +
+      sectionHead("PART I", "트렌드 요약", "") +
       '<div class="mr-summary-card"><div class="mr-summary-list">' + items + "</div></div>"
-    );
-  }
-
-  // DATA G3 — 트렌드 점수 비교 그래프 (매칭 통과수 total/4 × 100 = 0~100점)
-  function compareCard(contents) {
-    var rows = contents
-      .map(function (c, i) {
-        var mp = c.match_passes || {};
-        var total = mp.total != null ? mp.total : (mp.q1 || 0) + (mp.q2 || 0);
-        var score = Math.round((total / 4) * 100);
-        return (
-          '<div class="mr-compare-row">' +
-            '<div class="mr-compare-label">' +
-              '<span class="mr-group-letter">' + letterOf(i) + "</span>" +
-              '<span class="mr-compare-name">' + esc(c.trend_name) + "</span>" +
-            "</div>" +
-            '<div class="mr-compare-bar-track">' +
-              '<div class="mr-compare-bar-fill ' + rankClass(i) + '" style="width:' + score + '%"><span>' + score + "</span></div>" +
-            "</div>" +
-          "</div>"
-        );
-      })
-      .join("");
-    return (
-      '<div class="mr-compare-card"><div class="mr-compare-head">트렌드 점수 비교 (매칭 점수)</div>' +
-        '<div class="mr-compare-list">' + rows + "</div>" +
-      "</div>"
     );
   }
 
@@ -344,7 +314,6 @@
     return (
       '<div class="mr-data-card' + warnCls + '">' +
         '<div class="mr-data-card-head">' +
-          '<span class="mr-group-letter">' + letterOf(i) + "</span>" +
           '<span class="mr-data-card-name">' + esc(c.trend_name) + "</span>" +
           '<span class="mr-rank-badge' + rankBadgeClass(c.rank) + '">' + esc(c.rank) + "순위</span>" +
         "</div>" +
@@ -411,7 +380,6 @@
         sectionHead("PART II", "트렌드 카드", "유행현황 · 수집 근거 · 매칭이유") +
         '<div class="mr-trend-grid">' + contents.map(card).join("") + "</div>" +
         sectionHead("📊 DATA", "정량 분석", "점수 · 성장률 · 매칭 결과 · 채널별 현황", true) +
-        compareCard(contents) +
         '<div class="mr-data-grid">' + contents.map(dataCard).join("") + "</div>" +
       "</div>";
     return el;
