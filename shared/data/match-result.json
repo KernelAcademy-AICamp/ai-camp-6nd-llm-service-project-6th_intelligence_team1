@@ -1,6 +1,6 @@
 {
   "schema_version": "0.2",
-  "generated_at": "2026-06-09T03:01:47.688Z",
+  "generated_at": "2026-06-09T07:50:03.889Z",
   "status": "success",
   "data": {
     "brand_name": "헤라",
@@ -12,18 +12,18 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "헤라 실키 파운데이션의 매트·밀착 텍스처가 트렌드 핵심 키워드인 '매트 쿠션', '세미매트', '자연스러운 매트피니시'와 직접 일치",
-            "source": "브랜드 texture_keywords vs 트렌드 keywords"
+            "fact": "브랜드 실키 파운데이션의 매트·밀착 텍스처가 트렌드 핵심 키워드(매트 쿠션, 자연스러운 매트피니시)와 일치",
+            "source": "브랜드 texture_keywords vs 트렌드 keywords.ingred"
           },
           {
             "category": "라이프스타일 매칭",
-            "fact": "트렌드 타겟이 '피부 표현의 정점이 극도의 광채에서 피부 본연의 텍스처를 살리는 방향으로 전환'되는 가치관을 추구하며, 이는 자기표현 동기의 30대 일상사용자와 부합",
-            "source": "트렌드 meaning vs 브랜드 target motivation"
+            "fact": "트렌드 타겟이 번들거림 민감·데일리 사용자로, 브랜드 타겟(30대 일상사용자)의 일상 루틴과 겹침",
+            "source": "트렌드 audience_signal vs 브랜드 target.involvement"
           },
           {
-            "category": "매체 매칭",
-            "fact": "브랜드 Instagram·YouTube 채널이 트렌드의 주요 콘텐츠 매체(YouTube 튜토리얼, Instagram 데일리 룩 콘텐츠)와 2개 매체 겹침",
-            "source": "브랜드 media_channels vs 트렌드 media_channel_status"
+            "category": "트렌드 수명",
+            "fact": "트렌드 lifespan_estimate 6개월 이상, 매트 베이스 검색량 지속적 유지(1월 38.9→5월 47.4)",
+            "source": "트렌드 lifespan_estimate & metrics.period"
           }
         ]
       },
@@ -34,18 +34,18 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "헤라 실키 파운데이션의 매트·밀착 텍스처가 트렌드 핵심인 '자연스러운 커버', '가벼운 밀착감', '고커버 매트 쿠션'과 직접 일치",
-            "source": "브랜드 texture_keywords vs 트렌드 keywords"
+            "fact": "브랜드 매트·밀착 텍스처가 트렌드 핵심(자연스러운 커버, 가벼운 밀착감, 고커버 매트 쿠션)과 일치",
+            "source": "브랜드 texture_keywords vs 트렌드 keywords.ingred"
           },
           {
             "category": "라이프스타일 매칭",
-            "fact": "브랜드 타겟 30대 일상사용자가 '데일리 메이크업·수정 화장 양쪽에서 활용 가능한 제품'을 선호하며, 이는 트렌드의 '커버와 가벼움을 동시에 충족하는 베이스' 니즈와 부합",
-            "source": "브랜드 target(involvement, motivation) vs 트렌드 audience_signal"
+            "fact": "트렌드 타겟이 데일리 효율 중시·장시간 외출 일상으로, 브랜드 타겟(30대 일상사용자)의 직장인 루틴과 겹침",
+            "source": "트렌드 audience_signal vs 브랜드 target.involvement"
           },
           {
-            "category": "매체 매칭",
-            "fact": "브랜드 Instagram 채널이 트렌드의 주요 콘텐츠 매체(제품 리뷰, 사용 후기 콘텐츠)와 1개 매체 겹침",
-            "source": "브랜드 media_channels vs 트렌드 media_channel_status"
+            "category": "트렌드 수명",
+            "fact": "트렌드 lifespan_estimate 6개월 이상, 커버력 쿠션 검색량 지속(1월 9.2→5월 9.7)",
+            "source": "트렌드 lifespan_estimate & metrics"
           }
         ]
       }
@@ -60,11 +60,11 @@
           },
           "visual_fit": {
             "result": "✅",
-            "reason": "브랜드 럭셔리·프리미엄 톤이 트렌드의 YouTube·Instagram 튜토리얼·리뷰 콘텐츠(전문가 평가, 제품 추천)와 부합하며, 고급 베이스 제품으로서의 위상이 명확."
+            "reason": "브랜드 럭셔리 톤과 트렌드의 중립적·친근한 일상 공유 콘텐츠 연출이 충돌 없이 어울림. YouTube·Instagram 매체 겹침으로 비주얼 연출 친화도 높음."
           },
           "life_fit": {
             "result": "✅",
-            "reason": "타겟 30대 일상사용자의 자기표현 동기가 트렌드의 '피부 본연의 텍스처를 살리는 자연스러운 매트' 가치관과 일치. 데일리 메이크업·수정 화장 용이성도 부합."
+            "reason": "브랜드 타겟(30대 일상사용자, 자기표현)과 트렌드 타겟(20-30대 데일리 사용자, 꾸안꾸 추구)의 라이프스타일·가치관이 명확히 일치. 번들거림 민감·데일리 효율 중시 모두 부합."
           },
           "safe_fit": {
             "result": "⚠️",
@@ -76,18 +76,18 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "헤라 실키 파운데이션의 매트·밀착 텍스처가 트렌드 핵심 키워드인 '매트 쿠션', '세미매트', '자연스러운 매트피니시'와 직접 일치",
-            "source": "브랜드 texture_keywords vs 트렌드 keywords"
+            "fact": "브랜드 실키 파운데이션의 매트·밀착 텍스처가 트렌드 핵심 키워드(매트 쿠션, 자연스러운 매트피니시)와 일치",
+            "source": "브랜드 texture_keywords vs 트렌드 keywords.ingred"
           },
           {
             "category": "라이프스타일 매칭",
-            "fact": "트렌드 타겟이 '피부 표현의 정점이 극도의 광채에서 피부 본연의 텍스처를 살리는 방향으로 전환'되는 가치관을 추구하며, 이는 자기표현 동기의 30대 일상사용자와 부합",
-            "source": "트렌드 meaning vs 브랜드 target motivation"
+            "fact": "트렌드 타겟이 번들거림 민감·데일리 사용자로, 브랜드 타겟(30대 일상사용자)의 일상 루틴과 겹침",
+            "source": "트렌드 audience_signal vs 브랜드 target.involvement"
           },
           {
-            "category": "매체 매칭",
-            "fact": "브랜드 Instagram·YouTube 채널이 트렌드의 주요 콘텐츠 매체(YouTube 튜토리얼, Instagram 데일리 룩 콘텐츠)와 2개 매체 겹침",
-            "source": "브랜드 media_channels vs 트렌드 media_channel_status"
+            "category": "트렌드 수명",
+            "fact": "트렌드 lifespan_estimate 6개월 이상, 매트 베이스 검색량 지속적 유지(1월 38.9→5월 47.4)",
+            "source": "트렌드 lifespan_estimate & metrics.period"
           }
         ]
       },
@@ -100,11 +100,11 @@
           },
           "visual_fit": {
             "result": "✅",
-            "reason": "브랜드 럭셔리·프리미엄 톤이 트렌드의 Instagram·Blog 콘텐츠(제품 리뷰, 텍스처 설명, 사용 후기)와 부합하며, 고급 베이스로서의 신뢰도 강화."
+            "reason": "브랜드 럭셔리 톤과 트렌드의 친근한 일상 비교 리뷰·중립적 분위기가 충돌 없음. Instagram 매체 겹침으로 비주얼 연출 친화도 확보."
           },
           "life_fit": {
             "result": "✅",
-            "reason": "타겟 30대 일상사용자의 '데일리 메이크업·수정 화장 양쪽 활용, 피부감 살리기' 니즈가 트렌드의 '기미·붉은기를 자연스럽게 가리면서도 피부 표현이 살아있는 밸런스' 추구와 일치."
+            "reason": "브랜드 타겟(30대 일상사용자, 자기표현)과 트렌드 타겟(데일리 효율 중시, 장시간 외출 일상)의 라이프스타일이 명확히 일치. 답답함 거부·데일리 효율 모두 30대 직장인 일상과 부합."
           },
           "safe_fit": {
             "result": "⚠️",
@@ -116,18 +116,18 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "헤라 실키 파운데이션의 매트·밀착 텍스처가 트렌드 핵심인 '자연스러운 커버', '가벼운 밀착감', '고커버 매트 쿠션'과 직접 일치",
-            "source": "브랜드 texture_keywords vs 트렌드 keywords"
+            "fact": "브랜드 매트·밀착 텍스처가 트렌드 핵심(자연스러운 커버, 가벼운 밀착감, 고커버 매트 쿠션)과 일치",
+            "source": "브랜드 texture_keywords vs 트렌드 keywords.ingred"
           },
           {
             "category": "라이프스타일 매칭",
-            "fact": "브랜드 타겟 30대 일상사용자가 '데일리 메이크업·수정 화장 양쪽에서 활용 가능한 제품'을 선호하며, 이는 트렌드의 '커버와 가벼움을 동시에 충족하는 베이스' 니즈와 부합",
-            "source": "브랜드 target(involvement, motivation) vs 트렌드 audience_signal"
+            "fact": "트렌드 타겟이 데일리 효율 중시·장시간 외출 일상으로, 브랜드 타겟(30대 일상사용자)의 직장인 루틴과 겹침",
+            "source": "트렌드 audience_signal vs 브랜드 target.involvement"
           },
           {
-            "category": "매체 매칭",
-            "fact": "브랜드 Instagram 채널이 트렌드의 주요 콘텐츠 매체(제품 리뷰, 사용 후기 콘텐츠)와 1개 매체 겹침",
-            "source": "브랜드 media_channels vs 트렌드 media_channel_status"
+            "category": "트렌드 수명",
+            "fact": "트렌드 lifespan_estimate 6개월 이상, 커버력 쿠션 검색량 지속(1월 9.2→5월 9.7)",
+            "source": "트렌드 lifespan_estimate & metrics"
           }
         ]
       },
@@ -140,11 +140,11 @@
           },
           "visual_fit": {
             "result": "✅",
-            "reason": "브랜드 럭셔리·프리미엄 톤이 트렌드의 YouTube·Instagram·Blog 콘텐츠(쿠션 튜토리얼, 브랜드 비교 영상, 추천 글)와 부합하며, 프리미엄 쿠션 브랜드로서의 위상 강화."
+            "reason": "브랜드 럭셔리 톤과 트렌드의 실용적·친근한 일상 공유 톤이 충돌 없음. YouTube·Instagram 매체 겹침으로 비주얼 연출 친화도 높음."
           },
           "life_fit": {
             "result": "✅",
-            "reason": "타겟 30대 일상사용자의 '편의성·휴대성·수정 용이성' 니즈가 트렌드의 '바쁜 일상 속 메이크업 시간 효율화, 출근 전 빠른 완성, 업무 중 수정 화장 용이' 라이프스타일과 정확히 일치."
+            "reason": "브랜드 타겟(30대 일상사용자)과 트렌드 타겟(수정 화장 빈번, 이동 중 터치업, 데일리 효율 중시)의 라이프스타일이 명확히 일치. MZ세대 일상 사용자 범주에 30대도 포함되며, 효율성 중시 가치관 부합."
           },
           "safe_fit": {
             "result": "⚠️",
@@ -156,18 +156,18 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "헤라 실키 파운데이션이 쿠션 제형의 베이스 메이크업 제품이며, 트렌드에서 쿠션 파운데이션 사용률이 38.8%로 일반 파운데이션 33.3%를 압도",
-            "source": "브랜드 product_name vs 트렌드 summary, evidence(MZ세대 베이스 메이크업 사용 행태 조사)"
+            "fact": "브랜드 실키 파운데이션이 쿠션 제형으로, 트렌드 핵심(쿠션 선호, 데일리 쿠션, 수정 화장 쿠션)과 일치",
+            "source": "브랜드 product_name vs 트렌드 keywords.ingred"
           },
           {
             "category": "라이프스타일 매칭",
-            "fact": "브랜드 타겟 30대 일상사용자의 편의성·휴대성 중시가 트렌드의 '바쁜 일상 속 메이크업 효율화, 수정 화장 용이성' 라이프스타일과 일치",
-            "source": "브랜드 target(involvement, motivation) vs 트렌드 audience_signal"
+            "fact": "트렌드 타겟이 수정 화장 빈번·이동 중 터치업·데일리 효율 중시로, 브랜드 타겟(30대 일상사용자)의 직장 루틴과 겹침",
+            "source": "트렌드 audience_signal vs 브랜드 target.involvement"
           },
           {
-            "category": "매체 매칭",
-            "fact": "브랜드 Instagram·YouTube 채널이 트렌드의 주요 콘텐츠 매체(쿠션 튜토리얼, 브랜드 비교 영상, 추천 글)와 2개 매체 겹침",
-            "source": "브랜드 media_channels vs 트렌드 media_channel_status"
+            "category": "트렌드 수명",
+            "fact": "트렌드 lifespan_estimate 6개월 이상, 쿠션 파운데이션 사용률 38.8%로 파운데이션 33.3% 초과 유지",
+            "source": "트렌드 lifespan_estimate & evidence"
           }
         ]
       },
@@ -180,11 +180,11 @@
           },
           "visual_fit": {
             "result": "✅",
-            "reason": "브랜드 럭셔리·프리미엄 톤이 트렌드의 Instagram·Blog 콘텐츠(20대 여성 크리에이터 추천, 제품 리뷰)와 부합하며, 중가 프리미엄급 쿠션으로서의 위상 강화."
+            "reason": "브랜드 럭셔리 톤과 트렌드의 친근하고 중립적인 라이프스타일 기반 추천 톤이 충돌 없음. Instagram 매체 겹침으로 비주얼 연출 친화도 확보."
           },
           "life_fit": {
             "result": "⚠️",
-            "reason": "타겟 30대 일상사용자는 트렌드의 주 타깃인 '직장인·대학생 20대 여성, 출근/등교 전 10-15분 내 완성, SNS 트렌드에 빠른 반응'과 연령대에서 차이가 있으나, 데일리 메이크업·수정 화장 니즈는 부분 일치."
+            "reason": "브랜드 타겟(30대 일상사용자)과 트렌드 타겟(20대 직장인·학생)의 연령대가 다름. 데일리 효율·트렌드 정보 탐색 활발은 공통이나, 트렌드가 20대 특화로 명시되어 30대와는 부분 겹침."
           },
           "safe_fit": {
             "result": "⚠️",
@@ -196,18 +196,18 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "헤라 실키 파운데이션의 매트·밀착 텍스처가 트렌드 핵심인 '20대 데일리 쿠션', '매트·커버·자연스러움 조건 충족'과 직접 일치",
-            "source": "브랜드 texture_keywords vs 트렌드 keywords"
+            "fact": "브랜드 매트·밀착 텍스처가 트렌드 핵심(20대 데일리 쿠션, 매트 베이스)과 일치",
+            "source": "브랜드 texture_keywords vs 트렌드 keywords.ingred"
           },
           {
             "category": "라이프스타일 매칭",
-            "fact": "브랜드 타겟 30대 일상사용자의 '데일리 메이크업·수정 화장' 니즈가 트렌드의 '20대 직장인·학생 여성의 업무 8시간 지속력, 번들거림 제어' 요구와 부분 일치",
-            "source": "브랜드 target(involvement) vs 트렌드 audience_signal"
+            "fact": "트렌드 타겟이 20대 직장인·학생으로 데일리 효율 중시, 브랜드 타겟(일상사용자)의 효율성 가치관과 겹침",
+            "source": "트렌드 audience_signal vs 브랜드 target.involvement"
           },
           {
-            "category": "매체 매칭",
-            "fact": "브랜드 Instagram 채널이 트렌드의 주요 콘텐츠 매체(20대 여성 크리에이터 데일리 메이크업, 제품 추천 콘텐츠)와 1개 매체 겹침",
-            "source": "브랜드 media_channels vs 트렌드 media_channel_status"
+            "category": "트렌드 수명",
+            "fact": "트렌드 lifespan_estimate 6개월 이상, 20대 맞춤 검색('20대 여성 매트 베이스', '20대 쿠션 추천') 활발",
+            "source": "트렌드 lifespan_estimate & status"
           }
         ]
       },
@@ -219,12 +219,12 @@
             "reason": "성분 키워드 트렌드와 겹치지 않음 (임베딩 유사도 기반)"
           },
           "visual_fit": {
-            "result": "✅",
-            "reason": "브랜드 럭셔리·프리미엄 톤이 트렌드의 '라이트한 메이크업, 섬세한 톤 보정' 콘텐츠 연출(YouTube 톤 비교 영상, 고급 제품 리뷰)과 부합."
+            "result": "⚠️",
+            "reason": "브랜드 럭셔리 톤과 트렌드의 발랄·감성적 무드 콘텐츠가 부분 충돌. 트렌드가 Z세대 트렌디·키치 브랜드와 친화도 높다고 명시되어 럭셔리 톤과는 다소 거리 있음."
           },
           "life_fit": {
             "result": "⚠️",
-            "reason": "타겟 30대 일상사용자는 트렌드의 주 타깃인 '라이트·쿨톤 피부의 Z세대·트렌디한 소비자'와 연령대·개성 표현 강도에서 부분 겹침만 있음."
+            "reason": "브랜드 타겟(30대 일상사용자)과 트렌드 타겟(20대 트렌드 민감·자기표현)의 연령대·동기가 부분 겹침. 자기표현은 공통이나 트렌드의 '컬러 변신·개성' 강조는 30대 일상사용자보다 20대 트렌디 소비자에 더 부합."
           },
           "safe_fit": {
             "result": "⚠️",
@@ -236,18 +236,18 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "헤라 실키 파운데이션은 매트·밀착 텍스처 강조이며, 파스텔 톤 컬러 보정(핑크·민트·바이올렛)에 대한 제품 특성 명시 부족",
-            "source": "브랜드 texture_keywords vs 트렌드 keywords(핑크쿠션, 파스텔톤베이스, 색감쿠션)"
+            "fact": "브랜드 매트 텍스처는 부합하나, 파스텔 톤 컬러 베이스(핑크·민트·바이올렛)라는 트렌드 핵심 성분에 대한 제품 정보 부재",
+            "source": "브랜드 texture_keywords vs 트렌드 keywords.ingred"
           },
           {
-            "category": "라이프스타일 매칭",
-            "fact": "트렌드 타겟이 '라이트·쿨톤 피부의 Z세대, 개성 있는 컬러감으로 자기표현'을 추구하나, 브랜드 타겟은 30대 일상사용자로 연령대 및 트렌디함 강도에서 차이",
-            "source": "트렌드 audience_signal vs 브랜드 target(age_groups, involvement)"
+            "category": "톤앤매너 충돌",
+            "fact": "트렌드가 Z세대 트렌디·키치 브랜드와 친화도 높다고 명시되어, 럭셔리 톤과 다소 거리 있음",
+            "source": "트렌드 summary 문장 '정통 럭셔리·미니멀 톤과는 다소 충돌 가능'"
           },
           {
-            "category": "매체 매칭",
-            "fact": "브랜드 YouTube 채널이 트렌드의 주요 콘텐츠 매체(YSL 핑크쿠션 튜토리얼, 톤 비교 영상)와 1개 매체 겹침",
-            "source": "브랜드 media_channels vs 트렌드 media_channel_status"
+            "category": "트렌드 수명",
+            "fact": "트렌드 lifespan_estimate 3-6개월로 시즌성 강함. 올봄 파스텔 톤 트렌드로 제한적",
+            "source": "트렌드 lifespan_estimate & status"
           }
         ]
       },
@@ -259,12 +259,12 @@
             "reason": "성분 키워드 트렌드와 겹치지 않음 (임베딩 유사도 기반)"
           },
           "visual_fit": {
-            "result": "✅",
-            "reason": "브랜드 럭셔리·프리미엄 톤이 트렌드의 '피부 건강함을 중시하는 고급 베이스' 콘텐츠(Blog 트렌드 분석, Instagram 사용 후기)와 부합."
+            "result": "⚠️",
+            "reason": "브랜드 럭셔리 톤과 트렌드의 임상적·과학적 전문가 리뷰 톤이 부분 충돌. 트렌드가 클린뷰티·더마·과학적 브랜드와 친화도 높다고 명시되어, 럭셔리 톤과는 다소 거리 있음."
           },
           "life_fit": {
             "result": "⚠️",
-            "reason": "타겟 30대 일상사용자는 트렌드의 주 타깃인 '피부 건강함·스킨케어 성분 중시, 민감성 피부 보유자'와 부분 겹침만 있으며, 메이크업 완전 덮기보다 피부 본연 표현 추구 강도에서 차이."
+            "reason": "브랜드 타겟(30대 일상사용자, 자기표현)과 트렌드 타겟(피부 건강 중시, 셀프케어, 기능성 베이스 선호)의 동기가 부분 겹침. 자기표현보다 피부 건강·셀프케어 가치관이 트렌드 중심으로, 30대 일상사용자보다 건강 중시 소비자에 더 부합."
           },
           "safe_fit": {
             "result": "✅",
@@ -276,18 +276,18 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "헤라 실키 파운데이션은 매트·밀착 텍스처 강조이며, 트렌드의 핵심인 스킨케어 성분(보습, 진정, 톤업) 강화에 대한 제품 특성 명시 부족",
-            "source": "브랜드 texture_keywords vs 트렌드 keywords(스킨케어성분, 세럼쿠션, 톤업프라이머)"
+            "fact": "브랜드 매트 텍스처는 부합하나, 스킨케어 성분 강화(세럼, 보습, 진정, 톤업)라는 트렌드 핵심에 대한 제품 정보 부재",
+            "source": "브랜드 texture_keywords vs 트렌드 keywords.ingred"
+          },
+          {
+            "category": "톤앤매너 충돌",
+            "fact": "트렌드가 클린뷰티·더마·과학적 브랜드와 친화도 높으며, 키치·플레이풀 톤과 충돌 가능하다고 명시되어 럭셔리 톤과 거리 있음",
+            "source": "트렌드 summary 문장 '클린뷰티·더마·과학적 브랜드와 친화도가 매우 높으며'"
           },
           {
             "category": "라이프스타일 매칭",
-            "fact": "트렌드 타겟이 '피부 건강함 중시, 메이크업으로 완전히 덮기보다 피부 본연 표현, 민감성 피부'를 추구하나, 브랜드 타겟은 30대 일상사용자로 스킨케어 성분 강조 강도에서 차이",
-            "source": "트렌드 audience_signal vs 브랜드 target(involvement, motivation)"
-          },
-          {
-            "category": "매체 매칭",
-            "fact": "브랜드 Instagram·YouTube 채널이 트렌드의 주요 콘텐츠 매체(Blog 트렌드 분석, Instagram 사용 후기, YouTube 튜토리얼)와 2개 매체 겹침",
-            "source": "브랜드 media_channels vs 트렌드 media_channel_status"
+            "fact": "트렌드 타겟이 피부 건강 중시·셀프케어·기능성 베이스 선호로, 브랜드 타겟(자기표현 중심)과 동기 차이 있음",
+            "source": "트렌드 audience_signal vs 브랜드 target.motivation"
           }
         ]
       }
