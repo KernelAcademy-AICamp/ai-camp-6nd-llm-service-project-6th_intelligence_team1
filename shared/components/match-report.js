@@ -100,7 +100,21 @@
     return '<ul class="mr-reason-list">' + lis + "</ul>";
   }
 
-  // 수집 근거 — 출처 칩(링크 있으면 a, 없으면 span) + 설명
+  // 링크 가능 판정 — 실제 출처 페이지(경로·쿼리 있음)만 링크.
+  //  "https://datalab.naver.com/" 같은 플랫폼 홈(루트)은 링크 안 함
+  //  → 클릭 시 엉뚱한 플랫폼 메인으로 가는 것 방지. 특정 글 링크만 클릭됨.
+  function isLinkable(url) {
+    if (!url || typeof url !== "string") return false;
+    try {
+      var u = new URL(url);
+      var pathLen = u.pathname.replace(/\/+$/, "").length; // 끝 슬래시 제거 후 경로
+      return pathLen > 0 || !!u.search || !!u.hash;
+    } catch (e) {
+      return false; // 파싱 불가 url은 링크 안 함
+    }
+  }
+
+  // 수집 근거 — 출처 칩(실제 글 링크면 a, 아니면 span) + 설명
   function evidenceList(evidence) {
     var arr = evidence || [];
     if (!arr.length) return '<div class="mr-empty">—</div>';
@@ -108,7 +122,7 @@
       .map(function (e) {
         var chip = chipFor(e.source, e.label);
         var clsAttr = chip.cls ? "mr-src-chip " + chip.cls : "mr-src-chip";
-        var inner = e.url
+        var inner = isLinkable(e.url)
           ? '<a class="' + clsAttr + '" href="' + esc(e.url) +
             '" target="_blank" rel="noopener noreferrer">' + esc(chip.label) + "</a>"
           : '<span class="' + clsAttr + '">' + esc(chip.label) + "</span>";
