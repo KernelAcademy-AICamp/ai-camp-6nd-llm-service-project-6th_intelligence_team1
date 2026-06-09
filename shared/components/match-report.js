@@ -255,11 +255,17 @@
               evidenceList(c.evidence) +
             "</details>" +
           "</div>" +
-          // 우: 정량 분석 (매칭 설명 — 매칭가 4기준)
+          // 우: 정량 분석 (매칭 설명 4기준 + 활용 방안)
           '<div class="mr-card-col mr-col-data">' +
             '<div class="mr-block">' +
               '<div class="mr-block-label"><span class="mr-ico">🧮</span> 매칭 설명</div>' +
               matchExplain(c.match_fits) +
+            "</div>" +
+            '<div class="mr-block">' +
+              '<div class="mr-block-label"><span class="mr-ico">💡</span> 활용 방안</div>' +
+              (c.usage_plan
+                ? '<div class="mr-usage">' + esc(c.usage_plan) + "</div>"
+                : '<div class="mr-usage mr-fit-placeholder">활용방안 작성</div>') +
             "</div>" +
           "</div>" +
         "</div>" +
