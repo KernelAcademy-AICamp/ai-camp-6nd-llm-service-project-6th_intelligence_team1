@@ -29,10 +29,12 @@
 | ①기본 인물 설정 | Instagram `shot_type` + Pinterest `mood` | 브랜드 타겟 연령·성별 |
 | ②헤어 & 메이크업 | Pinterest `mood` + `key_objects` | 브랜드 톤앤매너에 맞는 스타일 |
 | ③포즈·소품·시선 | Instagram `composition` + `key_objects` | 자연스러운 광고 포즈 |
-| ④배경 | Mintoiro `color_palette` + Pinterest `mood` | 브랜드 컬러 기반 단색·그라디언트 |
+| ④배경 | Pinterest·Instagram·Mintoiro `background` → **Pinterest `mood`와 어울리는 장소·환경으로 서술** | 브랜드 톤앤매너에 어울리는 장소·환경 (예: 미니멀 욕실, 선셋 테라스, 모던 드레싱룸, 자연광 스튜디오 등) |
 | ⑤조명·구도 | Instagram `composition` | 뷰티 광고 스탠다드 소프트박스 |
 | ⑥카메라 세팅 | Instagram `composition` | 85mm f/1.8 인물 표준 |
 | ⑦렌더링 치트키 | 고정 | photorealistic, hyper-detailed, masterpiece, best quality, 8k wallpaper |
+
+**④배경 작성 원칙**: 레퍼런스 `background`와 인물 `mood`를 함께 보고, 무드를 가장 잘 살리는 배경을 선택하세요. 장소(예: softly lit vanity room, sunset terrace)여도 되고 단색(예: warm beige backdrop, deep navy gradient)이어도 됩니다. 무드와 어울리는 쪽을 우선합니다.
 
 7요소를 콤마로 이어 **한 줄 영문**으로 작성하세요.
 
@@ -40,7 +42,7 @@
 
 ## 제품 단독일 때 — 자유 형식
 
-3매체 분석을 자연스럽게 녹여 한 줄 영문 프롬프트를 작성합니다.
+3매체 분석을 자연스럽게 녹여 한 줄 영문 프롬프트를 작성합니다. 배경도 단색 대신 브랜드 무드에 어울리는 장소·환경을 묘사하세요.
 
 ---
 

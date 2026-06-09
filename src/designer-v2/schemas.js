@@ -48,6 +48,7 @@ export const LlmSourceAnalysisSchema = z.object({
   composition: z.string(), // 한국어
   color_palette: z.array(z.string()).optional(),
   key_objects: z.array(z.string()).optional(),
+  background: z.string().optional(), // 배경·장소·환경 (한국어)
   source_specific: z.string(), // 이 매체에서 특히 강조할 1-2문장 (한국어)
 });
 
@@ -74,6 +75,7 @@ const SourceAnalysisSchema = z.object({
   composition: z.string(),
   color_palette: z.array(z.string()).optional(),
   key_objects: z.array(z.string()).optional(),
+  background: z.string().optional(),
   source_specific: z.string(),
 });
 
