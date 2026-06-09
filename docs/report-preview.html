@@ -101,9 +101,9 @@
             "20대 여성의 자기표현 동기와 '새로운 기준' 트렌드 수용 성향 일치"
           ],
           evidence: [
-            { source: "naver_datalab", label: "Naver Datalab", description: "[클릭됨] 특정 키워드 결과 링크(쿼리 있음) → 매트쿠션 47.4 (5월)", url: "https://datalab.naver.com/keyword/trendResult.naver?cid=10000&keyword=매트쿠션" },
-            { source: "naver_news", label: "Naver News", description: "[클릭됨] 실제 기사 링크(경로 있음) → 라네즈 네오 쿠션 더 매트 출시", url: "https://n.news.naver.com/article/001/0014567890" },
-            { source: "tavily", label: "Tavily", description: "[링크 안 됨] 플랫폼 홈 URL → 가드가 막음", url: "https://tavily.com/" },
+            { source: "naver_news", label: "Naver News", description: "[클릭됨] 실제 기사 URL(경로 있음) — naver-search.js가 item.link 캡처", url: "https://n.news.naver.com/article/001/0014567890" },
+            { source: "tavily", label: "Tavily", description: "[클릭됨] Tavily가 찾은 실제 출처 페이지 — tavily.js가 result.url 캡처", url: "https://www.allure.com/story/2026-makeup-base-trends" },
+            { source: "naver_datalab", label: "Naver Datalab", description: "[링크 안 됨] 데이터랩은 분석 플랫폼 → 개별 글 링크 없어 홈만 (가드가 막음)", url: "https://datalab.naver.com/" },
             { source: "instagram", label: "Instagram", description: "[링크 안 됨] url 없음(null)", url: null }
           ],
           channels: [
