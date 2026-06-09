@@ -47,8 +47,38 @@
 /* 카드 그리드 — 고정폭 없이 부모 너비에 맞춰 유연하게 */
 .mr-trend-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: 1fr;   /* 카드 세로 스택(전체 폭) */
   gap: 16px;
+}
+
+/* 가로형 넓은 카드 — 본문 2열 (좌: 스토리 / 우: 매칭 설명) */
+.mr-card-cols {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 20px;
+  padding: 18px 20px;
+}
+.mr-card-col { display: flex; flex-direction: column; gap: 16px; }
+.mr-col-data {
+  border-left: 1px solid var(--mr-border);
+  padding-left: 20px;
+}
+.mr-stage-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--mr-warn-soft);
+  color: var(--mr-warn);
+}
+@media (max-width: 720px) {
+  .mr-card-cols { grid-template-columns: 1fr; }
+  .mr-col-data {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid var(--mr-border);
+    padding-top: 14px;
+  }
 }
 
 .mr-trend-card {
@@ -599,3 +629,52 @@ a.mr-src-chip[href]::after { content: '↗'; font-size: 10px; opacity: 0.85; mar
 .mr-mini-bar-fill.mr-r1 { background: var(--mr-primary); }
 .mr-mini-bar-fill.mr-r2 { background: var(--mr-rank2); }
 .mr-mini-bar-fill.mr-r3 { background: var(--mr-primary-soft); }
+
+/* 정량분석 — 트렌드 지표 행 (검색량 지수 · 트렌드 단계) */
+.mr-metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--mr-border);
+  font-size: 13px;
+}
+.mr-metric-row:last-child { border-bottom: none; }
+.mr-mr-label { color: var(--mr-text-sub); font-weight: 600; }
+.mr-mr-value { font-weight: 800; color: var(--mr-text); text-align: right; }
+
+/* 정량분석 — 매칭 설명 (매칭가 4기준: 판정 + 이유) */
+.mr-fit-row {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--mr-border);
+}
+.mr-fit-row:last-child { border-bottom: none; }
+.mr-fit-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.mr-fit-name { font-size: 12.5px; font-weight: 700; color: var(--mr-text); }
+.mr-fit-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.mr-fit-ok { background: var(--mr-ok-soft, #ffe5ec); color: var(--mr-ok); }
+.mr-fit-mid { background: var(--mr-warn-soft); color: var(--mr-warn); }
+.mr-fit-no { background: var(--mr-danger-soft, #f5dde3); color: var(--mr-danger, #c98a96); }
+.mr-fit-desc { font-size: 11px; color: var(--mr-text-mute); margin-bottom: 4px; }
+.mr-fit-reason { font-size: 12.5px; line-height: 1.55; color: var(--mr-text-sub); }
+.mr-fit-placeholder {
+  color: var(--mr-text-mute);
+  font-style: italic;
+  background: var(--mr-card-top);
+  border: 1px dashed var(--mr-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+}

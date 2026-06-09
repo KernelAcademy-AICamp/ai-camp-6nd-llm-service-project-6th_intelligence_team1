@@ -224,31 +224,44 @@
     var isWarn = c.rank === 3 || c.display_variant === "supplementary";
     var warnCls = isWarn ? " mr-warn" : "";
     var warnNote = c.rank === 3 ? '<span class="mr-warn-note">⚠️ 보완 활용 권장</span>' : "";
+    var stage = c.trend_stage && TREND_STAGE[c.trend_stage];
+    var stageChip = stage ? '<span class="mr-stage-chip">' + stage + "</span>" : "";
 
     return (
-      '<div class="mr-trend-card' + warnCls + '">' +
+      '<div class="mr-trend-card mr-wide' + warnCls + '">' +
         '<div class="mr-card-top">' +
           '<div class="mr-rank-row">' +
             '<span class="mr-rank-badge' + rankBadgeClass(c.rank) + '">' + esc(c.rank) + "순위</span>" +
+            stageChip +
             warnNote +
           "</div>" +
           '<h3 class="mr-h3">' + esc(c.trend_name) + "</h3>" +
           keywordTags(c.keywords) +
         "</div>" +
-        '<div class="mr-card-body">' +
-          metricStrip(c) +
-          '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">🎯</span> 매칭이유</div>' +
-            bulletList(c.reason_bullets) +
+        '<div class="mr-card-cols">' +
+          // 좌: 트렌드 스토리 (지표·매칭이유·유행현황·수집근거)
+          '<div class="mr-card-col mr-col-main">' +
+            metricStrip(c) +
+            '<div class="mr-block">' +
+              '<div class="mr-block-label"><span class="mr-ico">🎯</span> 매칭이유</div>' +
+              bulletList(c.reason_bullets) +
+            "</div>" +
+            '<div class="mr-block">' +
+              '<div class="mr-block-label"><span class="mr-ico">📊</span> 유행현황 (Status)</div>' +
+              bulletList(c.summary_bullets) +
+            "</div>" +
+            '<details class="mr-block mr-evidence-details">' +
+              '<summary class="mr-block-label"><span class="mr-ico">📚</span> 수집 근거</summary>' +
+              evidenceList(c.evidence) +
+            "</details>" +
           "</div>" +
-          '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">📊</span> 유행현황 (Status)</div>' +
-            bulletList(c.summary_bullets) +
+          // 우: 정량 분석 (매칭 설명 — 매칭가 4기준)
+          '<div class="mr-card-col mr-col-data">' +
+            '<div class="mr-block">' +
+              '<div class="mr-block-label"><span class="mr-ico">🧮</span> 매칭 설명</div>' +
+              matchExplain(c.match_fits) +
+            "</div>" +
           "</div>" +
-          '<details class="mr-block mr-evidence-details">' +
-            '<summary class="mr-block-label"><span class="mr-ico">📚</span> 수집 근거</summary>' +
-            evidenceList(c.evidence) +
-          "</details>" +
         "</div>" +
       "</div>"
     );
@@ -290,27 +303,78 @@
   }
 
   // growth_rate(소수 0.22) → 정수 퍼센트(22). 부호 유지, 숫자 아니면 null.
-  function growthPct(g) {
-    if (typeof g !== "number") return null;
-    return Math.round(g * 100);
+  // trend_stage → 한국어 라벨 (없으면 미표시)
+  var TREND_STAGE = { emerging: "📈 상승 중", peak: "🔥 정점", declining: "📉 하락" };
+  // 매칭가 4기준 → 일반어 이름
+  var FIT_FRIENDLY = {
+    ingred: "제품·제형이 트렌드와 맞는가",
+    visual: "브랜드 매체·톤이 트렌드와 맞는가",
+    life: "타겟 고객층이 트렌드와 맞는가",
+    safe: "트렌드가 브랜드 이미지에 안전한가",
+  };
+  // 각 기준이 '무엇을 보는지' 보조 설명
+  var FIT_DESC = {
+    ingred: "제품 성분·제형 ↔ 트렌드 핵심",
+    visual: "브랜드 채널·톤앤매너 ↔ 트렌드 표현 방식",
+    life: "타겟 연령·라이프스타일·니즈 ↔ 트렌드 소비층",
+    safe: "트렌드 수명·이미지 ↔ 브랜드 격 보호",
+  };
+  // 판정 → 태그(라벨·색)
+  var FIT_RESULT = {
+    "✅": { tag: "적합", cls: "mr-fit-ok" },
+    "⚠️": { tag: "부분 적합", cls: "mr-fit-mid" },
+    "❌": { tag: "부적합", cls: "mr-fit-no" },
+  };
+
+  // 트렌드 지표 — 검색량 지수(headline_metric) + 트렌드 단계(trend_stage, 없으면 graceful)
+  function trendMetrics(c) {
+    var hm = c.headline_metric || {};
+    var rows = "";
+    if (hm.value) {
+      var delta = hm.delta ? ' <span class="mr-m-delta">' + esc(hm.delta) + "</span>" : "";
+      rows +=
+        '<div class="mr-metric-row"><span class="mr-mr-label">' + esc(hm.metric || "검색량 지수") + "</span>" +
+        '<span class="mr-mr-value">' + esc(hm.value) + delta + "</span></div>";
+    }
+    var stage = c.trend_stage && TREND_STAGE[c.trend_stage];
+    if (stage) {
+      rows += '<div class="mr-metric-row"><span class="mr-mr-label">트렌드 단계</span><span class="mr-mr-value">' + stage + "</span></div>";
+    }
+    return rows || '<div class="mr-empty">—</div>';
   }
 
-  // DATA — 트렌드별 데이터카드 (점수·성장률 + 매칭결과 + 채널별현황)
-  function dataCard(c, i) {
-    var mp = c.match_passes || {};
-    var total = mp.total != null ? mp.total : (mp.q1 || 0) + (mp.q2 || 0);
-    var score = Math.round((total / 4) * 100);
-    var gp = growthPct(c.metrics && c.metrics.growth_rate);
+  // 매칭 설명 — 매칭가 4기준(판정 + 이유). 이유 문구는 output-text가 다듬어 채움(슬롯).
+  function matchExplain(fits) {
+    if (!fits) return '<div class="mr-empty">—</div>';
+    var rows = ["ingred", "visual", "life", "safe"]
+      .filter(function (k) { return fits[k]; })
+      .map(function (k) {
+        var f = fits[k];
+        var r = FIT_RESULT[f.result] || { tag: "", cls: "" };
+        var tag = r.tag
+          ? '<span class="mr-fit-tag ' + r.cls + '">' + esc(f.result || "") + " " + r.tag + "</span>"
+          : "";
+        // 이유 문장은 output-text가 매칭가 reason을 받아 다듬어 채우는 슬롯.
+        // 아직 없으면 placeholder 표시.
+        var reason = f.reason
+          ? '<div class="mr-fit-reason">' + esc(f.reason) + "</div>"
+          : '<div class="mr-fit-reason mr-fit-placeholder">여기에 어떤 기준으로 매칭했는지 작성</div>';
+        return (
+          '<div class="mr-fit-row">' +
+            '<div class="mr-fit-head"><span class="mr-fit-name">' + esc(FIT_FRIENDLY[k]) + "</span>" + tag + "</div>" +
+            '<div class="mr-fit-desc">' + esc(FIT_DESC[k] || "") + "</div>" +
+            reason +
+          "</div>"
+        );
+      })
+      .join("");
+    return rows || '<div class="mr-empty">—</div>';
+  }
+
+  // DATA — 트렌드별 데이터카드 (검색량 지수·트렌드 단계 + 매칭 설명)
+  function dataCard(c) {
     var warnCls =
       c.match_strength === "weak" || c.display_variant === "supplementary" ? " mr-warn" : "";
-    var growthHtml =
-      gp == null
-        ? ""
-        : '<div class="mr-growth-pill ' + (gp >= 0 ? "mr-up" : "mr-down") + '">' +
-          '<span><span class="mr-arrow">' + (gp >= 0 ? "▲" : "▼") + "</span>" +
-          (gp >= 0 ? "+" : "") + gp + "%</span>" +
-          '<span class="mr-growth-sub">3개월</span>' +
-          "</div>";
     return (
       '<div class="mr-data-card' + warnCls + '">' +
         '<div class="mr-data-card-head">' +
@@ -318,20 +382,12 @@
           '<span class="mr-rank-badge' + rankBadgeClass(c.rank) + '">' + esc(c.rank) + "순위</span>" +
         "</div>" +
         '<div class="mr-data-block">' +
-          '<div class="mr-db-label">점수 · 성장률</div>' +
-          '<div class="mr-score-row">' +
-            '<div class="mr-big-score"><div class="mr-m-label">매칭 점수</div><div class="mr-m-value-xl">' + score + "</div></div>" +
-            growthHtml +
-          "</div>" +
-          '<div class="mr-mini-bar"><div class="mr-mini-bar-fill ' + rankClass(i) + '" style="width:' + score + '%"></div></div>' +
+          '<div class="mr-db-label">트렌드 지표</div>' +
+          trendMetrics(c) +
         "</div>" +
         '<div class="mr-data-block">' +
-          '<div class="mr-db-label">매칭 결과</div>' +
-          passesBlock(c) +
-        "</div>" +
-        '<div class="mr-data-block">' +
-          '<div class="mr-db-label">채널별 현황</div>' +
-          channelList(c.channels) +
+          '<div class="mr-db-label">매칭 설명</div>' +
+          matchExplain(c.match_fits) +
         "</div>" +
       "</div>"
     );
@@ -377,10 +433,8 @@
       '<div class="mr-report">' +
         headerSection(brand) +
         summarySection(contents) +
-        sectionHead("PART II", "트렌드 카드", "유행현황 · 수집 근거 · 매칭이유") +
+        sectionHead("PART II", "트렌드 카드", "매칭이유 · 유행현황 · 수집 근거 · 매칭 설명") +
         '<div class="mr-trend-grid">' + contents.map(card).join("") + "</div>" +
-        sectionHead("📊 DATA", "정량 분석", "점수 · 성장률 · 매칭 결과 · 채널별 현황", true) +
-        '<div class="mr-data-grid">' + contents.map(dataCard).join("") + "</div>" +
       "</div>";
     return el;
   }
