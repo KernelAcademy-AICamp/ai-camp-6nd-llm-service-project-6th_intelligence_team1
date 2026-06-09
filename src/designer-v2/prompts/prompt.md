@@ -71,7 +71,7 @@
 ## 작성 규칙
 
 - **영문**, 콤마 구분, 자연어. `--ar`·`--no` 같은 미드저니 플래그 사용 금지.
-- 인물이 등장하면 자연스러운 자세·표정·손동작 포함.
+- 인물이 등장하면 자연스러운 자세·표정·손동작 포함. 팔은 반드시 어깨에서 자연스럽게 이어지도록 서술 (예: `arm naturally extending from shoulder`). 제품을 들고 있을 경우, 제품 무게감이 느껴지도록 안정적으로 잡은 자세 묘사 (예: `firmly holding the product with both hands`, `secure two-handed grip`).
 - 광고 사진 품질 어휘로 마무리: `photorealistic, hyper-detailed, masterpiece, best quality, 8k wallpaper`.
 - ⚠️ **코드가 끝에 `, vertical 3:4 portrait composition. Avoid: ...` 자동 추가** — 당신은 `8k wallpaper`까지만.
 - ⚠️ `Avoid:` / `negative` / `--no` 같은 표현을 본문에 넣지 마세요.
