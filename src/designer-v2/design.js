@@ -152,6 +152,7 @@ for (const c of writerData.contents) {
       prompt: generation_prompt,
       outputPath: outputImagePath,
       aspectRatio: "3:4",
+      referenceImagePath: productImagePath,
     });
     console.log(`  [4단계] 이미지 저장: ${generatedImageUrl}`);
   } catch (err) {
