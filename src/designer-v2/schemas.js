@@ -10,7 +10,7 @@ import { envelopeSchema } from "../../shared/envelope.js";
 const WriterContentSchema = z
   .object({
     trend_name: z.string().min(1, "trend_name 비어있음"),
-    concept: z.string().min(1, "concept 비어있음 (시안 방향의 근거)"),
+    concept: z.string().min(1).optional(), // 없으면 summary_bullets로 자동 생성
   })
   .passthrough();
 

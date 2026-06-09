@@ -8,6 +8,7 @@ import { analyzeOneSource } from "./analyze.js";
 import { generatePromptFromSources } from "./prompt.js";
 import { wrap, wrapError } from "../../shared/envelope.js";
 import { generateImage } from "./generateImage.js";
+import { generateConcept } from "./concept.js";
 
 // 시안가 v2 — 매체별 강점 활용 흐름:
 //   1단계 검색 — 트렌드별 매체별 수집 (Pinterest·Instagram·Mintoiro 각 10장)
@@ -80,6 +81,20 @@ let totalOutputTokens = 0;
 
 for (const c of writerData.contents) {
   console.log(`▶ ${c.trend_name} (${c.content_id ?? "id 없음"})`);
+
+  // concept 없으면 summary_bullets로 자동 생성
+  if (!c.concept) {
+    try {
+      const r = await generateConcept({ brand: brandData, content: c });
+      c.concept = r.concept;
+      totalInputTokens += r.usage?.input_tokens ?? 0;
+      totalOutputTokens += r.usage?.output_tokens ?? 0;
+      console.log(`  [0단계] concept 자동 생성: ${c.concept.slice(0, 60)}...`);
+    } catch (err) {
+      console.error(`  ❌ [0단계] concept 생성 실패: ${err.message}`);
+      continue;
+    }
+  }
 
   // 1단계: 매체별 수집
   let queries = [];
