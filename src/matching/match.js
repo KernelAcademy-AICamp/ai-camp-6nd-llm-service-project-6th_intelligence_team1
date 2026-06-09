@@ -279,6 +279,18 @@ score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 **
 
 // 4. 사용자 메시지 — 카테고리 게이트 통과 트렌드만 LLM에 전달
 
+// keywords 정규화 — flat array(구형) / {ingred, life} 객체(신형) 둘 다 지원
+function getKeywords(trend, type = "all") {
+  const kw = trend.keywords;
+  if (Array.isArray(kw)) return kw;
+  if (kw != null && typeof kw === "object") {
+    if (type === "ingred") return kw.ingred ?? [];
+    if (type === "life") return kw.life ?? [];
+    return [...(kw.ingred ?? []), ...(kw.life ?? [])];
+  }
+  return trend.core_keywords ?? [];
+}
+
 // 매체명 정규화 — "Instagram Reels" / "Instagram" 등 동일 매체 통일
 function normalizeChannel(ch) {
   const s = String(ch ?? "").toLowerCase();
@@ -348,7 +360,7 @@ const ingredOverrides = new Map();
 if (brandFeatures.length > 0 && passedTrends.length > 0) {
   console.log("Ingred-Fit 임베딩 계산 중...");
   for (const t of passedTrends) {
-    const keywords = t.keywords ?? t.core_keywords ?? [];
+    const keywords = getKeywords(t, "ingred");
     const fit = await computeIngredFit(brandFeatures, keywords);
     if (fit) ingredOverrides.set(t.trend_name, fit);
   }
@@ -469,12 +481,12 @@ function detectKeywordConflict(evs) {
   for (const [keyA, keyB] of KEYWORD_CONFLICT_PAIRS) {
     const hasA = (ev) => {
       const t = allTrendByName.get(ev.trend_name);
-      return [...(t?.keywords ?? []), ...(t?.core_keywords ?? [])]
+      return getKeywords(t)
         .some((k) => k.toLowerCase().includes(keyA));
     };
     const hasB = (ev) => {
       const t = allTrendByName.get(ev.trend_name);
-      return [...(t?.keywords ?? []), ...(t?.core_keywords ?? [])]
+      return getKeywords(t)
         .some((k) => k.toLowerCase().includes(keyB));
     };
     const groupA = evs.filter(hasA);
@@ -506,7 +518,7 @@ for (let round = 0; round < MAX_CONFLICT_ROUNDS && topEvals.length >= 2; round++
   // 2차: LLM 감지 (코드가 못 잡은 경우)
   const topCtx = topEvals.map((ev) => {
     const t = allTrendByName.get(ev.trend_name);
-    return { trend_name: ev.trend_name, keywords: t?.keywords ?? t?.core_keywords ?? [], summary: t?.summary ?? "" };
+    return { trend_name: ev.trend_name, keywords: getKeywords(t), summary: t?.summary ?? "" };
   });
 
   const conflictMsg = `추천 트렌드 간 핵심 방향성을 비교하세요.

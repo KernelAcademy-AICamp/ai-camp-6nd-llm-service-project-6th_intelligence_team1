@@ -77,14 +77,24 @@ const TrendItemSchema = z
     trend_name: z.string().min(1, "trend_name 비어있음"),
     category: z.string().min(1, "category 비어있음"),
     summary: z.string().min(1, "summary 비어있음 (모든 4기준 평가에 필요)"),
-    keywords: z.array(z.string().min(1)).optional(),
+    keywords: z.union([
+      z.array(z.string().min(1)),
+      z.object({
+        ingred: z.array(z.string().min(1)).optional(),
+        life: z.array(z.string().min(1)).optional(),
+      }),
+    ]).optional(),
     core_keywords: z.array(z.string().min(1)).optional(),
   })
   .passthrough()
   .refine(
-    (t) =>
-      (Array.isArray(t.keywords) && t.keywords.length > 0) ||
-      (Array.isArray(t.core_keywords) && t.core_keywords.length > 0),
+    (t) => {
+      const kw = t.keywords;
+      if (Array.isArray(kw) && kw.length > 0) return true;
+      if (kw != null && typeof kw === "object" && (kw.ingred?.length > 0 || kw.life?.length > 0)) return true;
+      if (Array.isArray(t.core_keywords) && t.core_keywords.length > 0) return true;
+      return false;
+    },
     { message: "keywords 또는 core_keywords 중 하나는 비어있지 않아야 함 (Ingred-Fit 평가에 필요)" },
   );
 
