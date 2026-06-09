@@ -36,34 +36,17 @@ function ageGroupToRange(group, currentYear) {
   return null;
 }
 
-// ─── 4기준 score·matching_grade 코드 계산 ───────────────────────────────
-// 각 fit: ✅=2, ⚠️=1, ❌=0. 4기준 합산 max 8.
-// matching_grade 규칙:
-//   - ❌ 2개 이상 → 제외 (합산 무관)
-//   - score 8 → 상
-//   - score 6-7 → 중
-//   - score 2-5 → 하 (❌ 1개 가능)
-//   - score < 2 → 제외
-const FIT_POINT = { "✅": 2, "⚠️": 1, "❌": 0 };
+// ─── 3단계 허들 평가 ─────────────────────────────────────────────────
+// 0순위: ingred_fit ❌ → 탈락 (성분/텍스처 불일치)
+// 1순위: visual_fit ❌ → 탈락 (톤앤매너 충돌)
+// 2순위: life_fit 점수로 순위 결정 (✅=2, ⚠️=1, ❌=0)
+// safe_fit: 시급성 참고 정보 (순위에 미포함)
+const LIFE_SCORE = { "✅": 2, "⚠️": 1, "❌": 0 };
 
-function computeScoreAndGrade(fits /* { ingred_fit, visual_fit, life_fit, safe_fit } */) {
-  const results = [
-    fits.ingred_fit?.result,
-    fits.visual_fit?.result,
-    fits.life_fit?.result,
-    fits.safe_fit?.result,
-  ].filter(Boolean);
-  const failCount = results.filter((r) => r === "❌").length;
-  const score = results.reduce((sum, r) => sum + (FIT_POINT[r] ?? 0), 0);
-
-  let matching_grade;
-  if (failCount >= 2) matching_grade = "제외";
-  else if (score === 8) matching_grade = "상";
-  else if (score >= 6) matching_grade = "중";
-  else if (score >= 2) matching_grade = "하";
-  else matching_grade = "제외";
-
-  return { score, matching_grade };
+function computeHurdle(fits) {
+  if (fits.ingred_fit?.result === "❌") return { eliminated_by: "ingred", life_score: 0 };
+  if (fits.visual_fit?.result === "❌") return { eliminated_by: "tone", life_score: 0 };
+  return { eliminated_by: null, life_score: LIFE_SCORE[fits.life_fit?.result] ?? 0 };
 }
 
 // LLM 정성 판정(1-A·1-B·2-B) + 코드 계산(2-A·passes·verdict)을 최종 구조로 조립.
@@ -116,12 +99,12 @@ function assembleEvaluation(llmEval, trendData, ingredOverride) {
     fits.safe_fit = { result: "⚠️", reason: "트렌드 수명 정보 없음 — 지속 가능성 불확실" };
   }
 
-  const { score, matching_grade } = computeScoreAndGrade(fits);
+  const { eliminated_by, life_score } = computeHurdle(fits);
   return {
     trend_name: llmEval.trend_name,
     evaluation: fits,
-    score,
-    matching_grade,
+    life_score,
+    eliminated_by,
     summary_reasons: filterVagueReasons(llmEval.summary_reasons),
   };
 }
@@ -235,8 +218,8 @@ function makeExcludedByCategory(trend, brandCategory) {
       life_fit: skip,
       safe_fit: skip,
     },
-    score: 0,
-    matching_grade: "제외",
+    life_score: 0,
+    eliminated_by: "category",
     summary_reasons: [
       {
         category: "카테고리 적합성",
@@ -456,13 +439,12 @@ const allTrendByName = new Map(
   trendAnalysis.data.trends.map((t) => [t.trend_name, t]),
 );
 
-// 정렬: matching_grade → 4기준 score 내림 → 트렌드 metrics.score 내림.
-const GRADE_RANK = { "상": 1, "중": 2, "하": 3, 제외: 99 };
+// 정렬: 탈락 여부 → life_score 내림 → 트렌드 metrics.score 내림.
 function sortTuple(ev) {
-  const vr = GRADE_RANK[ev.matching_grade] ?? 99;
-  const fitScore = ev.score ?? 0;
+  const eliminated = ev.eliminated_by !== null ? 1 : 0;
+  const lifeScore = ev.life_score ?? 0;
   const trendScore = allTrendByName.get(ev.trend_name)?.metrics?.score ?? 0;
-  return [vr, -fitScore, -trendScore];
+  return [eliminated, -lifeScore, -trendScore];
 }
 allEvaluations.sort((a, b) => {
   const ka = sortTuple(a);
@@ -472,7 +454,7 @@ allEvaluations.sort((a, b) => {
 });
 
 // 추천: 제외가 아닌 것 전부 (최소 3개 기준, 있는 만큼 다양하게).
-const nonExcluded = allEvaluations.filter((ev) => ev.matching_grade !== "제외");
+const nonExcluded = allEvaluations.filter((ev) => ev.eliminated_by === null);
 let topEvals = [...nonExcluded];
 
 // 뷰티 카테고리 정반대 개념 쌍 — 코드 1차 감지용
