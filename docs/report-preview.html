@@ -89,7 +89,7 @@
           display_variant: "primary",
           keywords: ["매트 쿠션", "세미매트", "결 살아있는", "라네즈 네오 쿠션", "자연 매트"],
           headline_metric: { metric: "검색량 지수", value: "47.4", delta: "+22%" },
-          metrics: { score: 92, growth_rate: 22, period: "26.01-05" },
+          metrics: { score: 92, growth_rate: 0.22, period: "26.01-05" },
           summary_bullets: [
             "글래스 스킨이나 과도한 광택보다 자연스럽고 얇은 레이어의 매트한 피부 표현이 2026년 핵심 트렌드로 떠올랐다. 매트와 글로우의 대비를 이용한 밸런스 잡힌 베이스 메이크업이 새로운 기준으로 자리 잡고 있다.",
             "매트 쿠션 검색 관심도가 2026년 1월 38.9에서 5월 47.4로 22% 상승했으며, 라네즈 네오 쿠션 더 매트 등 신제품 출시로 시장이 활성화 중이다.",
@@ -101,10 +101,24 @@
             "20대 여성의 자기표현 동기와 '새로운 기준' 트렌드 수용 성향 일치"
           ],
           evidence: [
-            { source: "naver_datalab", label: "Naver Datalab", description: "검색량 지수 (2026-01 ~ 2026-05) → 매트쿠션 47.4 (5월), 커버쿠션·세미매트쿠션 함께 트렌드", url: "https://datalab.naver.com/" },
-            { source: "instagram", label: "Instagram", description: "관련 콘텐츠 (최근 30일) → 라네즈 네오 쿠션 더 매트, 어바웃톤 디자인 멀티 팔레트 등 신상품 언급 다수", url: null },
-            { source: "tavily", label: "Tavily", description: "업계 분석 (2026년) → 2026 뷰티 트렌드 보고서에서 '매트와 글로의 대비'를 메이크업의 새로운 균형으로 명시", url: "https://tavily.com/" }
-          ]
+            { source: "naver_news", label: "Naver News", description: "[클릭됨] 실제 기사 URL(경로 있음) — naver-search.js가 item.link 캡처", url: "https://n.news.naver.com/article/001/0014567890" },
+            { source: "tavily", label: "Tavily", description: "[클릭됨] Tavily가 찾은 실제 출처 페이지 — tavily.js가 result.url 캡처", url: "https://www.allure.com/story/2026-makeup-base-trends" },
+            { source: "naver_datalab", label: "Naver Datalab", description: "[링크 안 됨] 데이터랩은 분석 플랫폼 → 개별 글 링크 없어 홈만 (가드가 막음)", url: "https://datalab.naver.com/" },
+            { source: "instagram", label: "Instagram", description: "[링크 안 됨] url 없음(null)", url: null }
+          ],
+          channels: [
+            { name: "Instagram", status: "active" },
+            { name: "TikTok", status: "rising" },
+            { name: "Naver 블로그", status: "stable" }
+          ],
+          match_passes: { q1: 2, q2: 2, total: 4 },
+          match_fits: {
+            ingred: { result: "✅", reason: "브랜드 제형 '매트'가 트렌드 핵심 키워드 '매트쿠션·세미매트'와 직결" },
+            visual: { result: "✅", reason: "인스타·틱톡 매트 베이스 콘텐츠가 브랜드 주력 매체·톤과 일치" },
+            life: { result: "✅", reason: "20대 여성의 '결 살아있는' 자연 매트 선호가 타겟 라이프스타일과 부합" },
+            safe: { result: "✅", reason: "'새로운 기준'으로 부상한 장기 트렌드라 브랜드 격 손상 위험 낮음" },
+            score: 8
+          }
         },
         {
           trend_name: "최소 레이어 베이스의 '얇고 정밀한' 철학",
@@ -113,7 +127,7 @@
           display_variant: "primary",
           keywords: ["밀착", "최소 레이어", "얇은 레이어", "피붓결 정리", "미니멀 베이스"],
           headline_metric: { metric: "효능 키워드 1위", value: "밀착", delta: "" },
-          metrics: { score: 78, growth_rate: 14, period: "26.01-05" },
+          metrics: { score: 78, growth_rate: 0.14, period: "26.01-05" },
           summary_bullets: [
             "2026년 베이스 메이크업의 가장 큰 철학적 변화는 '완벽함'에서 '자연스러움'으로의 전환이다. 피부 자체를 커버하는 것이 아니라 피붓결만 정리하는 얇은 레이어가 새로운 기준이 되었다.",
             "올리브영 베이스 메이크업 키워드 분석에서 '밀착'이 상위 키워드로 강조되고 있으며, 20대 대상 가이드에서 최소 3~4가지 제품 조합이 권장되고 있다."
@@ -126,7 +140,20 @@
           evidence: [
             { source: "naver_datalab", label: "Naver DataLab", description: "효능 키워드 (2026년 1분기) → 베이스 제품 리뷰: 밀착(효능 1위), 촉촉하게·수분·지속 등 선호", url: "https://datalab.naver.com/" },
             { source: "tavily", label: "Tavily", description: "트렌드 분석 (2026년) → 베이스는 완벽한 커버보다 피붓결만 정리한 얇은 레이어가 기준", url: "https://tavily.com/" }
-          ]
+          ],
+          channels: [
+            { name: "Instagram", status: "active" },
+            { name: "YouTube", status: "rising" },
+            { name: "Naver 블로그", status: "stable" }
+          ],
+          match_passes: { q1: 2, q2: 1, total: 3 },
+          match_fits: {
+            ingred: { result: "✅", reason: "'매트' 제형이 '얇은 레이어·밀착' 트렌드와 제품 특성에서 조화" },
+            visual: { result: "⚠️", reason: "미니멀 베이스 콘텐츠는 있으나 브랜드 주력 매체와 부분 일치" },
+            life: { result: "✅", reason: "Z세대 '효율·미니멀' 가치와 최소 레이어 철학이 공명" },
+            safe: { result: "✅", reason: "자연스러움 지향의 구조적 흐름이라 지속성·브랜드 격 안정" },
+            score: 7
+          }
         },
         {
           trend_name: "웰니스 뷰티 기반의 스킨케어형 베이스",
@@ -135,7 +162,7 @@
           display_variant: "supplementary",
           keywords: ["PDRN", "펩타이드", "세럼 프라이머", "하이브리드 포뮬러", "피부 회복"],
           headline_metric: { metric: "핵심 성분", value: "PDRN · 펩타이드", delta: "" },
-          metrics: { score: 54, growth_rate: 9, period: "26.01-05" },
+          metrics: { score: 54, growth_rate: -0.08, period: "26.01-05" },
           summary_bullets: [
             "2026년 뷰티 시장의 핵심 축이 '완벽한 커버'에서 '피부 회복'으로 이동했다. 메이크업이 피부 부담이 아닌 컨디션 유지 단계로 재해석되면서 세럼 프라이머·PDRN 베이스 등 기능성 하이브리드 포뮬러가 확산 중이다.",
             "PDRN, NAD, 펩타이드, 레티날 등 바이오 기술 성분이 베이스 메이크업에 적극 채용되고 있다."
@@ -148,7 +175,20 @@
           evidence: [
             { source: "tavily", label: "Tavily", description: "트렌드 분석 (2026년) → 파운데이션·쿠션에 스킨케어 성분 담는 흐름이 기본화, 하이브리드 포뮬러 증가", url: "https://tavily.com/" },
             { source: "tavily", label: "Tavily", description: "성분 트렌드 (2026년) → PDRN, NAD, 펩타이드 등 바이오 성분이 핵심 축으로 부상", url: "https://tavily.com/" }
-          ]
+          ],
+          channels: [
+            { name: "YouTube", status: "stable" },
+            { name: "Naver 블로그", status: "declining" },
+            { name: "Instagram", status: "stable" }
+          ],
+          match_passes: { q1: 1, q2: 1, total: 2 },
+          match_fits: {
+            ingred: { result: "❌", reason: "PDRN·펩타이드 등 성분 중심이라 브랜드 제형 키워드와 무관" },
+            visual: { result: "⚠️", reason: "기능성 강조 콘텐츠가 브랜드 트렌디 톤과 부분 충돌" },
+            life: { result: "⚠️", reason: "피부 회복·관리 니즈 중심으로 20대 자기표현 동기와 약한 일치" },
+            safe: { result: "❌", reason: "과학적·기능성 강조 트렌드가 Z세대·트렌디 톤과 충돌" },
+            score: 2
+          }
         }
       ]
     };

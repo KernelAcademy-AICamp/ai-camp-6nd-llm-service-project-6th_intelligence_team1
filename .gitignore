@@ -7,6 +7,7 @@
 # 예시 데이터는 shared/schemas/에 따로 있음
 shared/data/*
 !shared/data/trend-analysis.json
+!shared/data/match-result.json
 
 # Python
 __pycache__/

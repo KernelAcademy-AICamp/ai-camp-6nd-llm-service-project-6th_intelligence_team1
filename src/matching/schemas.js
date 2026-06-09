@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { envelopeSchema } from "../../shared/envelope.js";
 
-// 매칭가 출력 스키마 v0.3 (4기준: Ingred-Fit / Visual-Fit / Life-Fit / Safe-Fit).
-// 각 기준 단일 ✅/⚠️/❌ 판정. verdict는 4기준 합산 + ❌ 개수로 결정.
-// envelope(schema_version·generated_at·status)은 shared/envelope.js가 자동 부여.
+// 매칭가 출력 스키마 v0.5 (3단계 허들: 성분→톤→라이프스타일).
+// 0순위(ingred)·1순위(tone) ❌ 시 eliminated_by 설정. 통과 시 life_score로 순위 결정.
+// safe_fit은 시급성 참고 정보. envelope은 shared/envelope.js가 자동 부여.
 
 // ─── 입력 스키마 (분석가 산출 검증) ─────────────────────────────────
 
@@ -115,13 +115,13 @@ const EvidenceReasonSchema = z.object({
 const EvaluationItemSchema = z.object({
   trend_name: z.string(),
   evaluation: z.object({
-    ingred_fit: FitResultSchema, // 제품 features ↔ 트렌드 성분·효능
-    visual_fit: FitResultSchema, // 매체·톤 ↔ 트렌드 매체 콘텐츠
-    life_fit: FitResultSchema, // 타겟 ↔ 트렌드 라이프스타일·가치관
-    safe_fit: FitResultSchema, // 브랜드 격·톤 ↔ 트렌드 수명·이미지
+    ingred_fit: FitResultSchema, // 0순위 허들 — 성분·텍스처
+    visual_fit: FitResultSchema, // 1순위 허들 — 톤앤매너
+    life_fit: FitResultSchema,   // 2순위 순위 결정 — 라이프스타일
+    safe_fit: FitResultSchema,   // 서브 참고 — 트렌드 시급성
   }),
-  score: z.number().int().min(0).max(8), // ✅=2, ⚠️=1, ❌=0 합산 (max 8)
-  matching_grade: z.enum(["상", "중", "하", "제외"]),
+  life_score: z.number().int().min(0).max(2), // life_fit: ✅=2, ⚠️=1, ❌=0
+  eliminated_by: z.enum(["ingred", "tone", "category"]).nullable(),
   summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
 });
 
