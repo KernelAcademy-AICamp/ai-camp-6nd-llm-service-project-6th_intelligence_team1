@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { envelopeSchema } from "../../shared/envelope.js";
 
-// 매칭가 출력 스키마 v0.3 (4기준: Ingred-Fit / Visual-Fit / Life-Fit / Safe-Fit).
+// 매칭가 출력 스키마 v0.4 (4기준: Ingred-Fit / Visual-Fit / Life-Fit / Safe-Fit).
 // 각 기준 단일 ✅/⚠️/❌ 판정. verdict는 4기준 합산 + ❌ 개수로 결정.
 // envelope(schema_version·generated_at·status)은 shared/envelope.js가 자동 부여.
 
@@ -116,9 +116,9 @@ const EvaluationItemSchema = z.object({
   trend_name: z.string(),
   evaluation: z.object({
     ingred_fit: FitResultSchema, // 제품 features ↔ 트렌드 성분·효능
-    visual_fit: FitResultSchema, // 매체·톤 ↔ 트렌드 매체 콘텐츠
-    life_fit: FitResultSchema, // 타겟 ↔ 트렌드 라이프스타일·가치관
-    safe_fit: FitResultSchema, // 브랜드 격·톤 ↔ 트렌드 수명·이미지
+    visual_fit: FitResultSchema, // 톤앤매너·비주얼 ↔ 트렌드 연출
+    life_fit: FitResultSchema,   // 타겟 ↔ 트렌드 라이프스타일·가치관
+    safe_fit: FitResultSchema,   // 브랜드 격·톤 ↔ 트렌드 수명·이미지
   }),
   score: z.number().int().min(0).max(8), // ✅=2, ⚠️=1, ❌=0 합산 (max 8)
   matching_grade: z.enum(["상", "중", "하", "제외"]),

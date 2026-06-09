@@ -52,7 +52,7 @@ function computeScoreAndGrade(fits /* { ingred_fit, visual_fit, life_fit, safe_f
     fits.visual_fit?.result,
     fits.life_fit?.result,
     fits.safe_fit?.result,
-  ];
+  ].filter(Boolean);
   const failCount = results.filter((r) => r === "❌").length;
   const score = results.reduce((sum, r) => sum + (FIT_POINT[r] ?? 0), 0);
 
@@ -102,8 +102,13 @@ function assembleEvaluation(llmEval, trendData, ingredOverride) {
     safe_fit: llmEval.safe_fit,
   };
 
-  // Safe-Fit 코드 보정: status 있으면 우선 적용, 둘 다 없으면 ⚠️ 강제
-  const status = trendData?.status;
+  // Life-Fit 코드 보정: audience_signal 없으면 ⚠️ 강제
+  if (!trendData?.audience_signal) {
+    fits.life_fit = { result: "⚠️", reason: "타겟 페르소나 정보 없음 — 비교 불가" };
+  }
+
+  // Safe-Fit 코드 보정: trend_stage 우선, 없으면 status fallback. 둘 다 없으면 ⚠️ 강제
+  const status = trendData?.trend_stage ?? trendData?.status;
   const lifespan = trendData?.lifespan_estimate;
   if (STATUS_SAFE_FIT[status]) {
     fits.safe_fit = STATUS_SAFE_FIT[status];
@@ -355,7 +360,7 @@ ${mediaOverlapBlock}${lifeFitBlock}
 score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
 
 // 5. Ingred-Fit 임베딩 사전 계산 — LLM 호출 전 features ↔ keywords 유사도 판정
-const brandFeatures = brandAnalysis.data.product_features ?? [];
+const brandFeatures = brandAnalysis.data.product_features ?? brandAnalysis.data.texture_keywords ?? [];
 const ingredOverrides = new Map();
 if (brandFeatures.length > 0 && passedTrends.length > 0) {
   console.log("Ingred-Fit 임베딩 계산 중...");
@@ -551,7 +556,7 @@ ${JSON.stringify(topCtx, null, 2)}
   }
 }
 
-const recommendations = topEvals.map((ev, i) => {
+const recommendations = topEvals.slice(0, 3).map((ev, i) => {
   const trendRaw = allTrendByName.get(ev.trend_name);
   return {
     rank: i + 1,
