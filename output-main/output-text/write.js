@@ -413,10 +413,11 @@ if (isDirectRun) {
   mkdirSync(dirname(mdPath), { recursive: true });
   writeFileSync(mdPath, md);
 
-  // 2) JSON 구조화 산출물 (UI용) — 컨벤션상 shared/data/에 저장 (시안가·mockup이 여기서 읽음)
+  // 2) JSON 구조화 산출물 (UI 서빙용) — 팀 합의로 output-main/output-text/에 저장하고
+  //    git 추적함. shared/data/는 gitignore라 UI 작업자(mockup HTML·web/) 디스크엔 안
+  //    생기는 문제 때문에 서빙용 파일은 추적되는 위치에 보관.
   const writerJson = generateWriterOutput({ brand, trend, match });
-  const jsonPath = resolve(PROJECT_ROOT, "shared/data/writer-output.json");
-  mkdirSync(dirname(jsonPath), { recursive: true });
+  const jsonPath = resolve(__dirname, "writer-output.json");
   writeFileSync(jsonPath, JSON.stringify(writerJson, null, 2));
 
   console.log(`✅ 작성가 산출물 생성 완료`);
