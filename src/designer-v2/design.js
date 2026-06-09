@@ -16,7 +16,7 @@ import { generateImage } from "./generateImage.js";
 //                · Instagram → 무드·트렌드
 //                · Mintoiro → 컬러·패키지
 //   3단계 프롬프트 — 3매체 분석 종합 → 영문 generation_prompt 한 줄
-//   4단계 이미지 — Flux Dev (Replicate, 미구현)
+//   4단계 이미지 — Google Imagen 4.0 (generateImage.js)
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, "../..");
@@ -188,4 +188,3 @@ console.log(`산출 시안     : ${visuals.length}개`);
 console.log(`입력 토큰     : ${totalInputTokens} (Anthropic 누적)`);
 console.log(`출력 토큰     : ${totalOutputTokens} (Anthropic 누적)`);
 console.log(`결과 저장     : ${outputPath}`);
-console.log(`\n⚠️ 4단계(이미지 생성)는 Replicate 키 도착 후.`);
