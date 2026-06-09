@@ -52,7 +52,7 @@ function computeScoreAndGrade(fits /* { ingred_fit, visual_fit, life_fit, safe_f
     fits.visual_fit?.result,
     fits.life_fit?.result,
     fits.safe_fit?.result,
-  ];
+  ].filter(Boolean);
   const failCount = results.filter((r) => r === "❌").length;
   const score = results.reduce((sum, r) => sum + (FIT_POINT[r] ?? 0), 0);
 

@@ -43,8 +43,6 @@ export async function computeIngredFit(features, keywords) {
     if (maxSim >= MATCH_THRESHOLD) matchCount++;
   }
 
-  const threshold = Math.min(2, features.length);
-  if (matchCount >= threshold) return { result: "✅", reason: `성분 키워드 ${matchCount}개 이상 트렌드와 일치 (임베딩 유사도 기반)` };
-  if (matchCount === 1) return { result: "⚠️", reason: "성분 키워드 1개 부분 일치 (임베딩 유사도 기반)" };
+  if (matchCount >= 1) return { result: "✅", reason: `성분 키워드 ${matchCount}개 트렌드와 일치 (임베딩 유사도 기반)` };
   return { result: "❌", reason: "성분 키워드 트렌드와 겹치지 않음 (임베딩 유사도 기반)" };
 }
