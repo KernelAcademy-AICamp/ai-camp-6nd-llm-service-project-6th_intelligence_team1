@@ -17,33 +17,37 @@ export async function generateImage({ prompt, outputPath, aspectRatio = "3:4", r
 
   if (hasRef) {
     // Gemini 멀티모달: 제품 사진 + 텍스트 프롬프트 → 이미지 생성
-    const ext = absRef.split(".").pop().toLowerCase();
-    const mimeType = ext === "png" ? "image/png" : "image/jpeg";
-    const imageData = readFileSync(absRef).toString("base64");
+    try {
+      const ext = absRef.split(".").pop().toLowerCase();
+      const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+      const imageData = readFileSync(absRef).toString("base64");
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-image",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: `You are a beauty advertising photographer. Using the product in the reference image, create a high-quality beauty advertisement photo based on this description:\n\n${prompt}\n\nThe product from the reference image must appear prominently in the generated image.`,
-            },
-            {
-              inlineData: { mimeType, data: imageData },
-            },
-          ],
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `You are a beauty advertising photographer. Using the product in the reference image, create a high-quality beauty advertisement photo based on this description:\n\n${prompt}\n\nThe product from the reference image must appear prominently in the generated image.`,
+              },
+              {
+                inlineData: { mimeType, data: imageData },
+              },
+            ],
+          },
+        ],
+        config: {
+          responseModalities: [Modality.IMAGE],
         },
-      ],
-      config: {
-        responseModalities: [Modality.IMAGE],
-      },
-    });
+      });
 
-    const parts = response.candidates?.[0]?.content?.parts ?? [];
-    const imagePart = parts.find((p) => p.inlineData?.mimeType?.startsWith("image/"));
-    imageBytes = imagePart?.inlineData?.data;
+      const parts = response.candidates?.[0]?.content?.parts ?? [];
+      const imagePart = parts.find((p) => p.inlineData?.mimeType?.startsWith("image/"));
+      imageBytes = imagePart?.inlineData?.data;
+    } catch (err) {
+      console.warn(`  ⚠️ Gemini 멀티모달 실패 (${err?.message ?? err}), Imagen 폴백`);
+    }
   }
 
   if (!imageBytes) {
