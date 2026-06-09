@@ -52,9 +52,15 @@
             "url": "https://datalab.naver.com/keyword/trendResult.naver?cid=10000&datetype=0&keyword=매트쿠션"
           },
           {
-            "source": "instagram",
-            "label": "Instagram",
-            "description": "관련 콘텐츠 (최근 30일) → 라네즈 네오 쿠션 더 매트, 어바웃톤 디자인 멀티 팔레트 등 신상품 언급 다수",
+            "source": "naver_blog",
+            "label": "Naver Blog",
+            "description": "리뷰·UGC (최근 30일) → 라네즈 네오 쿠션 더 매트, 어바웃톤 디자인 멀티 팔레트 등 신상품 후기 다수",
+            "url": null
+          },
+          {
+            "source": "naver_news",
+            "label": "Naver News",
+            "description": "신제품 출시 보도 (2026-04~05) → 매트 텍스처 베이스 라인업 확대 기사 다수",
             "url": null
           },
           {
@@ -65,16 +71,23 @@
           }
         ],
         "channels": [
-          { "name": "Instagram", "status": "active" },
-          { "name": "TikTok", "status": "rising" },
-          { "name": "Naver 블로그", "status": "stable" }
+          { "name": "YouTube", "status": "active" },
+          { "name": "TikTok", "status": "rising" }
         ],
         "match_passes": {
           "q1": 2,
           "q2": 2,
           "total": 4
         },
-        "match_strength": "strong"
+        "match_strength": "strong",
+        "matching_grade": "상",
+        "match_fits": {
+          "ingred": { "result": "✅", "reason": "브랜드 매트 텍스처가 트렌드 핵심 키워드 매트쿠션·세미매트·무광과 정확히 일치" },
+          "visual": { "result": "✅", "reason": "유튜브 매트 쿠션 튜토리얼·리뷰 콘텐츠가 브랜드 주요 매체와 일치" },
+          "life": { "result": "✅", "reason": "트렌드 오디언스 20대 비중 48%로 브랜드 타겟 연령대 일치" },
+          "safe": { "result": "✅", "reason": "자연스러운 피부 표현 트렌드가 Z세대·트렌디 브랜드 톤과 부합" },
+          "score": 8
+        }
       },
       {
         "content_id": "C002",
@@ -129,7 +142,6 @@
           }
         ],
         "channels": [
-          { "name": "Instagram", "status": "active" },
           { "name": "YouTube", "status": "rising" },
           { "name": "Pinterest", "status": "stable" }
         ],
@@ -138,7 +150,15 @@
           "q2": 1,
           "total": 3
         },
-        "match_strength": "partial"
+        "match_strength": "partial",
+        "matching_grade": "중",
+        "match_fits": {
+          "ingred": { "result": "✅", "reason": "베이스 얇은 레이어 트렌드와 매트 텍스처 자연 조화" },
+          "visual": { "result": "⚠️", "reason": "유튜브·핀터레스트에 최소 레이어 가이드 콘텐츠 일부만 매칭" },
+          "life": { "result": "✅", "reason": "20대 효율성 추구 동기와 미니멀 베이스 트렌드 일치" },
+          "safe": { "result": "⚠️", "reason": "Z세대·트렌디 톤과 부분적으로 부합 (효율·미니멀)" },
+          "score": 6
+        }
       },
       {
         "content_id": "C003",
@@ -188,7 +208,6 @@
           }
         ],
         "channels": [
-          { "name": "Instagram", "status": "stable" },
           { "name": "메디컬 블로그", "status": "rising" },
           { "name": "TikTok", "status": "decline" }
         ],
@@ -197,7 +216,15 @@
           "q2": 1,
           "total": 2
         },
-        "match_strength": "weak"
+        "match_strength": "weak",
+        "matching_grade": "하",
+        "match_fits": {
+          "ingred": { "result": "⚠️", "reason": "PDRN·펩타이드 성분 트렌드와 브랜드 매트 텍스처 키워드 무관" },
+          "visual": { "result": "⚠️", "reason": "메디컬 블로그 등 비주류 매체 중심" },
+          "life": { "result": "✅", "reason": "20대 비중 일정 수준 유지" },
+          "safe": { "result": "❌", "reason": "Z세대·트렌디 톤과 학술·기능성 강조 트렌드 충돌" },
+          "score": 4
+        }
       }
     ]
   }
