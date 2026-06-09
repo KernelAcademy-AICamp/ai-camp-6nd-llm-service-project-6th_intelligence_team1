@@ -11,6 +11,18 @@ import { wrap, wrapError } from "../../shared/envelope.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, "../..");
 
+// keywords가 flat 배열 또는 {ingred, life} 객체 모두 처리
+function getKeywords(trend, type = "all") {
+  const kw = trend.keywords;
+  if (Array.isArray(kw)) return kw;
+  if (kw != null && typeof kw === "object") {
+    if (type === "ingred") return kw.ingred ?? [];
+    if (type === "life") return kw.life ?? [];
+    return [...(kw.ingred ?? []), ...(kw.life ?? [])];
+  }
+  return trend.core_keywords ?? [];
+}
+
 // 1. 시스템 프롬프트 로드 (매칭가의 두뇌 + 톤앤매너 친화/충돌 테이블 포함)
 const systemPrompt = readFileSync(
   resolve(__dirname, "prompts/system.md"),
@@ -348,7 +360,7 @@ const ingredOverrides = new Map();
 if (brandFeatures.length > 0 && passedTrends.length > 0) {
   console.log("Ingred-Fit 임베딩 계산 중...");
   for (const t of passedTrends) {
-    const keywords = t.keywords ?? t.core_keywords ?? [];
+    const keywords = getKeywords(t, "ingred");
     const fit = await computeIngredFit(brandFeatures, keywords);
     if (fit) ingredOverrides.set(t.trend_name, fit);
   }
@@ -469,12 +481,12 @@ function detectKeywordConflict(evs) {
   for (const [keyA, keyB] of KEYWORD_CONFLICT_PAIRS) {
     const hasA = (ev) => {
       const t = allTrendByName.get(ev.trend_name);
-      return [...(t?.keywords ?? []), ...(t?.core_keywords ?? [])]
+      return getKeywords(t ?? {})
         .some((k) => k.toLowerCase().includes(keyA));
     };
     const hasB = (ev) => {
       const t = allTrendByName.get(ev.trend_name);
-      return [...(t?.keywords ?? []), ...(t?.core_keywords ?? [])]
+      return getKeywords(t ?? {})
         .some((k) => k.toLowerCase().includes(keyB));
     };
     const groupA = evs.filter(hasA);
