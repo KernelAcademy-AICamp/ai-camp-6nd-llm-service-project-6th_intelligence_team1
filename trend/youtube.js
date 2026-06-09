@@ -32,7 +32,7 @@ async function fetchTrendingVideos(query) {
       part: "snippet",
       type: "video",
       order: "viewCount",
-      maxResults: 5,
+      maxResults: 10,
       relevanceLanguage: "ko",
       publishedAfter: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
     }
