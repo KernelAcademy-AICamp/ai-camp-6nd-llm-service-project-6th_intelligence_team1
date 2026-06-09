@@ -81,9 +81,21 @@ function sourceUrl(source = "") {
   return null;
 }
 
+// 트렌드 keywords 정규화. 매칭가가 형식 두 가지 중 하나로 줄 수 있음:
+//   - 옛 형식: Array<string>
+//   - 신 형식: { ingred?: string[], life?: string[], ... } 카테고리 객체
+// 둘 다 받아서 평면 배열로 통일. 객체일 땐 ingred + life만 사용.
+function normalizeKeywords(keywords) {
+  if (Array.isArray(keywords)) return keywords;
+  if (keywords && typeof keywords === "object") {
+    return [...(keywords.ingred ?? []), ...(keywords.life ?? [])];
+  }
+  return [];
+}
+
 // 키워드 배열 → `칩1` `칩2` (백틱 인라인 코드로 칩 표현, HTML keyword-tags 등가)
 function keywordChips(keywords = []) {
-  return keywords.filter(Boolean).map((k) => `\`${k}\``).join(" ");
+  return normalizeKeywords(keywords).filter(Boolean).map((k) => `\`${k}\``).join(" ");
 }
 
 // 정량 지표 한 줄 (headline_metric + 기간) — HTML metric-strip 등가
@@ -361,7 +373,7 @@ export function generateWriterOutput({ brand, trend, match } = {}) {
       verdict: `${r.rank}순위`, // recommendations에 들어왔으면 N순위 (제외 트렌드는 애초에 없음)
       matching_grade: ev?.matching_grade ?? "중", // 매칭가 v0.3 절대 등급
       display_variant: deriveVariant(r.rank),
-      keywords: (td?.keywords ?? []).slice(0, 5),
+      keywords: normalizeKeywords(td?.keywords).slice(0, 5),
       headline_metric: td?.headline_metric ?? { metric: "", value: "", delta: "" },
       metrics: td?.metrics ?? { score: 0, growth_rate: 0, period: "" },
       summary_bullets: buildSummaryBullets(td),
