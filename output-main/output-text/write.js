@@ -128,6 +128,19 @@ export function generateReport({ brand, trend, match } = {}) {
   lines.push(`**카테고리**: ${b.category}`);
   lines.push(`**타겟**: ${formatTarget(b)}`);
   lines.push("");
+
+  // 캠페인 정보 — brand-analysis.json의 campaign_kpi/period/budget 노출.
+  // 빈 값이거나 누락된 필드는 건너뜀(헤더 깨지지 않도록).
+  const campaignLines = [];
+  if (b.campaign_kpi) campaignLines.push(`- KPI: ${b.campaign_kpi}`);
+  if (b.campaign_period) campaignLines.push(`- 기간: ${b.campaign_period}`);
+  if (b.campaign_budget) campaignLines.push(`- 예산: ${b.campaign_budget}`);
+  if (campaignLines.length > 0) {
+    lines.push("**캠페인 정보**");
+    campaignLines.forEach((l) => lines.push(l));
+    lines.push("");
+  }
+
   lines.push("---");
   lines.push("");
 
@@ -405,6 +418,13 @@ export function generateWriterOutput({ brand, trend, match } = {}) {
         product_name: b.product_name ?? "",
         category: b.category ?? "",
         target_display: targetDisplay(b),
+        // 캠페인 정보 — brand-analysis.json의 campaign_* 필드를 그대로 노출.
+        // 매칭가는 무시하고 작성가/UI만 활용.
+        campaign: {
+          kpi: b.campaign_kpi ?? "",
+          period: b.campaign_period ?? "",
+          budget: b.campaign_budget ?? "",
+        },
       },
       contents,
     },
