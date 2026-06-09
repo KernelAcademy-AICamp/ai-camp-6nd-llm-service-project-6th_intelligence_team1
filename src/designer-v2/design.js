@@ -179,7 +179,7 @@ const result = wrap(finalData);
 
 const outputDir = resolve(PROJECT_ROOT, "shared/data");
 mkdirSync(outputDir, { recursive: true });
-const outputPath = resolve(outputDir, "design-v2-output.json");
+const outputPath = resolve(outputDir, "design-output.json");
 writeFileSync(outputPath, JSON.stringify(result, null, 2), "utf-8");
 
 console.log("\n=== 메타 ===");
