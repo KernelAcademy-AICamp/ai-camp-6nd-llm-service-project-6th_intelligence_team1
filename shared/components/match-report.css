@@ -21,6 +21,9 @@
   --mr-warn: #b8a8d8;
   --mr-warn-soft: #ece8f7;
   --mr-ok: #d98ba0;
+  --mr-ok-soft: #fbe9ef;
+  --mr-danger: #c98a98;
+  --mr-line-strong: #cbb8c5;
   --mr-rank2: #e6e6fa;
   --mr-card-top: #fef0f5;
   --mr-chip-naver: #03c75a;
@@ -246,3 +249,133 @@ a.mr-src-chip[href]::after { content: '↗'; font-size: 10px; opacity: 0.85; mar
   font-size: 13px;
   line-height: 1.6;
 }
+
+/* ===== 매칭 결과 (match passes) — mockup 'Match Passes' 이식 ===== */
+.mr-mp-total {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--mr-text);
+  margin-bottom: 6px;
+}
+.mr-match-passes-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--mr-border);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.mr-mpb-fill { height: 100%; border-radius: 4px; }
+.mr-match-passes-bar.mr-strong .mr-mpb-fill { background: var(--mr-ok); }
+.mr-match-passes-bar.mr-partial .mr-mpb-fill { background: var(--mr-primary); }
+.mr-match-passes-bar.mr-weak .mr-mpb-fill { background: var(--mr-danger); }
+
+.mr-mp-passes-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.mr-mp-passes-row.mr-with-sub { margin-bottom: 2px; }
+.mr-mp-q { color: var(--mr-text-sub); flex: 1; font-weight: 600; }
+.mr-mp-dots { display: inline-flex; gap: 4px; }
+.mr-mp-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--mr-border);
+}
+.mr-mp-passes-row.mr-strong .mr-mp-dot.mr-on { background: var(--mr-ok); }
+.mr-mp-passes-row.mr-partial .mr-mp-dot.mr-on { background: var(--mr-primary); }
+.mr-mp-passes-row.mr-weak .mr-mp-dot.mr-on { background: var(--mr-danger); }
+.mr-mp-frac {
+  font-size: 12px; font-weight: 700;
+  color: var(--mr-text-sub);
+  min-width: 24px; text-align: right;
+}
+.mr-mp-sub {
+  font-size: 11px;
+  color: var(--mr-text-mute);
+  margin-bottom: 10px;
+  line-height: 1.4;
+  padding-left: 2px;
+}
+
+/* 4기준 상세 (어떻게 평가했나요) — 펼침 */
+.mr-eval-details {
+  margin-top: 14px;
+  background: var(--mr-card-top);
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius-lg);
+}
+.mr-eval-details summary {
+  cursor: pointer;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mr-primary-deep);
+  list-style: none;
+  display: flex; align-items: center; gap: 6px;
+}
+.mr-eval-details summary::-webkit-details-marker { display: none; }
+.mr-eval-details summary::before {
+  content: '▶';
+  font-size: 9px;
+  color: var(--mr-primary);
+  transition: transform 0.15s;
+}
+.mr-eval-details[open] summary::before { transform: rotate(90deg); }
+.mr-ed-body {
+  padding: 4px 14px 14px;
+  font-size: 11.5px;
+  color: var(--mr-text-sub);
+  line-height: 1.6;
+}
+.mr-ed-group { margin-bottom: 10px; }
+.mr-ed-group:last-child { margin-bottom: 0; }
+.mr-ed-group-title {
+  font-weight: 700; color: var(--mr-text);
+  margin-bottom: 4px;
+  font-size: 11.5px;
+}
+.mr-ed-reason { color: var(--mr-text-sub); }
+
+/* ===== 채널별 현황 (channel status) — mockup 이식 ===== */
+.mr-channel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mr-channel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--mr-card-top);
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius-lg);
+  font-size: 12px;
+}
+.mr-ch-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--mr-text);
+  font-weight: 600;
+}
+.mr-ch-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--mr-line-strong);
+}
+.mr-ch-status {
+  font-size: 10.5px; font-weight: 700;
+  padding: 2px 9px; border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+.mr-ch-dot.mr-active { background: var(--mr-ok); }
+.mr-ch-status.mr-active { background: var(--mr-ok-soft); color: var(--mr-ok); }
+.mr-ch-dot.mr-rising { background: var(--mr-primary); }
+.mr-ch-status.mr-rising { background: var(--mr-primary-soft); color: var(--mr-primary-deep); }
+.mr-ch-dot.mr-stable { background: var(--mr-line-strong); }
+.mr-ch-status.mr-stable { background: #ffffff; color: var(--mr-text-sub); border: 1px solid var(--mr-border); }
+.mr-ch-dot.mr-decline { background: var(--mr-warn); }
+.mr-ch-status.mr-decline { background: var(--mr-warn-soft); color: var(--mr-warn); }

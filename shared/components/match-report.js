@@ -118,6 +118,94 @@
     return '<div class="mr-src-list">' + items + "</div>";
   }
 
+  // 채널별 현황 — 채널명 + 상태 dot/pill. status enum → 색·라벨 매핑.
+  var CH_STATUS = {
+    active: { cls: "mr-active", label: "활성" },
+    rising: { cls: "mr-rising", label: "부상" },
+    stable: { cls: "mr-stable", label: "안정" },
+    decline: { cls: "mr-decline", label: "하락" },
+    declining: { cls: "mr-decline", label: "하락" },
+  };
+  function channelList(channels) {
+    var arr = (channels || []).filter(Boolean);
+    if (!arr.length) return '<div class="mr-empty">—</div>';
+    var rows = arr
+      .map(function (ch) {
+        var st = CH_STATUS[ch.status] || { cls: "mr-stable", label: ch.status || "—" };
+        return (
+          '<div class="mr-channel-row">' +
+            '<span class="mr-ch-name"><span class="mr-ch-dot ' + st.cls + '"></span>' + esc(ch.name) + "</span>" +
+            '<span class="mr-ch-status ' + st.cls + '">' + esc(st.label) + "</span>" +
+          "</div>"
+        );
+      })
+      .join("");
+    return '<div class="mr-channel-list">' + rows + "</div>";
+  }
+
+  // 통과 강도 → 색 클래스 (passed/max 비율: 만점=strong, 일부=partial, 0=weak)
+  function strengthCls(passed, max) {
+    if (passed >= max) return "mr-strong";
+    if (passed >= 1) return "mr-partial";
+    return "mr-weak";
+  }
+  // on/off 점 max개 (앞에서부터 passed개 채움)
+  function passDots(on, max) {
+    var s = "";
+    for (var i = 0; i < max; i++) s += '<span class="mr-mp-dot' + (i < on ? " mr-on" : "") + '"></span>';
+    return '<span class="mr-mp-dots">' + s + "</span>";
+  }
+  // 질문 1행 — 라벨 + 점 + 분수 + 서브설명
+  function passesRow(label, sub, passed, max) {
+    return (
+      '<div class="mr-mp-passes-row ' + strengthCls(passed, max) + ' mr-with-sub">' +
+        '<span class="mr-mp-q">' + esc(label) + "</span>" +
+        passDots(passed, max) +
+        '<span class="mr-mp-frac">' + passed + "/" + max + "</span>" +
+      "</div>" +
+      '<div class="mr-mp-sub">' + esc(sub) + "</div>"
+    );
+  }
+  // 4기준 상세 (어떻게 평가했나요) — match_fits 바인딩
+  var FIT_LABELS = { ingred: "성분 적합성", visual: "비주얼 적합성", life: "라이프스타일 적합성", safe: "브랜드 안전성" };
+  function fitsDetails(fits) {
+    if (!fits) return "";
+    var groups = ["ingred", "visual", "life", "safe"]
+      .filter(function (k) { return fits[k]; })
+      .map(function (k) {
+        var f = fits[k];
+        return (
+          '<div class="mr-ed-group">' +
+            '<div class="mr-ed-group-title">' + esc(f.result || "") + " " + esc(FIT_LABELS[k]) + "</div>" +
+            '<div class="mr-ed-reason">' + esc(f.reason || "") + "</div>" +
+          "</div>"
+        );
+      })
+      .join("");
+    if (!groups) return "";
+    return (
+      '<details class="mr-eval-details"><summary>어떻게 평가했나요?</summary>' +
+        '<div class="mr-ed-body">' + groups + "</div>" +
+      "</details>"
+    );
+  }
+  // 매칭 결과 — 통과 합계 바 + q1/q2 행 + 4기준 상세 (mockup 'Match Passes' 이식)
+  function passesBlock(c) {
+    var mp = c.match_passes;
+    if (!mp) return '<div class="mr-empty">—</div>';
+    var total = mp.total != null ? mp.total : (mp.q1 || 0) + (mp.q2 || 0);
+    var pct = Math.round((total / 4) * 100);
+    return (
+      '<div class="mr-mp-total">4개 비교 중 ' + esc(total) + "개 통과</div>" +
+      '<div class="mr-match-passes-bar ' + strengthCls(total, 4) + '">' +
+        '<div class="mr-mpb-fill" style="width:' + pct + '%"></div>' +
+      "</div>" +
+      passesRow("브랜드 적합성", "톤·키워드가 트렌드와 맞는지", mp.q1 || 0, 2) +
+      passesRow("타겟 적합성", "우리 고객층·라이프스타일이 트렌드와 맞는지", mp.q2 || 0, 2) +
+      fitsDetails(c.match_fits)
+    );
+  }
+
   function card(c, i) {
     var letter = String.fromCharCode(65 + i); // 0→A, 1→B, 2→C
     var isWarn = c.rank === 3 || c.display_variant === "supplementary";
@@ -138,6 +226,10 @@
         '<div class="mr-card-body">' +
           metricStrip(c) +
           '<div class="mr-block">' +
+            '<div class="mr-block-label"><span class="mr-ico">✅</span> 매칭 결과</div>' +
+            passesBlock(c) +
+          "</div>" +
+          '<div class="mr-block">' +
             '<div class="mr-block-label"><span class="mr-ico">📊</span> 유행현황 (Status)</div>' +
             bulletList(c.summary_bullets) +
           "</div>" +
@@ -148,6 +240,10 @@
           '<div class="mr-block">' +
             '<div class="mr-block-label"><span class="mr-ico">🎯</span> 매칭이유</div>' +
             bulletList(c.reason_bullets) +
+          "</div>" +
+          '<div class="mr-block">' +
+            '<div class="mr-block-label"><span class="mr-ico">📡</span> 채널별 현황</div>' +
+            channelList(c.channels) +
           "</div>" +
         "</div>" +
       "</div>"
