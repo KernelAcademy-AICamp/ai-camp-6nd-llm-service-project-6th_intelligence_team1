@@ -7,9 +7,9 @@
 - **0순위 허들 (Product-Fit)**: `product_fit`으로 출력. ❌이면 코드가 탈락 처리
 - **1순위 허들 (톤앤매너)**: `tnm_fit`으로 출력. ❌이면 코드가 탈락 처리
 - **2순위 순위 결정 (라이프스타일)**: `target_fit`으로 출력. 통과 트렌드 간 순위 결정
-- **서브 참고 (시급성)**: `safe_fit`으로 출력. 순위에 영향 없음
+- **서브 참고 (시장성)**: `market_fit`은 코드가 계산 — 출력 불필요
 
-⚠️ **eliminated_by·life_score·envelope·카테고리 게이트는 코드가 계산합니다.** 당신은 4기준(product·tnm·target·safe) 판정(result·reason) + summary_reasons만 출력하세요.
+⚠️ **eliminated_by·life_score·envelope·카테고리 게이트·market_fit은 코드가 계산합니다.** 당신은 3기준(product·tnm·target) 판정(result·reason) + summary_reasons만 출력하세요.
 
 ⚠️ **trend_name은 입력 그대로 인용하세요.** 요약·번역·변형 금지. 입력에 `"저자극 클린 선케어"`라고 돼 있으면 출력도 정확히 `"저자극 클린 선케어"`.
 
@@ -74,13 +74,8 @@
 
 ⚠️ **인구통계(성별·연령) 수치 인용 금지**: `audience_distribution`은 추정값이라 부정확. reason·summary_reasons에 `여성 87%` 같은 % 인용 X. 정성적 매칭만.
 
-### 4. Safe-Fit (트렌드 시급성)
-**기준**: 트렌드 `trend_stage`·`lifespan_estimate` (브랜드 비교 없음 — 트렌드 수명만 판단)
-
-- **✅**: `emerging` — 성장 중, 진입 타이밍 좋음
-- **⚠️**: `peak` — 정점, 곧 하락 가능. 단기 캠페인에만 적합
-- **❌**: `declining` — 하락 중, 진입 시기 지남
-- `trend_stage` 없으면 `lifespan_estimate`로 추정 (6개월+ → ✅, 3~6개월 → ⚠️, 3개월 미만 → ❌)
+### 4. Market-Fit (시장성) — 코드 계산, 출력 불필요
+`trend_stage` × `demand_fit.monthly_searches` 2×2 매트릭스로 코드가 자동 계산합니다. 당신은 이 항목을 출력하지 마세요.
 
 ---
 
@@ -94,7 +89,6 @@
       "product_fit": { "result": "✅|⚠️|❌", "reason": "한국어 한 줄" },
       "tnm_fit": { "result": "...", "reason": "..." },
       "target_fit":   { "result": "...", "reason": "..." },
-      "safe_fit":   { "result": "...", "reason": "..." },
       "summary_reasons": [
         { "category": "성분 적합성", "fact": "...", "source": "..." }
       ]
@@ -108,9 +102,11 @@
 
 ## summary_reasons 작성 규칙
 
-- 2-3개. **입력에서 직접 확인 가능한 사실 + 출처**만.
+- **3기준(product_fit·tnm_fit·target_fit) 각각 최소 1개씩 반드시 포함.** 빠진 기준이 있으면 안 됨.
+- 개수 제한 없음. 각 기준 내 근거가 여러 개면 모두 기재.
 - `{ category, fact, source }` 객체.
-- `category`: 4기준 중 하나로 분류 (예: "성분 적합성", "매체 매칭", "라이프스타일 매칭", "트렌드 수명").
+- `category` 예시: "성분 적합성(product)", "톤앤매너(tnm)", "타겟 라이프스타일(target)", "타겟 연령·관여도(target)", "트렌드 수명".
+- **fact는 구체적으로**: 어떤 키워드·필드가 어떻게 일치/불일치하는지, 값까지 인용. "일치"가 아니라 "브랜드 '매트'↔트렌드 ingred '매트피니시' 직접 대응" 수준으로.
 - **모호어 금지**: "다수", "활발", "급증" — 숫자나 비교군 없이 쓰지 말 것.
 - **인구통계 수치 금지**: 성별·연령 % 는 추정값이라 부정확. summary_reasons·reason 어디에도 X.
 - **출처 못 대는 정성 판단 금지**: "Z세대 톤 부합" 같은 건 reason에만, summary_reasons에서는 제외.
@@ -124,7 +120,7 @@
 | 0순위 | product_fit | ❌ → 탈락 | LLM 판단 (부정 맥락 포함) |
 | 1순위 | tnm_fit | ❌ → 탈락 | 톤앤매너 충돌 여부 |
 | 2순위 | target_fit | — | ✅=2·⚠️=1로 순위 결정 |
-| 서브 | safe_fit | — | 시급성 참고만 |
+| 서브 | market_fit | — | 시급성 참고만 |
 
 ---
 
@@ -162,7 +158,7 @@
 
 ## 평가 체크리스트
 
-- [ ] 트렌드마다 4기준(product·tnm·target·safe) 모두 ✅/⚠️/❌ 채웠는가?
+- [ ] 트렌드마다 3기준(product·tnm·target) 모두 ✅/⚠️/❌ 채웠는가? (market_fit은 코드 계산 — 출력 불필요)
 - [ ] reason은 한국어 한 줄로 명확한가?
 - [ ] summary_reasons는 입력에서 확인 가능한 사실인가? (지어낸 수치·출처 금지)
 - [ ] 인구통계 % 인용 안 했는가? (추정값)

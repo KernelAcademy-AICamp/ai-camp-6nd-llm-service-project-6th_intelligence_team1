@@ -51,7 +51,7 @@ function ageGroupToRange(group, currentYear) {
 // 0순위: product_fit ❌ → 탈락 (제품 유형·성분 불일치, LLM + 코드 안전망)
 // 1순위: tnm_fit ❌ → 탈락 (톤앤매너 충돌)
 // 2순위: target_fit 점수로 순위 결정 (✅=2, ⚠️=1, ❌=0)
-// safe_fit: 시급성 참고 정보 (순위에 미포함)
+// market_fit: 시장성 참고 정보 (코드 계산, 순위에 미포함)
 const LIFE_SCORE = { "✅": 2, "⚠️": 1, "❌": 0 };
 
 function computeHurdle(fits) {
@@ -110,19 +110,82 @@ function filterVagueReasons(reasons) {
   return kept.length > 0 ? kept : reasons;
 }
 
-// status → Safe-Fit result 매핑
-const STATUS_SAFE_FIT = {
-  emerging: { result: "✅", reason: "트렌드 성장 중 (emerging) — 브랜드 격 손상 위험 낮음" },
-  peak:     { result: "⚠️", reason: "트렌드 정점 (peak) — 곧 하락 가능, 단기 캠페인 적합" },
-  declining: { result: "❌", reason: "트렌드 하락 중 (declining) — 이미 식는 트렌드" },
+// Market-Fit: 라이프사이클(trend_stage) × 수요 규모(demand_fit.monthly_searches) 2×2 매트릭스
+// 검색량 기준 임계값 — 카테고리 볼륨에 따라 조정 필요
+const MARKET_FIT_MIN_SEARCHES = 5000; // 하위 카테고리 키워드 기준 — 필요 시 조정
+
+function computeMarketFit(trendData) {
+  const stage = trendData?.trend_stage ?? trendData?.status;
+  const searches = trendData?.demand_fit?.monthly_searches ?? null;
+  const lifespan = trendData?.lifespan_estimate;
+
+  const searchLabel = searches != null
+    ? `네이버 월 검색 ${searches >= 10000 ? (searches / 10000).toFixed(1) + "만" : searches.toLocaleString()}`
+    : null;
+
+  if (stage === "declining") {
+    return { result: "❌", reason: "트렌드 하락 중 (declining) — 진입 시기 지남" };
+  }
+  if (stage === "emerging") {
+    if (searches == null) return { result: "✅", reason: "트렌드 성장 중 (emerging)" };
+    return searches > MARKET_FIT_MIN_SEARCHES
+      ? { result: "✅", reason: `emerging + ${searchLabel} — 타이밍·수요 모두 좋음` }
+      : { result: "⚠️", reason: `emerging이나 ${searchLabel} — 니치 트렌드` };
+  }
+  if (stage === "peak") {
+    if (searches == null) return { result: "⚠️", reason: "트렌드 정점 (peak) — 단기 캠페인 적합" };
+    return searches > MARKET_FIT_MIN_SEARCHES
+      ? { result: "⚠️", reason: `peak + ${searchLabel} — 수요 있지만 타이밍 늦음` }
+      : { result: "❌", reason: `peak + ${searchLabel} — 타이밍·수요 모두 불리` };
+  }
+  // stage 없는 경우 lifespan으로 fallback
+  if (!lifespan) return { result: "⚠️", reason: "트렌드 단계 정보 없음 — 지속 가능성 불확실" };
+  return { result: "⚠️", reason: "트렌드 단계 미확인 — lifespan 기준 추정" };
+}
+
+// 2차·3차 레이블 — recommendations에 인간 가독 맥락으로 첨부
+const COMPETITION_LABELS = {
+  "높음": "경쟁 치열 — 차별화 전략 필요",
+  "중간": "경쟁 보통 — 포지셔닝에 따라 기회",
+  "낮음": "빠른 진입 시 선점 효과 ↑",
 };
+
+function marketFitLabel(trendData) {
+  const stage = trendData?.trend_stage ?? trendData?.status;
+  const searches = trendData?.demand_fit?.monthly_searches ?? null;
+  const highDemand = searches != null && searches > MARKET_FIT_MIN_SEARCHES;
+
+  const stageDesc = {
+    emerging: "트렌드 성장 중 (emerging)",
+    peak:     "트렌드 정점 (peak)",
+    declining:"트렌드 하락 중 (declining)",
+  }[stage] ?? "트렌드 단계 정보 없음";
+
+  const searchDesc = searches != null
+    ? `네이버 월 검색 ${searches >= 10000 ? (searches / 10000).toFixed(1) + "만" : searches.toLocaleString()}회`
+    : "검색량 데이터 없음";
+
+  if (stage === "emerging") {
+    const verdict = searches == null ? "✅ 성장 중"
+      : highDemand ? "✅ 타이밍·수요 둘 다 좋음"
+      : "⚠️ 타이밍은 좋지만 이 조합으론 수요가 작게 잡혀요 — 참고하세요";
+    return `${stageDesc} / ${searchDesc} → ${verdict}`;
+  }
+  if (stage === "peak") {
+    const verdict = searches == null ? "⚠️ 단기 캠페인 적합"
+      : highDemand ? "⚠️ 수요 있지만 진입 타이밍 늦음"
+      : "❌ 타이밍·수요 모두 불리";
+    return `${stageDesc} / ${searchDesc} → ${verdict}`;
+  }
+  return `${stageDesc} / ${searchDesc}`;
+}
 
 function assembleEvaluation(llmEval, trendData) {
   const fits = {
     product_fit: llmEval.product_fit,
     tnm_fit: llmEval.tnm_fit,
     target_fit: llmEval.target_fit,
-    safe_fit: llmEval.safe_fit,
+    market_fit: computeMarketFit(trendData),
   };
 
   // Product-Fit 코드 안전망: 부정 맥락 ingred 키워드 감지 시 ❌ 강제
@@ -134,14 +197,6 @@ function assembleEvaluation(llmEval, trendData) {
     fits.target_fit = { result: "⚠️", reason: "타겟 페르소나 정보 없음 — 비교 불가" };
   }
 
-  // Safe-Fit 코드 보정: trend_stage 우선, 없으면 status fallback. 둘 다 없으면 ⚠️ 강제
-  const status = trendData?.trend_stage ?? trendData?.status;
-  const lifespan = trendData?.lifespan_estimate;
-  if (STATUS_SAFE_FIT[status]) {
-    fits.safe_fit = STATUS_SAFE_FIT[status];
-  } else if (!lifespan) {
-    fits.safe_fit = { result: "⚠️", reason: "트렌드 수명 정보 없음 — 지속 가능성 불확실" };
-  }
 
   const { eliminated_by, target_score } = computeHurdle(fits);
   return {
@@ -151,6 +206,8 @@ function assembleEvaluation(llmEval, trendData) {
     eliminated_by,
     summary_reasons: filterVagueReasons(llmEval.summary_reasons),
     ...(trendData?.channel_activity != null && { channel_activity: trendData.channel_activity }),
+    ...(trendData?.demand_fit != null && { demand_fit: trendData.demand_fit }),
+    ...(trendData?.competition_fit != null && { competition_fit: trendData.competition_fit }),
   };
 }
 
@@ -261,7 +318,7 @@ function makeExcludedByCategory(trend, brandCategory) {
       product_fit: skip,
       tnm_fit: skip,
       target_fit: skip,
-      safe_fit: skip,
+      market_fit: skip,
     },
     target_score: 0,
     eliminated_by: "category",
@@ -315,9 +372,9 @@ const systemContent = [
     type: "text",
     text: `## 출력 리마인더
 
-각 트렌드마다 **4기준(product_fit·tnm_fit·target_fit·safe_fit)의 result(✅/⚠️/❌)+reason**과 **summary_reasons**를 담아 \`evaluations[]\`로 출력하세요.
+각 트렌드마다 **3기준(product_fit·tnm_fit·target_fit)의 result(✅/⚠️/❌)+reason**과 **summary_reasons**를 담아 \`evaluations[]\`로 출력하세요.
 
-score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 **출력하지 마세요.** 코드 블록 표시나 부가 설명 없이 순수 JSON 하나만.`,
+market_fit·score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 **출력하지 마세요.** 코드 블록 표시나 부가 설명 없이 순수 JSON 하나만.`,
     cache_control: { type: "ephemeral" },
   },
 ];
@@ -383,9 +440,9 @@ ${JSON.stringify(brandAnalysis, null, 2)}
 ${JSON.stringify(passedTrendInput, null, 2)}
 \`\`\`
 ${mediaOverlapBlock}${lifeFitBlock}
-위 모든 트렌드에 대해 **4기준(product_fit·tnm_fit·target_fit·safe_fit)의 result+reason과 summary_reasons**를 \`evaluations[]\`에 담아 반환하세요.
+위 모든 트렌드에 대해 **3기준(product_fit·tnm_fit·target_fit)의 result+reason과 summary_reasons**를 \`evaluations[]\`에 담아 반환하세요.
 
-score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
+market_fit·score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
 
 // 5. Claude API 호출 — 통과 트렌드가 있을 때만. LLM은 data 본체만 생성.
 let llmEvaluations = [];
@@ -486,9 +543,22 @@ allEvaluations.sort((a, b) => {
   return 0;
 });
 
-// 추천: 제외가 아닌 것 전부 (최소 3개 기준, 있는 만큼 다양하게).
+// 1차 매칭 완료 — product/tnm/target 허들 통과분
 const nonExcluded = allEvaluations.filter((ev) => ev.eliminated_by === null);
-let topEvals = [...nonExcluded];
+
+// 2차 Market 허들: declining 트렌드 순위권에서 제거 (evaluations엔 그대로 유지)
+const marketFiltered = nonExcluded.filter((ev) => {
+  const t = allTrendByName.get(ev.trend_name);
+  return (t?.trend_stage ?? t?.status) !== "declining";
+});
+if (nonExcluded.length !== marketFiltered.length) {
+  const removed = nonExcluded
+    .filter((ev) => !marketFiltered.includes(ev))
+    .map((ev) => ev.trend_name);
+  console.log(`2차 Market 허들: declining ${removed.length}개 순위권 제거 — ${removed.join(", ")}`);
+}
+
+let topEvals = [...marketFiltered];
 
 // 뷰티 카테고리 정반대 개념 쌍 — 코드 1차 감지용
 const KEYWORD_CONFLICT_PAIRS = [
@@ -571,14 +641,20 @@ ${JSON.stringify(topCtx, null, 2)}
   }
 }
 
+// 3차: market_context(2차 레이블) + competition_context(3차 레이블) 첨부
 const recommendations = topEvals.slice(0, 3).map((ev, i) => {
   const trendRaw = allTrendByName.get(ev.trend_name);
+  const compLevel = trendRaw?.competition_fit?.level;
   return {
     rank: i + 1,
     trend_id: trendRaw?.trend_id ?? null,
-    trend_name: trendRaw?.trend_name ?? ev.trend_name, // 입력 원본 우선 (LLM 변형 방지)
+    trend_name: trendRaw?.trend_name ?? ev.trend_name,
     summary_reasons: ev.summary_reasons,
+    market_context: marketFitLabel(trendRaw),
+    ...(compLevel && { competition_context: `${compLevel} — ${COMPETITION_LABELS[compLevel] ?? compLevel}` }),
     ...(trendRaw?.channel_activity != null && { channel_activity: trendRaw.channel_activity }),
+    ...(trendRaw?.demand_fit != null && { demand_fit: trendRaw.demand_fit }),
+    ...(trendRaw?.competition_fit != null && { competition_fit: trendRaw.competition_fit }),
   };
 });
 

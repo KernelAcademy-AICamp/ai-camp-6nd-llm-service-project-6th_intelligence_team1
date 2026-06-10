@@ -3,7 +3,7 @@ import { envelopeSchema } from "../../shared/envelope.js";
 
 // 매칭가 출력 스키마 v0.6 (3단계 허들: Product-Fit→TnM-Fit→Target-Fit).
 // 0순위(product)·1순위(tone) ❌ 시 eliminated_by 설정. 통과 시 target_score로 순위 결정.
-// safe_fit은 시급성 참고 정보. envelope은 shared/envelope.js가 자동 부여.
+// market_fit은 시급성 참고 정보. envelope은 shared/envelope.js가 자동 부여.
 
 // ─── 입력 스키마 (분석가 산출 검증) ─────────────────────────────────
 
@@ -128,6 +128,18 @@ const ChannelActivitySchema = z.object({
   top_channel: z.string(),
 }).optional();
 
+const DemandFitSchema = z.object({
+  monthly_searches: z.number(),
+  score: z.number(),
+  evidence: z.string(),
+}).optional();
+
+const CompetitionFitSchema = z.object({
+  level: z.enum(["높음", "중간", "낮음"]),
+  score: z.number(),
+  evidence: z.string(),
+}).optional();
+
 // 데이터 근거 — 입력에서 직접 확인 가능한 사실 + 출처만. 정성 판단은 제외.
 const EvidenceReasonSchema = z.object({
   category: z.string(), // 예: "성분 적합성", "매체 매칭", "라이프스타일 매칭", "트렌드 수명"
@@ -141,12 +153,14 @@ const EvaluationItemSchema = z.object({
     product_fit: FitResultSchema, // 0순위 허들 — 성분·텍스처
     tnm_fit: FitResultSchema, // 1순위 허들 — 톤앤매너
     target_fit: FitResultSchema,   // 2순위 순위 결정 — 라이프스타일
-    safe_fit: FitResultSchema,   // 서브 참고 — 트렌드 시급성
+    market_fit: FitResultSchema,   // 서브 참고 — 트렌드 시급성
   }),
   target_score: z.number().int().min(0).max(2), // target_fit: ✅=2, ⚠️=1, ❌=0
   eliminated_by: z.enum(["product", "tone", "category"]).nullable(),
-  summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
+  summary_reasons: z.array(EvidenceReasonSchema).min(1),
   channel_activity: ChannelActivitySchema,
+  demand_fit: DemandFitSchema,
+  competition_fit: CompetitionFitSchema,
 });
 
 const RecommendationSchema = z.object({
@@ -154,7 +168,11 @@ const RecommendationSchema = z.object({
   trend_id: z.string().nullable(),
   trend_name: z.string(),
   summary_reasons: z.array(EvidenceReasonSchema),
+  market_context: z.string(),               // 2차: 트렌드 단계·수요 레이블
+  competition_context: z.string().optional(), // 3차: 경쟁 강도 레이블 (데이터 있을 때만)
   channel_activity: ChannelActivitySchema,
+  demand_fit: DemandFitSchema,
+  competition_fit: CompetitionFitSchema,
 });
 
 export const MatchDataSchema = z.object({
@@ -173,14 +191,14 @@ export const ConflictCheckSchema = z.object({
 export const MatchResultSchema = envelopeSchema(MatchDataSchema);
 
 // ─── LLM 전용 출력 스키마 ───────────────────────────────────────────
-// LLM은 4기준 정성 판정 + summary_reasons만 생성. score·verdict는 코드가 계산.
+// LLM은 3기준(product·tnm·target) 정성 판정 + summary_reasons만 생성.
+// market_fit·score·verdict는 코드가 계산.
 const LlmEvaluationItemSchema = z.object({
   trend_name: z.string(),
   product_fit: FitResultSchema,
   tnm_fit: FitResultSchema,
   target_fit: FitResultSchema,
-  safe_fit: FitResultSchema,
-  summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
+  summary_reasons: z.array(EvidenceReasonSchema).min(1),
 });
 
 export const LlmMatchDataSchema = z.object({
