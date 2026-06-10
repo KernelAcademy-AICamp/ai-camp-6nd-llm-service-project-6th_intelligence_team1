@@ -67,7 +67,7 @@ const NEGATION_TERMS = ["감소", "대체", "줄이는", "피하는", "기피", 
 function checkNegationConflict(trendData) {
   const ingredKws = getKeywords(trendData, "ingred");
   // brandAnalysis는 모듈 스코프 — 이 함수는 brandAnalysis 초기화 이후에만 호출됨
-  const brandFeatures = (brandAnalysis.data.product_features ?? []).map((f) => f.toLowerCase());
+  const brandFeatures = (brandAnalysis.data.product_features ?? brandAnalysis.data.texture_keywords ?? []).map((f) => f.toLowerCase());
   const brandCategory = (brandAnalysis.data.category ?? "").toLowerCase();
 
   for (const kw of ingredKws) {
