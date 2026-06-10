@@ -16,11 +16,45 @@ const writerOutput = JSON.parse(
   readFileSync(resolve(PROJECT_ROOT, "output-main/output-text/writer-output.json"), "utf-8"),
 );
 
+// 영역별 제목·부제·"이 영역에서 본 것" 불렛.
+// 백엔드 이름(Ingred-Fit 등) 대신 자연 한글 제목 사용 — 마케터·디자이너가 한 눈에 의미 파악.
 const FIT_META = {
-  ingred: { title: "Ingred-Fit", subtitle: "제품 성분·제형 ↔ 트렌드 핵심" },
-  visual: { title: "Visual-Fit", subtitle: "브랜드 매체·톤 ↔ 트렌드 채널" },
-  life: { title: "Life-Fit", subtitle: "타겟 고객 ↔ 트렌드 라이프스타일" },
-  safe: { title: "Safe-Fit", subtitle: "트렌드 이미지·수명 ↔ 브랜드 안전성" },
+  ingred: {
+    title: "제품 적합도",
+    subtitle: "제품·제형이 트렌드와 맞는지",
+    checks: [
+      "브랜드 제품의 텍스처·성분 키워드",
+      "트렌드의 핵심 키워드 (검색되는 단어)",
+      "둘이 직접 매칭되는 단어가 있는지",
+    ],
+  },
+  visual: {
+    title: "비주얼·톤 적합도",
+    subtitle: "브랜드 매체·톤이 트렌드와 맞는지",
+    checks: [
+      "브랜드의 톤앤매너 (럭셔리·감성·트렌디 등)",
+      "트렌드의 시각적 성격 (꾸안꾸·미니멀·과감 등)",
+      "콘텐츠 매체(유튜브·인스타 등)가 어울리는지",
+    ],
+  },
+  life: {
+    title: "타겟 적합도",
+    subtitle: "타겟 고객이 트렌드에 맞는지",
+    checks: [
+      "브랜드 타겟 연령·성별",
+      "트렌드 주요 향유층의 연령·라이프스타일",
+      "타겟의 동기·가치관과 트렌드 코드의 일치",
+    ],
+  },
+  safe: {
+    title: "안전성·지속성",
+    subtitle: "트렌드가 브랜드 이미지에 안전한지",
+    checks: [
+      "트렌드 단계 (성장기·정점·하락기)",
+      "트렌드 수명 (단기 유행 vs 장기 자리잡기)",
+      "브랜드 이미지에 충돌·리스크 없는지",
+    ],
+  },
 };
 
 const FIT_RESULT_LABEL = {
@@ -42,6 +76,7 @@ function renderFitItem(fitKey, fit) {
   const r = fit?.result ?? "";
   const label = FIT_RESULT_LABEL[r] ?? { label: "-", className: "fit-empty" };
   const reason = fit?.reason || "(매칭 데이터 없음)";
+  const checks = Array.isArray(meta.checks) ? meta.checks : [];
   return `
     <div class="fit-item ${label.className}">
       <div class="fit-head">
@@ -49,6 +84,13 @@ function renderFitItem(fitKey, fit) {
         <span class="fit-result">${esc(r)} ${esc(label.label)}</span>
       </div>
       <div class="fit-subtitle">${esc(meta.subtitle)}</div>
+      ${
+        checks.length > 0
+          ? `<div class="fit-checks-label">📌 이 영역에서 본 것</div>
+             <ul class="fit-checks">${checks.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>`
+          : ""
+      }
+      <div class="fit-reason-label">📊 결과</div>
       <div class="fit-reason">${esc(reason)}</div>
     </div>
   `;
@@ -287,6 +329,23 @@ const html = `<!DOCTYPE html>
     .fit-title { font-size: 14px; font-weight: 800; color: #2a1a20; }
     .fit-result { font-size: 12px; font-weight: 700; color: #6a3a4a; }
     .fit-subtitle { font-size: 11.5px; color: #8a5a6e; margin-bottom: 8px; font-weight: 500; }
+    .fit-checks-label, .fit-reason-label {
+      font-size: 11px; font-weight: 700; color: #c2185b;
+      margin-top: 8px; margin-bottom: 4px; letter-spacing: -0.2px;
+    }
+    .fit-checks {
+      list-style: none; padding: 0; margin: 0 0 6px;
+      background: #fff5f7; border-radius: 8px; padding: 8px 10px;
+    }
+    .fit-checks li {
+      position: relative; padding-left: 14px; font-size: 11.5px;
+      color: #4a3a40; line-height: 1.55; margin-bottom: 2px;
+    }
+    .fit-checks li::before {
+      content: "·"; position: absolute; left: 4px; top: -2px;
+      color: #c2185b; font-size: 18px; font-weight: 700;
+    }
+    .fit-checks li:last-child { margin-bottom: 0; }
     .fit-reason { font-size: 12.5px; color: #2a1a20; line-height: 1.5; }
 
     /* 카드 하단 — 활용 방안 */
