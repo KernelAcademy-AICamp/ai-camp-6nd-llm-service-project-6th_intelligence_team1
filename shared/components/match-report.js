@@ -261,13 +261,14 @@
               '<div class="mr-block-label"><span class="mr-ico">🧮</span> 매칭 설명</div>' +
               matchExplain(c.match_fits) +
             "</div>" +
-            '<div class="mr-block">' +
-              '<div class="mr-block-label"><span class="mr-ico">💡</span> 활용 방안</div>' +
-              (c.usage_plan
-                ? '<div class="mr-usage">' + esc(c.usage_plan) + "</div>"
-                : '<div class="mr-usage mr-fit-placeholder">활용방안 작성</div>') +
-            "</div>" +
           "</div>" +
+        "</div>" +
+        // 활용 방안 — 카드 하단 전체 폭
+        '<div class="mr-card-usage">' +
+          '<div class="mr-block-label"><span class="mr-ico">💡</span> 활용 방안</div>' +
+          (c.usage_plan
+            ? '<div class="mr-usage">' + esc(c.usage_plan) + "</div>"
+            : '<div class="mr-usage mr-fit-placeholder">활용방안 작성</div>') +
         "</div>" +
       "</div>"
     );

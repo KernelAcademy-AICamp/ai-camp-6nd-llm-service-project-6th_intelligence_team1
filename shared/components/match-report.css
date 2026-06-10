@@ -679,3 +679,10 @@ a.mr-src-chip[href]::after { content: '↗'; font-size: 10px; opacity: 0.85; mar
   padding: 6px 10px;
 }
 .mr-usage { font-size: 12.5px; line-height: 1.55; color: var(--mr-text-sub); }
+
+/* 활용 방안 — 카드 하단 전체 폭 */
+.mr-card-usage {
+  padding: 16px 20px 18px;
+  border-top: 1px solid var(--mr-border);
+}
+.mr-card-usage .mr-block-label { margin-bottom: 8px; }
