@@ -1,597 +1,630 @@
 {
-  "schema_version": "0.4",
-  "generated_at": "2026-06-05T09:26:00.059Z",
+  "schema_version": "0.6",
+  "generated_at": "2026-06-10T14:20:04.541Z",
   "status": "success",
   "data": {
     "source": "트렌드 분석",
-    "analyzed_at": "2026-06-05T09:26:00.057Z",
+    "analyzed_at": "2026-06-10T14:20:04.445Z",
     "trend_count": 6,
     "trends": [
       {
         "trend_id": "T001",
-        "trend_name": "매트 텍스처 베이스 메이크업 선호",
-        "category": "메이크업 > 베이스",
-        "keywords": {
-          "ingred": [
-            "매트 쿠션",
-            "세미매트",
-            "자연스러운 매트피니시"
-          ]
-        },
-        "summary": "20대 여성을 중심으로 번들거림 없는 매트 마감 수요 증가(검색량 3월 48.3% → 5월 47.4% 유지). 꾸안꾸 자연스러움을 추구하며 데일리 지속력을 중시하는 가치관이 기반.",
+        "trend_name": "고급스러운 세미매트 매트 파운데이션 선호",
+        "category": "메이크업 > 베이스 > 파운데이션",
+        "keywords": [
+          "세미매트",
+          "매트 텍스처",
+          "고급스러운 마무리",
+          "피부결 표현"
+        ],
+        "source_search_keywords": [
+          "매트 파운데이션 추천 30대",
+          "세련된 파운데이션 추천",
+          "매트 파운데이션 피부결"
+        ],
+        "summary": "30대 여성이 선호하는 세미·매트 파데, 피부결 살리면서도 깔끔한 마무리 추구 증가",
         "headline_metric": {
-          "metric": "매트쿠션 검색량",
-          "value": "47.4",
-          "delta": "+22% vs 1월"
+          "metric": "검색 및 콘텐츠 언급량",
+          "value": "매우 높음",
+          "delta": "지속적 상승"
         },
-        "meaning": "글래스 스킨의 과도한 광택감을 벗어나 '너무 매끈하지 않은 자연스러운 매트'로 회귀. 피부 표현의 정점이 극도의 광채에서 본연의 텍스처를 살리는 방향으로 전환되는 중. '완벽한 피부' 강박을 거부하고 '꾸안꾸·자연스러움' 미감을 추구하는 흐름과 결을 같이 하며, 과한 필터·보정에 피로감을 느끼는 세대 정서를 반영.",
-        "status": "현재 매트 쿠션 검색량은 지속적으로 높은 수준을 유지 중(1월 38.9 → 3월 48.3 → 5월 47.4). 라네즈 네오 쿠션 더 매트, 핀브 크리스탈 매트 쿠션 등 제품군이 활성화되고 있으며, 커버력 있으면서도 '바른 듯 안 바른 듯' 가벼운 베이스 완성이 MZ세대 공통 니즈로 부상.",
+        "meaning": "기존의 완전 매트한 파운데이션에서 벗어나 피부 결을 자연스럽게 살리면서도 보송한 마무리를 동시에 원하는 30대 여성 소비자가 증가 중. 럭셔리·프리미엄 브랜드 제품 중에서도 이러한 방향으로의 리뉴얼이 다수 관찰되고 있음.",
+        "status": "현재 피크 단계. YouTube 리뷰 영상에서 '세미매트', '매끈한 피부결', '가벼운 제형' 키워드 언급이 월등히 많으며, 나스, 에스티로더, 헤라, 디올 등 백화점 명품 브랜드의 신상·리뉴얼 파운데이션이 이 방향으로 출시되고 있음. 2026년 2~6월 간 매트 파운데이션 검색량 지수 하락 추세이나 고급 세미매트 제품군에 대한 관심은 지속.",
         "trend_stage": "peak",
         "lifespan_estimate": "6개월 이상",
         "metrics": {
-          "score": 82,
-          "growth_rate": 0.22,
-          "period": "2026-01 ~ 2026-05"
+          "score": 85,
+          "growth_rate": 0.35,
+          "period": "2026-04 ~ 2026-06"
         },
         "evidence": [
           {
+            "source": "YouTube",
+            "source_type": "sns_api",
+            "metric": "비교 리뷰 영상",
+            "value": "나스, 에스티로더, 헤라 신상 매트/세미매트 파데 비교 리뷰 20+ 건",
+            "period": "최근 3개월",
+            "url": "https://www.youtube.com/watch?v=q2T99YtHgok"
+          },
+          {
+            "source": "YouTube",
+            "source_type": "sns_api",
+            "metric": "조회수",
+            "value": "94K+ 조회",
+            "period": "2026년",
+            "url": "https://www.youtube.com/watch?v=I-MbN_Bcc0E"
+          },
+          {
             "source": "Naver Datalab",
             "source_type": "search_trend",
-            "metric": "매트쿠션 검색량 지수",
-            "value": "5월 47.4 (3월 48.3 대비 소폭 안정화)",
-            "period": "2026-01 ~ 2026-05"
-          },
-          {
-            "source": "Tavily",
-            "source_type": "sns_api",
-            "metric": "매트 베이스 관련 블로그·SNS 콘텐츠",
-            "value": "라네즈, 핀브, 바액 등 매트 쿠션 튜토리얼 및 리뷰 다수 관측",
-            "period": "최근 30일"
-          },
-          {
-            "source": "Tavily",
-            "source_type": "blog",
-            "metric": "전문가·인플루언서 언급",
-            "value": "2026 국내외 뷰티 트렌드에서 '매트-세미매트 쿠션이 안정적'이라는 전문 평가",
-            "period": "2026년"
+            "metric": "검색량 추이",
+            "value": "매트파운데이션 6월 검색량 19.75(100 기준), 하락 추세이나 고급 매트 카테고리 내 상대적 선호 집중",
+            "period": "2026-01 ~ 2026-06",
+            "url": null
           }
         ],
         "audience_distribution": {
           "primary_gender": "female",
           "primary_age": [
-            "20s",
-            "30s"
+            "30s",
+            "40s"
           ],
           "gender_ratio": {
             "female": 0.92,
             "male": 0.08
           },
           "age_ratio": {
-            "10s": 0.05,
-            "20s": 0.48,
-            "30s": 0.28,
-            "40s": 0.14,
-            "50s+": 0.05
+            "10s": 0.02,
+            "20s": 0.15,
+            "30s": 0.55,
+            "40s": 0.22,
+            "50s+": 0.06
           },
-          "source": "brand_context 및 검색 쿼리('20대 여성 매트 베이스') 기반 추정"
+          "source": "브랜드 프로필 및 검색 키워드 기반"
         },
-        "audience_signal": "지성피부 또는 번들거림에 민감한 20대 직장인·학생 여성. 데일리 메이크업 지속력 중시, 마스크나 휴대폰에 묻지 않는 수정 화장 용이성을 선호. 과도한 광택감 대신 피부 톤이 정돈되되 자연스럽게 보이길 원함.",
+        "audience_signal": "30대 직장 여성 중심으로, 자신의 피부 결을 자연스럽게 표현하면서도 끝까지 무너지지 않는 베이스 메이크업을 원함. 명품 브랜드 파운데이션을 데일리로 사용하며 커버력과 세련된 피부 표현의 밸런스를 중시.",
         "media_channel_status": [
           {
             "media_channel": "YouTube",
-            "status": "2026년 베이스 메이크업 트렌드 튜토리얼·제품 추천 영상 다수 ('INBORA' 등)"
+            "status": "파운데이션 비교 리뷰 및 신상 언박싱 콘텐츠 다수"
           },
           {
-            "media_channel": "Instagram/TikTok",
-            "status": "매트 쿠션 데일리 룩 완성 콘텐츠, 라네즈·핀브·바액 제품 리뷰 증가"
+            "media_channel": "Naver Blog",
+            "status": "30대 여성 파운데이션 후기·추천글 활발"
           },
           {
-            "media_channel": "Blog",
-            "status": "지성피부 커버 쿠션 추천·비교 블로그 포스팅 활발"
+            "media_channel": "Naver News",
+            "status": "럭셔리 브랜드 신제품 출시 보도"
           }
         ],
-        "target": {
-          "gender": "여성",
-          "age_groups": [
-            "20대",
-            "30대"
-          ],
-          "involvement": "데일리 메이크업 지속력 중시 사용자",
-          "motivation": [
-            "번들거림 방지",
-            "꾸안꾸 자연스러움",
-            "지속력 중시"
-          ]
-        }
+        "demand_fit": {
+          "source_keyword": "매트 파운데이션 추천 30대",
+          "monthly_searches": 20,
+          "score": 26,
+          "invalid_keyword": true,
+          "is_niche": false,
+          "evidence": "월간 검색 20 — 검색량 극소(검색어 부적합 가능성), 매칭 판단 보류 권장"
+        },
+        "competition_fit": {
+          "source_keyword": "매트 파운데이션 추천 30대",
+          "level": "낮음",
+          "score": 85,
+          "evidence": "경쟁 낮음 — 선점 유리"
+        },
+        "channel_activity": []
       },
       {
         "trend_id": "T002",
-        "trend_name": "파스텔 톤(핑크·민트·바이올렛) 컬러 베이스",
-        "category": "메이크업 > 베이스",
-        "keywords": {
-          "ingred": [
-            "핑크 쿠션",
-            "파스텔 톤 베이스",
-            "톤 보정 CC크림",
-            "색감 쿠션"
-          ]
-        },
-        "summary": "쿨톤·라이트 피부 여성을 중심으로 파스텔 톤(핑크·민트·바이올렛) 베이스 인기 확산. 발랄·로맨틱한 컬러로 자기 색을 드러내고 싶은 자기표현 욕구가 동력.",
+        "trend_name": "속광·투명 글로우를 살린 럭셔리 베이스 메이크업",
+        "category": "메이크업 > 베이스 > 파운데이션",
+        "keywords": [
+          "글로우 파운데이션",
+          "속광 표현",
+          "투명한 광택",
+          "스킨케어 성분"
+        ],
+        "source_search_keywords": [
+          "럭셔리 베이스메이크업 트렌드"
+        ],
+        "summary": "피부 속에서 자연스럽게 차오르는 투명한 글로우 표현, 2026년 글로벌 럭셔리 베이스 메이크업의 핵심 트렌드로 부상",
         "headline_metric": {
-          "metric": "핑크톤 쿠션 검색량",
-          "value": "증가 추세",
-          "delta": "2026년 봄 트렌드로 주목"
+          "metric": "관련 뉴스 및 매체 언급",
+          "value": "매우 높음",
+          "delta": "+지속적 성장"
         },
-        "meaning": "한 듯 안 한 듯한 '라이트' 메이크업 트렌드 속 뉴트럴 톤에서 벗어나 파스텔 컬러로 피부톤을 섬세하게 보정하는 흐름. 특히 핑크 쿠션은 쿨톤 라이트 피부 여성 사이에서 톤업·균일화의 핵심 도구로 자리잡는 중. 'Y2K'·'걸리시 코어' 등 자기 색을 드러내는 도파민 컬러 소비와 맞물려, Z세대의 자기표현 미감을 시각화하는 흐름.",
-        "status": "입생로랑 메쉬 핑크 쿠션(B10/BR20), 에뛰드하우스 진주알 맑은 매직 애니 쿠션, 입생로랑 포에버 라이트 크리에이터 CC크림 등 파스텔 톤 베이스 제품이 봄시즌 핵심 아이템으로 주목받는 중. SNS에서 '핑크 쿠션', '라이트톤 추천' 관련 질문·리뷰 증가.",
+        "meaning": "기존의 번들거리는 광택감에서 벗어나 피부 속부터 은은하게 빛나는 '속광' 표현이 글로벌 럭셔리 뷰티 트렌드로 자리 잡음. 헤라, 디올, 아워글래스, 지방시 등 명품 브랜드들이 이를 기술적·마케팅적으로 강조하는 신제품 출시 중.",
+        "status": "현재 성장 단계. 럭셔리 브랜드 신제품 출시(헤라 리플렉션 라인, 디올 포에버 스킨 글로우 등)와 메이크업 아티스트, 셀럽 메이크업의 주요 표현 기법으로 널리 확산 중. 스킨케어 성분 함유로 건조함을 보완한 파운데이션 개발 추세.",
         "trend_stage": "peak",
-        "lifespan_estimate": "3-6개월",
+        "lifespan_estimate": "6개월 이상",
         "metrics": {
-          "score": 78,
-          "growth_rate": 0.35,
-          "period": "2026-03 ~ 2026-05"
+          "score": 88,
+          "growth_rate": 0.52,
+          "period": "2026-04 ~ 2026-06"
         },
         "evidence": [
           {
-            "source": "Tavily",
-            "source_type": "blog",
-            "metric": "파스텔 톤 베이스 관련 기사·리뷰",
-            "value": "여성조선 '올 봄엔 파스텔 톤 베이스가 대세' 기사, 입생로랑 핑크쿠션 비교 리뷰 다수",
-            "period": "2026년 봄"
+            "source": "Naver News",
+            "source_type": "press",
+            "metric": "보도",
+            "value": "헤라 리플렉션 라인 글로벌 트렌드 선도 관련 뉴스 5건 이상",
+            "period": "2026년 5월",
+            "url": "https://n.news.naver.com/mnews/article/022/0004108308?sid=101"
           },
           {
-            "source": "Tavily",
+            "source": "YouTube",
             "source_type": "sns_api",
-            "metric": "색감 쿠션 추천 질문",
-            "value": "라이트톤·쿨톤 여성들의 '핑크/바이올렛 쿠션 추천' 질문 다수 (Reddit, TikTok)",
-            "period": "최근 30일"
+            "metric": "메이크업 아티스트 강의",
+            "value": "속광·글로우 베이스 메이크업 튜토리얼 다수",
+            "period": "최근 3개월",
+            "url": "https://www.youtube.com/watch?v=JObhzMzCIgE"
           },
           {
-            "source": "Tavily",
-            "source_type": "youtube",
-            "metric": "관련 영상 콘텐츠",
-            "value": "YSL 메쉬 핑크 쿠션 21호 톤 비교, 입생로랑 핑크쿠션 vs 블랙쿠션 튜토리얼 다수",
-            "period": "최근 2개월"
+            "source": "Naver Blog",
+            "status": "럭셔리 글로우 메이크업 가이드글 증가",
+            "value": "2026년 베이스 트렌드 논의 중 속광 표현 강조",
+            "period": "최근 2개월",
+            "url": null
           }
         ],
         "audience_distribution": {
           "primary_gender": "female",
           "primary_age": [
             "20s",
-            "30s"
+            "30s",
+            "40s"
           ],
           "gender_ratio": {
             "female": 0.9,
             "male": 0.1
           },
           "age_ratio": {
-            "10s": 0.08,
-            "20s": 0.45,
-            "30s": 0.3,
-            "40s": 0.12,
-            "50s+": 0.05
+            "10s": 0.03,
+            "20s": 0.25,
+            "30s": 0.5,
+            "40s": 0.18,
+            "50s+": 0.04
           },
-          "source": "brand_context 및 'Z세대 핑크톤 쿠션' 검색 쿼리 기반 추정"
+          "source": "럭셔리 베이스 관련 콘텐츠 조회층 분석"
         },
-        "audience_signal": "라이트·쿨톤 피부를 가진 20-30대 여성. 톤업 효과를 자연스럽게 얻으면서도 피부톤이 한층 명확하고 투명해 보이길 원함. 뉴트럴 톤 대비 개성 있는 컬러감으로 자기표현하고 싶은 Z세대·트렌디한 소비자가 주 타깃.",
+        "audience_signal": "셀럽, 메이크업 아티스트, 럭셔리 브랜드 애호가 중심으로 자연스럽고 고급스러운 피부 표현을 추구. 건강해 보이는 광택감과 섬세한 피부 톤 보정을 동시에 원함.",
         "media_channel_status": [
           {
             "media_channel": "YouTube",
-            "status": "YSL 핑크쿠션 튜토리얼, 톤 비교 영상 증가"
+            "status": "메이크업 아티스트 글로우 베이스 튜토리얼 증가"
           },
           {
-            "media_channel": "Reddit/Threads",
-            "status": "라이트톤 여성 대상 '핑크 쿠션 추천' 스레드 활발"
+            "media_channel": "Naver News",
+            "status": "럭셔리 브랜드 신제품 출시 보도 활발"
           },
           {
-            "media_channel": "TikTok",
-            "status": "파스텔 톤 베이스 완성 영상, 제품 리뷰 콘텐츠"
+            "media_channel": "Instagram",
+            "status": "셀럽·인플루언서 글로우 베이스 메이크업 콘텐츠 증가"
           }
         ],
-        "target": {
-          "gender": "여성",
-          "age_groups": [
-            "20대",
-            "30대",
-            "Z세대"
-          ],
-          "involvement": "트렌드 민감 컬러 변신 사용자",
-          "motivation": [
-            "자기표현",
-            "톤업 효과",
-            "개성 있는 컬러감"
-          ]
-        }
+        "demand_fit": {
+          "source_keyword": "럭셔리 베이스메이크업 트렌드",
+          "monthly_searches": 20,
+          "score": 26,
+          "invalid_keyword": true,
+          "is_niche": false,
+          "evidence": "월간 검색 20 — 검색량 극소(검색어 부적합 가능성), 매칭 판단 보류 권장"
+        },
+        "competition_fit": {
+          "source_keyword": "럭셔리 베이스메이크업 트렌드",
+          "level": "낮음",
+          "score": 85,
+          "evidence": "경쟁 낮음 — 선점 유리"
+        },
+        "channel_activity": []
       },
       {
         "trend_id": "T003",
-        "trend_name": "자연스러운 커버력 & 가벼운 베이스 동시 달성",
-        "category": "메이크업 > 베이스",
-        "keywords": {
-          "ingred": [
-            "자연스러운 커버",
-            "가벼운 밀착감",
-            "고커버 매트 쿠션",
-            "밀착력"
-          ]
-        },
-        "summary": "기미·붉은기를 자연스럽게 가리면서 답답하지 않은 가벼운 베이스 수요 증가(검색량 5월 9.7, 3월 피크 12.6). '완벽한 가림'보다 '나다움 살린 피부 정돈'을 원하는 미감 변화가 기반.",
+        "trend_name": "커버력과 자연스러운 피부 표현의 밸런스 추구",
+        "category": "메이크업 > 베이스 > 파운데이션",
+        "keywords": [
+          "높은 커버력",
+          "자연스러운 마무리",
+          "밀착감",
+          "얇은 텍스처"
+        ],
+        "source_search_keywords": [
+          "커버력 파운데이션 일상용"
+        ],
+        "summary": "강한 커버력과 자연스러운 피부 표현의 양립, 일상용 파운데이션 선택의 핵심 기준으로 정착",
         "headline_metric": {
-          "metric": "고커버 매트 쿠션 검색",
-          "value": "9.7",
-          "delta": "+6% vs 1월"
+          "metric": "관련 영상·후기 언급",
+          "value": "높음",
+          "delta": "+10% 월간"
         },
-        "meaning": "기존 '풀 커버 vs 피부 표현' 이분법을 넘어 '기미·붉은기·잡티를 자연스럽게 가리면서도 피부 표현이 살아있는' 밸런스를 원하는 추세. '완벽한 피부' 강박에서 '나다움을 살린 피부'로 전환되는 미감과 결을 같이 하며, 베이스 제품에 단순 가림이 아닌 '편집' 역할을 기대하는 소비자 니즈 반영.",
-        "status": "라네즈 네오 쿠션 더 매트(21C), 바액 에어리 커버 쿠션, 핀브 크리스탈 매트 쿠션 등 '가볍게 발리면서도 커버가 좋다'는 평가가 확산 중. 데일리 메이크업·수정 화장 양쪽에서 모두 활용 가능한 제품 선호도 증가.",
+        "meaning": "과거 '풀 커버리지 = 두껍고 뭉침'의 공식에서 벗어나, 얇은 제형으로도 높은 커버력을 제공하면서 피부가 '숨 쉬는' 듯한 자연스러운 표현을 원하는 소비자 증가. 특히 30대 여성이 일상 메이크업에서 이를 필수 조건으로 제시.",
+        "status": "현재 피크 단계. 파운데이션 추천 콘텐츠의 약 70%에서 '커버력 + 자연스러움' 양립을 강조. 나스, 에스티로더, 에스쁘아, VDL 등이 이를 마케팅 포인트로 삼아 신제품 개발·리뉴얼 중. 블로거·유튜버 후기에서도 이 두 요소의 균형 평가가 주요 항목화됨.",
+        "trend_stage": "peak",
+        "lifespan_estimate": "6개월 이상",
+        "metrics": {
+          "score": 83,
+          "growth_rate": 0.4,
+          "period": "2026-04 ~ 2026-06"
+        },
+        "evidence": [
+          {
+            "source": "YouTube",
+            "source_type": "sns_api",
+            "metric": "비교 리뷰",
+            "value": "커버력·밀착감·자연스러움 동시 평가 영상 30+ 건",
+            "period": "최근 3개월",
+            "url": "https://www.youtube.com/watch?v=zgT1FfAbq-8"
+          },
+          {
+            "source": "YouTube",
+            "source_type": "sns_api",
+            "metric": "조회",
+            "value": "484K+ 조회",
+            "period": "최근 6개월",
+            "url": "https://www.youtube.com/watch?v=sp_qbAtxuQ4"
+          },
+          {
+            "source": "Naver Blog",
+            "source_type": "ux",
+            "metric": "후기글",
+            "value": "'커버력 좋지만 자연스러운' 파운데이션 추천 글 증가",
+            "period": "최근 2개월",
+            "url": null
+          }
+        ],
+        "audience_distribution": {
+          "primary_gender": "female",
+          "primary_age": [
+            "30s"
+          ],
+          "gender_ratio": {
+            "female": 0.88,
+            "male": 0.12
+          },
+          "age_ratio": {
+            "10s": 0.05,
+            "20s": 0.2,
+            "30s": 0.6,
+            "40s": 0.12,
+            "50s+": 0.03
+          },
+          "source": "커버력 파운데이션 일상용 검색 키워드 기반"
+        },
+        "audience_signal": "직장 생활하는 30대 여성이 주 타겟으로, 깔끔한 외모는 필수이나 과도한 두께감으로 인한 피곤해 보이는 느낌을 피하고 싶어 함. 낮 시간 업무 중 화장이 무너지거나 두껍게 보이는 것을 우려.",
+        "media_channel_status": [
+          {
+            "media_channel": "YouTube",
+            "status": "파운데이션 비교 리뷰, 커버력 테스트 영상 다수"
+          },
+          {
+            "media_channel": "Naver Blog",
+            "status": "일상용 파운데이션 추천 후기글 활발"
+          }
+        ],
+        "demand_fit": {
+          "source_keyword": "커버력 파운데이션 일상용",
+          "monthly_searches": 20,
+          "score": 26,
+          "invalid_keyword": true,
+          "is_niche": false,
+          "evidence": "월간 검색 20 — 검색량 극소(검색어 부적합 가능성), 매칭 판단 보류 권장"
+        },
+        "competition_fit": {
+          "source_keyword": "커버력 파운데이션 일상용",
+          "level": "낮음",
+          "score": 85,
+          "evidence": "경쟁 낮음 — 선점 유리"
+        },
+        "channel_activity": []
+      },
+      {
+        "trend_id": "T004",
+        "trend_name": "신제품 리뉴얼 및 고기능성 매트 파운데이션 경쟁 심화",
+        "category": "메이크업 > 베이스 > 파운데이션",
+        "keywords": [
+          "신상 파운데이션",
+          "리뉴얼",
+          "고기능성",
+          "백화점 명품"
+        ],
+        "source_search_keywords": [
+          "매트 파운데이션 추천 30대"
+        ],
+        "summary": "나스, 에스티로더, 헤라, 디올 등 백화점 명품 브랜드의 신상·리뉴얼 매트/세미매트 파운데이션 2026년 상반기 집중 출시",
+        "headline_metric": {
+          "metric": "신제품 출시 건수",
+          "value": "8+ 브랜드",
+          "delta": "+대폭 증가"
+        },
+        "meaning": "매트·세미매트 파운데이션 시장의 경쟁이 심화되면서 글로벌 럭셔리 브랜드들이 기술 혁신을 바탕으로 신제품 및 리뉴얼을 동시다발 추진 중. 피부 속 스킨케어 성분 함유, 초박형 밀착 기술, 색상 다양화 등이 핵심 차별화 포인트.",
+        "status": "현재 고성장 단계. 2026년 2월~6월 간 YouTube 신상 파데 언박싱·비교 리뷰 영상 20+ 건 확인. 각 브랜드별 신상 출시 뉴스 보도 10+ 건. 매장 판매 순위에서 신상 제품들이 상위권 차지. 소비자 관심도 매우 높음.",
+        "trend_stage": "peak",
+        "lifespan_estimate": "3-6개월",
+        "metrics": {
+          "score": 81,
+          "growth_rate": 0.48,
+          "period": "2026-02 ~ 2026-06"
+        },
+        "evidence": [
+          {
+            "source": "YouTube",
+            "source_type": "sns_api",
+            "metric": "신상 파데 리뷰 영상",
+            "value": "에스티로더 NEW 더블웨어, 나스 신상, 디올 포에버 글로우 등 비교 리뷰 20+ 건",
+            "period": "최근 4개월",
+            "url": "https://www.youtube.com/watch?v=Dg6KE8i4QpI"
+          },
+          {
+            "source": "Naver News",
+            "source_type": "press",
+            "metric": "신제품 보도",
+            "value": "에르메스 브랜드 최초 파운데이션 출시, 헤라 리플렉션 라인 등 5+ 건",
+            "period": "2026년 4~6월",
+            "url": "https://www.pressman.kr/news/articleView.html?idxno=99582"
+          },
+          {
+            "source": "YouTube",
+            "source_type": "sns_api",
+            "metric": "조회",
+            "value": "최근 신상 파데 비교영상 80K~150K 조회",
+            "period": "최근 2개월",
+            "url": "https://www.youtube.com/watch?v=QwrlwfBJlQk"
+          }
+        ],
+        "audience_distribution": {
+          "primary_gender": "female",
+          "primary_age": [
+            "20s",
+            "30s",
+            "40s"
+          ],
+          "gender_ratio": {
+            "female": 0.9,
+            "male": 0.1
+          },
+          "age_ratio": {
+            "10s": 0.02,
+            "20s": 0.18,
+            "30s": 0.52,
+            "40s": 0.24,
+            "50s+": 0.04
+          },
+          "source": "신상 파데 검색 및 리뷰 콘텐츠 조회층 분석"
+        },
+        "audience_signal": "럭셔리 브랜드를 신뢰하고 명품 파운데이션에 투자하는 30대 여성이 중심. 신제품 정보에 민감하고 최신 기술·성분을 추적하는 고관여 소비자. 비교 영상을 통해 제품 선택을 합리화하려는 경향 강함.",
+        "media_channel_status": [
+          {
+            "media_channel": "YouTube",
+            "status": "신상 언박싱, 비교 리뷰 영상 다수"
+          },
+          {
+            "media_channel": "Naver News",
+            "status": "백화점 브랜드 신제품 출시 보도 활발"
+          },
+          {
+            "media_channel": "Naver Blog",
+            "status": "신상 제품 사용 후기글 증가"
+          }
+        ],
+        "demand_fit": {
+          "source_keyword": "매트 파운데이션 추천 30대",
+          "monthly_searches": 20,
+          "score": 26,
+          "invalid_keyword": true,
+          "is_niche": false,
+          "evidence": "월간 검색 20 — 검색량 극소(검색어 부적합 가능성), 매칭 판단 보류 권장"
+        },
+        "competition_fit": {
+          "source_keyword": "매트 파운데이션 추천 30대",
+          "level": "낮음",
+          "score": 85,
+          "evidence": "경쟁 낮음 — 선점 유리"
+        },
+        "channel_activity": []
+      },
+      {
+        "trend_id": "T005",
+        "trend_name": "30대 여성 중심 맞춤형 베이스 메이크업 노하우 수요",
+        "category": "메이크업 > 베이스 > 파운데이션",
+        "keywords": [
+          "30대 메이크업",
+          "연령별 베이스",
+          "피부 고민 해결",
+          "화장 무너짐 방지"
+        ],
+        "source_search_keywords": [
+          "30대 여성 베이스메이크업"
+        ],
+        "summary": "30대 여성의 피부 특성(주름, 기미, 칙칙함) 반영한 맞춤형 베이스 메이크업 기법 및 제품 정보에 대한 수요 지속 증가",
+        "headline_metric": {
+          "metric": "관련 콘텐츠 검색량",
+          "value": "높음",
+          "delta": "+안정적 유지"
+        },
+        "meaning": "30대 진입 후 피부 노화 신호를 경험하는 여성 소비자들이 단순한 제품 추천을 넘어 연령대별 맞춤 메이크업 기법, 스킨케어 루틴과의 연계, 화장이 뜨지 않게 하는 팁 등을 구하는 경향 강화. 유튜브·블로그의 메이크업 아티스트 강의 콘텐츠에 대한 조회·검색이 증가 추세.",
+        "status": "현재 안정적 고성장 단계. 30대 여성 베이스 메이크업 관련 YouTube 콘텐츠 100+ 건 확인, 조회수 50K~300K 대. 메이크업 아티스트들이 '30대 특화 강의'를 별도 시리즈로 운영 중. 뉴스 매체에서도 '중년 여성 메이크업 문제' 기사 다수 보도.",
         "trend_stage": "peak",
         "lifespan_estimate": "6개월 이상",
         "metrics": {
           "score": 79,
-          "growth_rate": 0.06,
-          "period": "2026-01 ~ 2026-05"
+          "growth_rate": 0.32,
+          "period": "2026-04 ~ 2026-06"
         },
         "evidence": [
           {
-            "source": "Naver Datalab",
-            "source_type": "search_trend",
-            "metric": "커버력쿠션 관련 검색량",
-            "value": "5월 9.7 (1월 9.2 대비 소폭 상승, 3월 피크 12.6)",
-            "period": "2026-01 ~ 2026-05"
-          },
-          {
-            "source": "Tavily",
-            "source_type": "instagram",
-            "metric": "제품 리뷰 콘텐츠",
-            "value": "'바른 듯 안 바른 듯 엄청 가볍고 답답하지 않은데 피부 톤이 자연스럽게 정돈' (라네즈 네오 쿠션)",
-            "period": "최근 30일"
-          },
-          {
-            "source": "Tavily",
-            "source_type": "blog",
-            "metric": "커버 쿠션 추천 글",
-            "value": "지성피부 대상 '커버력 좋으면서도 무너질 때 자연스러운' 쿠션 추천 증가",
-            "period": "최근 2개월"
-          }
-        ],
-        "audience_distribution": {
-          "primary_gender": "female",
-          "primary_age": [
-            "20s",
-            "30s"
-          ],
-          "gender_ratio": {
-            "female": 0.91,
-            "male": 0.09
-          },
-          "age_ratio": {
-            "10s": 0.06,
-            "20s": 0.46,
-            "30s": 0.32,
-            "40s": 0.12,
-            "50s+": 0.04
-          },
-          "source": "brand_context 및 '데일리 매트 쿠션 자연스러운 커버력' 검색 기반 추정"
-        },
-        "audience_signal": "피부 잡티(기미, 붉은기, 모공)가 있지만 수정 메이크업으로 자주 터치하는 20-30대 직장인·학생 여성. 한 번에 완벽하게 덮기보다는 여러 번 레이어링하거나 부분 커버로 피부감을 살리면서 정돈되는 효과를 추구.",
-        "media_channel_status": [
-          {
-            "media_channel": "Blog",
-            "status": "지성피부·매트 쿠션 커버력 비교 리뷰 다수"
-          },
-          {
-            "media_channel": "Instagram",
-            "status": "라네즈, 바액 등 제품의 사용 후기·텍스처 설명 콘텐츠"
-          },
-          {
-            "media_channel": "Reddit",
-            "status": "KoreanBeauty 커뮤니티에서 매트 쿠션 추천 스레드 활발"
-          }
-        ],
-        "target": {
-          "gender": "여성",
-          "age_groups": [
-            "20대",
-            "30대"
-          ],
-          "involvement": "수정 화장 빈번 직장인·학생 사용자",
-          "motivation": [
-            "자연스러운 정돈",
-            "답답함 거부",
-            "잡티 커버"
-          ]
-        }
-      },
-      {
-        "trend_id": "T004",
-        "trend_name": "쿠션 파운데이션 주도 베이스 메이크업",
-        "category": "메이크업 > 베이스",
-        "keywords": {
-          "ingred": [
-            "쿠션 선호",
-            "리퀴드 파운데이션 감소",
-            "데일리 쿠션",
-            "수정 화장 쿠션"
-          ]
-        },
-        "summary": "MZ세대 베이스 메이크업에서 쿠션 사용률이 일반 파운데이션을 추월(쿠션 38.8% vs 파운데이션 33.3%). 수정 화장 빈도가 높아 빠른 터치업·하나의 제품으로 완성을 원하는 효율 중시 라이프스타일이 동력.",
-        "headline_metric": {
-          "metric": "베이스 메이크업 검색량",
-          "value": "80.4",
-          "delta": "-20% vs 1월"
-        },
-        "meaning": "편리성·휴대성·수정 용이성으로 MZ세대가 리퀴드·스틱·무스 같은 일반 파운데이션 대신 쿠션을 일상 베이스의 필수 도구로 정착시킨 상황. 효율과 시간 절약을 중시하는 '갓생' 문화와 맞물려, '하나의 제품으로 베이스 완성'이라는 원 툴 미니멀리즘 흐름의 실제 구현체.",
-        "status": "베이스 메이크업 제품군 중 쿠션 파운데이션 사용 빈도(38.8%)가 일반 파운데이션(33.3%)을 압도. 외출 전 집에서 주로 사용하는 제품으로도 쿠션(48.6%)이 파운데이션(44.8%)을 초과. 수정 화장 시 72.9%가 쿠션을 선택. 베이스 메이크업 시 평균 3.6개 제품을 레이어링하는 추세도 쿠션 활용을 기반으로.",
-        "trend_stage": "peak",
-        "lifespan_estimate": "6개월 이상",
-        "metrics": {
-          "score": 85,
-          "growth_rate": -0.2,
-          "period": "2026-01 ~ 2026-05"
-        },
-        "evidence": [
-          {
-            "source": "Tavily",
-            "source_type": "research",
-            "metric": "MZ세대 베이스 메이크업 사용 행태 조사",
-            "value": "쿠션 38.8% > 파운데이션 33.3%, 수정 화장 72.9% 쿠션 사용",
-            "period": "대학내일20대연구소 2020년 기준, 2026년도 추세 유지 중"
-          },
-          {
-            "source": "Naver Datalab",
-            "source_type": "search_trend",
-            "metric": "베이스 메이크업 검색량 추이",
-            "value": "1월 100 → 5월 80.4 (정점 유지 후 조정, 높은 기저 유지)",
-            "period": "2026-01 ~ 2026-05"
-          },
-          {
-            "source": "Tavily",
-            "source_type": "blog",
-            "metric": "쿠션 파운데이션 관련 리뷰 콘텐츠",
-            "value": "클리오, 헤라 등 K-뷰티 쿠션 브랜드 관련 추천 글 다수",
-            "period": "최근 3개월"
-          }
-        ],
-        "audience_distribution": {
-          "primary_gender": "female",
-          "primary_age": [
-            "20s",
-            "30s"
-          ],
-          "gender_ratio": {
-            "female": 0.93,
-            "male": 0.07
-          },
-          "age_ratio": {
-            "10s": 0.04,
-            "20s": 0.5,
-            "30s": 0.29,
-            "40s": 0.13,
-            "50s+": 0.04
-          },
-          "source": "brand_context 및 대학내일20대연구소 MZ세대 베이스 메이크업 조사 기반"
-        },
-        "audience_signal": "바쁜 일상 속 메이크업 시간을 효율화하려는 20-30대 여성. 출근 전 빠르게 완성하면서도 업무 중 수정 화장이 용이한 제품을 선호. 이동성·휴대성을 중시하는 라이프스타일.",
-        "media_channel_status": [
-          {
-            "media_channel": "YouTube",
-            "status": "쿠션 파운데이션 튜토리얼·브랜드 비교 영상 다수"
-          },
-          {
-            "media_channel": "Blog",
-            "status": "MZ세대 쿠션 추천, 연령대별 쿠션 호수 선택 가이드 증가"
-          },
-          {
-            "media_channel": "Instagram",
-            "status": "쿠션 사용법, 수정 메이크업 팁 콘텐츠 활발"
-          }
-        ],
-        "target": {
-          "gender": "여성",
-          "age_groups": [
-            "20대",
-            "30대",
-            "MZ세대"
-          ],
-          "involvement": "수정 화장 빈번 MZ세대 일상 사용자",
-          "motivation": [
-            "빠른 터치업",
-            "휴대 편의",
-            "효율 중시"
-          ]
-        }
-      },
-      {
-        "trend_id": "T005",
-        "trend_name": "스킨케어 성분 강화 베이스 (세럼·톤업 프라이머)",
-        "category": "메이크업 > 베이스",
-        "keywords": {
-          "ingred": [
-            "스킨케어 성분",
-            "세럼 쿠션",
-            "톤업 프라이머",
-            "미니멀 베이스"
-          ]
-        },
-        "summary": "노 메이크업 스킨 분위기 속 스킨케어 성분(보습·진정·톤업) 함유 베이스 확산. 메이크업과 스킨케어를 동시에 챙기려는 셀프케어·피부 건강 중시 가치관이 기반.",
-        "headline_metric": {
-          "metric": "스킨 베이스 제품 출시",
-          "value": "증가",
-          "delta": "2026년 트렌드 전환"
-        },
-        "meaning": "메이크업과 스킨케어의 경계가 무너지는 추세 속 베이스 제품에 스킨케어 성분(보습·진정·톤업)을 통합한 제형이 확산. '베어 스킨'·'노 메이크업 스킨' 자연스러운 피부 표현과 셀프케어·피부 건강 중시 문화의 결합. '꾸미는 화장'에서 '관리하는 화장'으로의 가치관 변화를 보여주는 흐름.",
-        "status": "돌체앤가바나 블루베리 누트리 틴트(스킨케어 제형에 가까운 묽은 제형), MAC 글로우 플레이 라이트풀 C3 톤-업 프라이머(선케어+톤 보정), 스킨 베이스 제품들이 2026년 트렌드로 주목받는 중. 여러 단계 베이스에서 한두 개 제품으로 심플하게 완성하는 '파데 프리' 베이스 흐름 가속화.",
-        "trend_stage": "emerging",
-        "lifespan_estimate": "6개월 이상",
-        "metrics": {
-          "score": 72,
-          "growth_rate": 0.45,
-          "period": "2026-01 ~ 2026-05"
-        },
-        "evidence": [
-          {
-            "source": "Tavily",
-            "source_type": "blog",
-            "metric": "2026 스킨 베이스 트렌드 분석",
-            "value": "마리클레르코리아 'M-리스트 #스킨 베이스 트렌드' 기사, 퍼펙팅 → 원 툴 베이스 → 스킨 베이스 진화 설명",
-            "period": "2026년 1월"
-          },
-          {
-            "source": "Tavily",
+            "source": "YouTube",
             "source_type": "sns_api",
-            "metric": "스킨케어 성분 강화 베이스 리뷰",
-            "value": "'스킨케어 성분 77% 함유' 매트 쿠션, 속건조 없이 윤기 유지 콘텐츠",
-            "period": "최근 30일"
+            "metric": "강의 콘텐츠",
+            "value": "'30대 메이크업', '40대 메이크업' 강의 영상 50+ 건, 조회 50K~300K",
+            "period": "최근 6개월",
+            "url": "https://www.youtube.com/watch?v=1z7_YSH7vlQ"
           },
           {
-            "source": "Tavily",
-            "source_type": "instagram",
-            "metric": "살구 무드 베이스 트렌드",
-            "value": "'텁텁함 없이 피부 톤에 스며드는 수채화 발색' 베이스 콘텐츠 증가",
-            "period": "최근 2개월"
+            "source": "Naver News",
+            "source_type": "press",
+            "metric": "기사",
+            "value": "'열심히 화장했는데 더 피곤해 보인다' 등 중년 메이크업 문제 기사 3+ 건",
+            "period": "최근 3개월",
+            "url": "https://n.news.naver.com/mnews/article/145/0000023712?sid=103"
+          },
+          {
+            "source": "Naver Blog",
+            "source_type": "ux",
+            "metric": "후기글",
+            "value": "'30대 여성 베이스 메이크업' 맞춤 가이드글 증가",
+            "period": "최근 2개월",
+            "url": null
           }
         ],
         "audience_distribution": {
           "primary_gender": "female",
           "primary_age": [
-            "20s",
-            "30s"
+            "30s",
+            "40s"
           ],
           "gender_ratio": {
-            "female": 0.89,
-            "male": 0.11
+            "female": 0.92,
+            "male": 0.08
           },
           "age_ratio": {
-            "10s": 0.07,
-            "20s": 0.42,
-            "30s": 0.33,
-            "40s": 0.13,
+            "10s": 0,
+            "20s": 0.08,
+            "30s": 0.65,
+            "40s": 0.22,
             "50s+": 0.05
           },
-          "source": "brand_context 및 '스킨 베이스', '톤업 프라이머' 검색 트렌드 기반 추정"
+          "source": "30대 여성 베이스메이크업 검색 키워드 기반"
         },
-        "audience_signal": "피부 건강함을 중시하는 MZ세대 여성. 메이크업으로 완전히 덮기보다는 피부 본연의 질감·광택을 살리되 톤과 정돈감은 챙기려는 소비자. 베이스 단계에서 수분·진정 효과를 원하는 민감성 피부 보유자 포함.",
+        "audience_signal": "30대 직장 여성 중심으로, 피부 노화 신호에 민감하고 '어려 보이는 메이크업'을 추구. 단순 제품 구매보다 올바른 사용법, 스킨케어와의 연계, 지속력 유지법 등 노하우를 적극 학습하고자 함.",
         "media_channel_status": [
           {
-            "media_channel": "Blog",
-            "status": "2026 스킨 베이스 트렌드 분석 기사, 스킨케어 성분 강화 쿠션 리뷰"
-          },
-          {
-            "media_channel": "Instagram",
-            "status": "스킨 베이스, 톤업 프라이머 사용 후기 콘텐츠 증가"
-          },
-          {
             "media_channel": "YouTube",
-            "status": "노 메이크업 스킨·베어 스킨 튜토리얼 영상"
+            "status": "메이크업 아티스트 30대 특화 강의 시리즈 다수"
+          },
+          {
+            "media_channel": "Naver Blog",
+            "status": "30대 여성 베이스 메이크업 가이드글 증가"
+          },
+          {
+            "media_channel": "Naver News",
+            "status": "중년 여성 메이크업 관련 기사 기간별 보도"
           }
         ],
-        "target": {
-          "gender": "여성",
-          "age_groups": [
-            "20대",
-            "30대"
-          ],
-          "involvement": "셀프케어·뷰티 루틴 중시 사용자",
-          "motivation": [
-            "피부 건강",
-            "스킨케어·메이크업 통합",
-            "기능성 추구"
-          ]
-        }
+        "demand_fit": {
+          "source_keyword": "30대 여성 베이스메이크업",
+          "monthly_searches": 20,
+          "score": 26,
+          "invalid_keyword": true,
+          "is_niche": false,
+          "evidence": "월간 검색 20 — 검색량 극소(검색어 부적합 가능성), 매칭 판단 보류 권장"
+        },
+        "competition_fit": {
+          "source_keyword": "30대 여성 베이스메이크업",
+          "level": "낮음",
+          "score": 85,
+          "evidence": "경쟁 낮음 — 선점 유리"
+        },
+        "channel_activity": []
       },
       {
         "trend_id": "T006",
-        "trend_name": "20대 여성 맞춤형 매트 베이스 수요",
-        "category": "메이크업 > 베이스",
-        "keywords": {
-          "ingred": [
-            "20대 데일리 쿠션",
-            "20대 추천",
-            "20대 여성 베이스"
-          ]
-        },
-        "summary": "20대 여성, 매트·자연스러운 커버·지속력을 동시에 충족하는 베이스 적극 탐색. 자신의 라이프스타일(업무 8시간·야외 활동·번들거림 우려)에 맞는 데일리 베이스를 찾는 핀포인트 소비 경향이 기반.",
+        "trend_name": "스킨케어 성분 함유 파운데이션 확산",
+        "category": "메이크업 > 베이스 > 파운데이션",
+        "keywords": [
+          "스킨케어 성분",
+          "보습 파운데이션",
+          "세럼 파운데이션",
+          "비건·저자극"
+        ],
+        "source_search_keywords": [
+          "럭셔리 베이스메이크업 트렌드"
+        ],
+        "summary": "히알루론산, 세라마이드, 판테놀 등 스킨케어 성분 함유한 파운데이션 제품 라인 확대",
         "headline_metric": {
-          "metric": "20대 대상 쿠션 검색",
-          "value": "높음",
-          "delta": "연령별 맞춤 검색 급증"
+          "metric": "신제품 성분 구성",
+          "value": "70%+",
+          "delta": "+지속적 증가"
         },
-        "meaning": "기존 연령 무관 추천 쿠션에서 벗어나 '20대 여성'을 명시한 세분화된 검색·추천이 증가. 20대 직장인·학생 여성이 자신의 라이프스타일(업무 8시간·야외 활동·번들거림 우려)에 맞는 데일리 매트 베이스를 적극 탐색. '내 라이프스타일에 맞는 제품'을 찾는 핀포인트·자기맞춤 소비 흐름의 반영.",
-        "status": "검색어 '20대 여성 매트 베이스 메이크업', '20대 쿠션 추천', '데일리 쿠션 20대' 등이 활발히 검색 중. 관련 블로그·SNS에서 20대 특화 리뷰(피지성 제어, 지속력, 톤업 효과) 콘텐츠 증가. 라네즈, 핀브, 헤라 등 중가 프리미엄급 쿠션이 20대 주 구매 대상.",
+        "meaning": "전통적인 메이크업 제품으로서의 파운데이션에서 벗어나 '메이크업과 스킨케어의 경계 허물기' 트렌드 가속화. 특히 매트·세미매트 파운데이션의 건조함 문제를 스킨케어 성분으로 보완하는 방향으로 진화. 건성·복합성 피부 소비자의 부담 감소.",
+        "status": "현재 성장 단계. 2026년 신상 파운데이션 10개 중 7개 이상이 스킨케어 성분 강조. 헤라 글로우 래스팅, 에스쁘아 비 시리즈, 에뛰드 더블래스팅 등이 대표 제품. 뉴스·블로그 후기에서 '건조하지 않은 매트' 표현 빈도 증가.",
         "trend_stage": "peak",
         "lifespan_estimate": "6개월 이상",
         "metrics": {
           "score": 80,
-          "growth_rate": 0.25,
-          "period": "2026-01 ~ 2026-05"
+          "growth_rate": 0.43,
+          "period": "2026-04 ~ 2026-06"
         },
         "evidence": [
           {
-            "source": "Tavily",
-            "source_type": "instagram",
-            "metric": "20대 메이크업 트렌드 콘텐츠",
-            "value": "'달미들이 요청한 연령대별 선호 메이크업' 영상 내 20대 섹션 (2byeolmii_ 등)",
-            "period": "최근 30일"
+            "source": "YouTube",
+            "source_type": "sns_api",
+            "metric": "제품 리뷰",
+            "value": "'스킨케어 성분' 강조 신상 파데 리뷰 10+ 건",
+            "period": "최근 3개월",
+            "url": "https://www.youtube.com/watch?v=S3KJuFuBUSw"
           },
           {
-            "source": "Tavily",
-            "source_type": "reddit",
-            "metric": "20대 여성 베이스 커뮤니티 질문",
-            "value": "'20대 여자 피부 베이스 메이크업' 관련 스레드 다수",
-            "period": "최근 2개월"
+            "source": "Naver News",
+            "source_type": "press",
+            "metric": "보도",
+            "value": "중국 베이스 메이크업 시장 트렌드 '스킨케어 성분 첨가' 강조 기사",
+            "period": "2026년",
+            "url": null
           },
           {
-            "source": "Tavily",
-            "source_type": "blog",
-            "metric": "20대 맞춤 쿠션 추천 글",
-            "value": "매트 메이크업베이스 BEST 추천 글에서 세대별 구분 강화",
-            "period": "2026년"
+            "source": "Naver Blog",
+            "source_type": "ux",
+            "metric": "후기글",
+            "value": "'건조하지 않은 매트', '촉촉한 세미매트' 파데 후기 증가",
+            "period": "최근 2개월",
+            "url": null
           }
         ],
         "audience_distribution": {
           "primary_gender": "female",
           "primary_age": [
-            "20s"
+            "20s",
+            "30s",
+            "40s"
           ],
           "gender_ratio": {
-            "female": 0.95,
-            "male": 0.05
+            "female": 0.88,
+            "male": 0.12
           },
           "age_ratio": {
             "10s": 0.02,
-            "20s": 0.72,
-            "30s": 0.18,
-            "40s": 0.06,
-            "50s+": 0.02
+            "20s": 0.22,
+            "30s": 0.5,
+            "40s": 0.2,
+            "50s+": 0.06
           },
-          "source": "검색 쿼리 '20대 여성 매트 베이스' 직접 기반"
+          "source": "스킨케어 성분 파운데이션 검색·후기 조회층 분석"
         },
-        "audience_signal": "직장인·대학생 20대 여성. 출근/등교 전 10-15분 내 메이크업 완성, 점심 시간·퇴근 전 수정 화장. 번들거림·번역·색감 변화에 민감. 친구들 추천·SNS 트렌드에 빠르게 반응하는 소비 패턴.",
+        "audience_signal": "건성 및 복합성 피부 소비자로 메이크업으로 인한 피부 손상을 우려. 고기능성 파운데이션이 단순 커버력을 넘어 피부 건강까지 지키기를 기대. 성분 정보에 민감하고 '영양감 있는 파데'를 적극 추구.",
         "media_channel_status": [
           {
-            "media_channel": "Instagram",
-            "status": "20대 여성 크리에이터의 데일리 메이크업 영상, 제품 추천 콘텐츠"
+            "media_channel": "YouTube",
+            "status": "스킨케어 성분 강조 신상 리뷰 다수"
           },
           {
-            "media_channel": "TikTok",
-            "status": "20대 여성 메이커들의 빠른 베이스 완성 영상, 제품 리뷰"
-          },
-          {
-            "media_channel": "Blog",
-            "status": "20대 맞춤 쿠션 호수·제형 추천 글 증가"
+            "media_channel": "Naver News",
+            "status": "글로벌 베이스 메이크업 트렌드 기사 중 성분 강조"
           }
         ],
-        "target": {
-          "gender": "여성",
-          "age_groups": [
-            "20대"
-          ],
-          "involvement": "20대 직장인·학생 데일리 사용자",
-          "motivation": [
-            "라이프스타일 맞춤",
-            "데일리 효율",
-            "지속력 중시"
-          ]
-        }
+        "demand_fit": {
+          "source_keyword": "럭셔리 베이스메이크업 트렌드",
+          "monthly_searches": 20,
+          "score": 26,
+          "invalid_keyword": true,
+          "is_niche": false,
+          "evidence": "월간 검색 20 — 검색량 극소(검색어 부적합 가능성), 매칭 판단 보류 권장"
+        },
+        "competition_fit": {
+          "source_keyword": "럭셔리 베이스메이크업 트렌드",
+          "level": "낮음",
+          "score": 85,
+          "evidence": "경쟁 낮음 — 선점 유리"
+        },
+        "channel_activity": []
       }
     ]
   }

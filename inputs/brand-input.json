@@ -3,8 +3,7 @@
   "current_channels": [
     "인스타그램",
     "유튜브",
-    "자사몰",
-    "네이버 스토어"
+    "틱톡"
   ],
   "brand_channel_url": "",
   "product_name": "실키 파운데이션",
@@ -26,7 +25,7 @@
     ]
   },
   "mood_image_url": "",
-  "campaign_kpi": "시즌 프로모션",
+  "campaign_kpi": "신제품 런칭",
   "campaign_period": "한달",
   "campaign_budget": "500~1000만원",
   "media_channels": [

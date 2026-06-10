@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TrendFit | 트렌드, 감으로 찍지 마세요</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <!-- 팀 공용 매칭 리포트 컴포넌트 (최신 리포트 수정사항이 여기에 반영됨) -->
     <link rel="stylesheet" href="/shared/components/match-report.css">
     <script src="/shared/components/match-report.js"></script>
@@ -495,6 +494,34 @@
         .rp-ch { display:flex; justify-content:space-between; gap:8px; font-size:0.82rem; color:var(--text-secondary); padding:5px 0; border-bottom:1px solid rgba(126,107,126,0.08); }
         .rp-empty { font-size:0.85rem; color:var(--text-secondary); opacity:0.6; }
         @media (max-width: 900px) { .rp-cards { grid-template-columns:1fr; } .rp-compare-name { width:120px; } }
+
+        /* ── PDF 인쇄: 리포트(page-step4)만 전체 출력 ── */
+        @media print {
+            /* 모든 페이지 숨김 → 리포트만 표시 */
+            .page { display: none !important; }
+            #page-step4 {
+                display: block !important;
+                position: static !important;
+                height: auto !important;
+                overflow: visible !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                transform: none !important;
+                padding: 0 !important;
+            }
+            /* 인쇄에 불필요한 요소 숨김 */
+            #page-step4 .stepper,
+            #page-step4 .step-header,
+            #page-step4 .submit-row,
+            .toast { display: none !important; }
+            #page-step4 .form-card { box-shadow: none !important; border: none !important; max-width: none !important; width: 100% !important; padding: 0 !important; }
+            body { background: #fff !important; }
+            /* 카드가 페이지 경계에서 잘리지 않게 */
+            .mr-trend-card, .mr-summary-card, .mr-data-card, .rp-card { break-inside: avoid; page-break-inside: avoid; }
+            /* 배경색·뱃지색 유지하며 인쇄 */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            @page { margin: 12mm; }
+        }
     </style>
 </head>
 <body>
@@ -1501,43 +1528,16 @@
         }
     }
 
-    /* 리포트(step4) 내용을 PDF로 저장 */
+    /* 리포트(step4)를 브라우저 기본 인쇄로 PDF 저장
+       → @media print CSS가 리포트만 전체 출력. 사용자는 인쇄 창에서 "PDF로 저장" 선택. */
     function downloadPDF() {
-        if (typeof html2pdf === 'undefined') {
-            showToast('PDF 라이브러리를 불러오는 중이에요, 잠시 후 다시 시도해 주세요');
+        const body = document.getElementById('report_body');
+        if (!body || !body.innerHTML.trim()) {
+            showToast('리포트가 아직 준비되지 않았어요');
             return;
         }
-        const src = document.querySelector('#page-step4 .form-card');
-        if (!src) { showToast('리포트가 아직 준비되지 않았어요'); return; }
-
-        // 인쇄용 클론 만들기 (네비/버튼은 제외)
-        const clone = src.cloneNode(true);
-        clone.querySelectorAll('.stepper, .submit-row').forEach(el => el.remove());
-
-        // 오프스크린 컨테이너에 배치 (실제 단계와 무관하게 항상 렌더 가능)
-        const wrap = document.createElement('div');
-        wrap.style.cssText = 'position: fixed; left: -10000px; top: 0; width: 1180px; background: #fffbf9; padding: 40px; font-family: Pretendard, sans-serif;';
-        wrap.appendChild(clone);
-        document.body.appendChild(wrap);
-
-        const brand = (document.getElementById('brand_name').value.trim() || 'trendfit').replace(/\s+/g, '_');
-        const opt = {
-            margin: [10, 10, 10, 10],
-            filename: brand + '_리포트.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, backgroundColor: '#fffbf9', logging: false },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-        };
-
-        showToast('PDF를 만드는 중이에요…');
-        html2pdf().set(opt).from(wrap).save().then(() => {
-            document.body.removeChild(wrap);
-            showToast('PDF 다운로드 완료');
-        }).catch(err => {
-            document.body.removeChild(wrap);
-            console.error(err);
-            showToast('PDF 저장에 실패했어요');
-        });
+        showToast('인쇄 창에서 "PDF로 저장"을 선택하세요');
+        window.print();
     }
 
     /* ===== 마우스 이펙트 ===== */
