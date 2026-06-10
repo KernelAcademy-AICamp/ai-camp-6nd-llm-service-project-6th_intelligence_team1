@@ -68,6 +68,7 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
       "trend_name": "트렌드 이름",
       "category": "메이크업 > 베이스",
       "keywords": ["키워드1", "키워드2"],
+      "source_search_keywords": ["검색어1", "검색어2"],
       "summary": "한 줄 요약 (50자 이내, 수치 포함 권장)",
       "headline_metric": { "metric": "검색량 지수", "value": "89", "delta": "+45% vs 전월" },
       "meaning": "트렌드의 의미 (2~3문장)",
@@ -97,6 +98,7 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
 ## 규칙 (반드시 준수)
 - **category**: "대분류 > 소분류" 형식. 대분류는 클렌징/스킨케어/메이크업 중 하나, 소분류는 하위 (예: "메이크업 > 베이스", "메이크업 > 립", "스킨케어 > 토너")
 - **keywords**: 최소 1개
+- **source_search_keywords**: 위 "브랜드 프로필"의 \`search_keywords\` 중 이 트렌드의 근거가 된 검색어만 골라 글자 그대로(verbatim) 배열에 담으세요. 한 트렌드가 여러 검색어에 걸쳐있을 수 있으니 해당되는 것 모두. 관련된 게 없으면 빈 배열([]). 이 필드는 채널 활성도·검색 수요(demand_fit) 매칭의 조인 키로 사용됩니다.
 - **summary**: 50자 이내
 - **gender_ratio**: female + male 합이 정확히 1.0
 - **age_ratio**: 모든 값 합이 정확히 1.0. 키는 "10s","20s","30s","40s","50s+"만 사용
@@ -119,6 +121,7 @@ const brandProfile = {
   texture_keywords: brand.texture_keywords,
   tone_and_manner: brand.tone_and_manner,
   target: brand.target,
+  search_keywords: brand.search_keywords,
 };
 const targetCategory = brand.category ?? "";
 const targetTexture = (brand.texture_keywords ?? []).join(", ");
