@@ -1,6 +1,6 @@
 {
   "schema_version": "0.2",
-  "generated_at": "2026-06-10T09:12:14.477Z",
+  "generated_at": "2026-06-10T09:16:42.632Z",
   "status": "success",
   "data": {
     "brand_name": "헤라",
@@ -12,18 +12,23 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "브랜드 product_features '고급 텍스처, 장시간 지속'이 트렌드 ingred '자연스러운 커버, 고커버 매트 쿠션'과 직접 일치.",
+            "fact": "브랜드 product_features ['매트','파운데이션','고급 텍스처','장시간 지속']이 트렌드 ingred ['자연스러운 커버','가벼운 밀착감','고커버 매트 쿠션','밀착력']과 자연스러운 커버+지속력 개념에서 직접 대응.",
             "source": "브랜드 product_features vs 트렌드 keywords.ingred"
           },
           {
+            "category": "톤앤매너",
+            "fact": "트렌드 meaning의 '완벽한 피부 강박 거부·나다움을 살린 피부·피부 표현이 살아있는' 철학이 럭셔리·프리미엄의 '정제·품질·엄선된' 가치와 결을 같이함.",
+            "source": "트렌드 meaning vs 브랜드 tone_and_manner"
+          },
+          {
             "category": "라이프스타일 매칭",
-            "fact": "트렌드 audience_signal '피부 잡티가 있지만 수정 메이크업으로 자주 터치하는 20-30대 직장인'은 브랜드 타겟 '30대 일상사용자'와 연령대·라이프스타일 일치.",
-            "source": "트렌드 audience_signal vs 브랜드 target"
+            "fact": "브랜드 타겟 '30대 일상사용자'와 트렌드 타겟 '20-30대 수정 화장 빈번 직장인·학생'의 연령·라이프스타일 겹침. 트렌드 motivation ['자연스러운 정돈','답답함 거부','잡티 커버']이 브랜드 motivation ['자기표현']과 피부 정돈 개념에서 일치.",
+            "source": "브랜드 target vs 트렌드 target·audience_signal"
           },
           {
             "category": "트렌드 수명",
-            "fact": "트렌드 stage 'peak', lifespan_estimate '6개월 이상'으로 안정적 수명 보유.",
-            "source": "트렌드 trend_stage, lifespan_estimate"
+            "fact": "트렌드 lifespan_estimate '6개월 이상', trend_stage 'peak', metrics.growth_rate 0.06으로 안정적 유지 추세.",
+            "source": "트렌드 lifespan_estimate·trend_stage·metrics"
           }
         ],
         "market_context": "트렌드 정점 (peak) / 검색량 데이터 없음 → ⚠️ 단기 캠페인 적합"
@@ -35,18 +40,23 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "브랜드 product_features에 '매트'가 명시되어 있으며, 트렌드 ingred 키워드 '매트 쿠션, 자연스러운 매트피니시'와 직접 일치.",
-            "source": "브랜드 분석 product_features vs 트렌드 keywords.ingred"
+            "fact": "브랜드 product_features ['매트','파운데이션','고급 텍스처','장시간 지속']이 트렌드 ingred ['매트 쿠션','세미매트','자연스러운 매트피니시']와 매트 마감 개념 직접 대응.",
+            "source": "브랜드 product_features vs 트렌드 keywords.ingred"
           },
           {
-            "category": "트렌드 수명",
-            "fact": "트렌드 stage는 'peak'이며 lifespan_estimate '6개월 이상'으로 안정적 수명 보유.",
-            "source": "트렌드 분석 trend_stage, lifespan_estimate"
+            "category": "톤앤매너",
+            "fact": "트렌드 summary의 '꾸안꾸·자연스러움·피부 표현의 정점이 극도의 광채에서 본연의 텍스처로 전환' 철학이 럭셔리·프리미엄의 '정제·품질·엄선' 가치와 결을 같이함.",
+            "source": "트렌드 meaning vs 브랜드 tone_and_manner"
           },
           {
             "category": "라이프스타일 매칭",
-            "fact": "트렌드 타겟의 motivation '지속력 중시, 꾸안꾸 자연스러움'은 브랜드 product_features '장시간 지속'과 부분 일치.",
-            "source": "트렌드 target.motivation vs 브랜드 product_features"
+            "fact": "브랜드 타겟 '30대 일상사용자'와 트렌드 타겟 '20-30대 데일리 메이크업 지속력 중시 사용자'의 연령대 겹침 있으나, 트렌드의 '수정 화장 빈도·효율' 동기는 브랜드의 '자기표현' 동기와 1개 항목만 일치.",
+            "source": "브랜드 target vs 트렌드 target·audience_signal"
+          },
+          {
+            "category": "트렌드 수명",
+            "fact": "트렌드 lifespan_estimate '6개월 이상', trend_stage 'peak', metrics.growth_rate 0.22로 안정적 성장 추세.",
+            "source": "트렌드 lifespan_estimate·trend_stage·metrics"
           }
         ],
         "market_context": "트렌드 정점 (peak) / 검색량 데이터 없음 → ⚠️ 단기 캠페인 적합"
@@ -58,18 +68,23 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "브랜드 product_features '매트, 파운데이션, 장시간 지속'이 트렌드 ingred '20대 데일리 쿠션, 자연스러운 커버, 지속력'과 직접 일치.",
+            "fact": "브랜드 product_features ['매트','파운데이션','고급 텍스처','장시간 지속']이 트렌드 ingred ['20대 데일리 쿠션','20대 추천','20대 여성 베이스']의 매트 베이스 개념과 직접 대응.",
             "source": "브랜드 product_features vs 트렌드 keywords.ingred"
           },
           {
+            "category": "톤앤매너",
+            "fact": "트렌드 summary의 '데일리·효율·지속력·라이프스타일 맞춤' 성격이 럭셔리·프리미엄의 '품질·정제·엄선된' 톤과 친화적. 일상 속 품질 추구.",
+            "source": "트렌드 meaning vs 브랜드 tone_and_manner"
+          },
+          {
             "category": "라이프스타일 매칭",
-            "fact": "트렌드 audience_signal '직장인·대학생 20대 여성, 출근 전 10-15분 내 완성, 수정 화장 빈번'은 브랜드 타겟 '일상사용자, 자기표현' 동기와 데일리 루틴 중심으로 부분 일치.",
-            "source": "트렌드 audience_signal vs 브랜드 target"
+            "fact": "브랜드 타겟 '30대 일상사용자'와 트렌드 타겟 '20대 직장인·학생 데일리 사용자'의 연령이 상이(30대 vs 20대). 라이프스타일(데일리·효율)과 관여도(일상사용자)는 일치하나 연령 불일치로 1개 항목만 일치.",
+            "source": "브랜드 target vs 트렌드 target·audience_signal"
           },
           {
             "category": "트렌드 수명",
-            "fact": "트렌드 stage 'peak', lifespan_estimate '6개월 이상'으로 안정적 수명 보유.",
-            "source": "트렌드 trend_stage, lifespan_estimate"
+            "fact": "트렌드 lifespan_estimate '6개월 이상', trend_stage 'peak', metrics.growth_rate 0.25로 안정적 성장 추세.",
+            "source": "트렌드 lifespan_estimate·trend_stage·metrics"
           }
         ],
         "market_context": "트렌드 정점 (peak) / 검색량 데이터 없음 → ⚠️ 단기 캠페인 적합"
@@ -81,15 +96,15 @@
         "evaluation": {
           "product_fit": {
             "result": "✅",
-            "reason": "브랜드 제품의 '고급 텍스처, 장시간 지속' 특성이 트렌드 ingred 키워드(자연스러운 커버, 가벼운 밀착감, 고커버 매트 쿠션)와 명확히 일치."
+            "reason": "브랜드 제품 '실키 파운데이션'의 '고급 텍스처·장시간 지속·매트'가 트렌드 ingred '자연스러운 커버·가벼운 밀착감·고커버 매트 쿠션·밀착력'과 자연스러운 커버+지속력 개념에서 직접 일치."
           },
           "tnm_fit": {
             "result": "✅",
-            "reason": "트렌드의 '나다움 살린 피부 정돈, 완벽한 피부 강박 거부' 성격이 브랜드 톤앤매너 '럭셔리·프리미엄'의 '엄선된, 품질' 미감과 친화적."
+            "reason": "트렌드의 '완벽한 가림 거부·나다움 살린 피부 정돈·피부 표현' 철학이 럭셔리·프리미엄의 '품질·정제·본연' 가치와 친화적."
           },
           "target_fit": {
             "result": "✅",
-            "reason": "트렌드 타겟의 motivation '자연스러운 정돈, 잡티 커버, 수정 화장 빈번'과 브랜드 타겟의 '일상사용자, 자기표현' 모두 데일리 루틴 중심 소비자로 명확히 일치."
+            "reason": "브랜드 타겟 '30대 일상사용자·자기표현'과 트렌드 타겟 '20-30대 수정 화장 빈번 직장인·학생·자연스러운 정돈·답답함 거부·잡티 커버' 동기가 연령·라이프스타일·관여도 3개 항목에서 명확히 일치."
           },
           "market_fit": {
             "result": "⚠️",
@@ -101,18 +116,23 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "브랜드 product_features '고급 텍스처, 장시간 지속'이 트렌드 ingred '자연스러운 커버, 고커버 매트 쿠션'과 직접 일치.",
+            "fact": "브랜드 product_features ['매트','파운데이션','고급 텍스처','장시간 지속']이 트렌드 ingred ['자연스러운 커버','가벼운 밀착감','고커버 매트 쿠션','밀착력']과 자연스러운 커버+지속력 개념에서 직접 대응.",
             "source": "브랜드 product_features vs 트렌드 keywords.ingred"
           },
           {
+            "category": "톤앤매너",
+            "fact": "트렌드 meaning의 '완벽한 피부 강박 거부·나다움을 살린 피부·피부 표현이 살아있는' 철학이 럭셔리·프리미엄의 '정제·품질·엄선된' 가치와 결을 같이함.",
+            "source": "트렌드 meaning vs 브랜드 tone_and_manner"
+          },
+          {
             "category": "라이프스타일 매칭",
-            "fact": "트렌드 audience_signal '피부 잡티가 있지만 수정 메이크업으로 자주 터치하는 20-30대 직장인'은 브랜드 타겟 '30대 일상사용자'와 연령대·라이프스타일 일치.",
-            "source": "트렌드 audience_signal vs 브랜드 target"
+            "fact": "브랜드 타겟 '30대 일상사용자'와 트렌드 타겟 '20-30대 수정 화장 빈번 직장인·학생'의 연령·라이프스타일 겹침. 트렌드 motivation ['자연스러운 정돈','답답함 거부','잡티 커버']이 브랜드 motivation ['자기표현']과 피부 정돈 개념에서 일치.",
+            "source": "브랜드 target vs 트렌드 target·audience_signal"
           },
           {
             "category": "트렌드 수명",
-            "fact": "트렌드 stage 'peak', lifespan_estimate '6개월 이상'으로 안정적 수명 보유.",
-            "source": "트렌드 trend_stage, lifespan_estimate"
+            "fact": "트렌드 lifespan_estimate '6개월 이상', trend_stage 'peak', metrics.growth_rate 0.06으로 안정적 유지 추세.",
+            "source": "트렌드 lifespan_estimate·trend_stage·metrics"
           }
         ]
       },
@@ -121,15 +141,15 @@
         "evaluation": {
           "product_fit": {
             "result": "✅",
-            "reason": "브랜드 제품 '실키 파운데이션'의 매트 텍스처가 트렌드의 핵심 ingred 키워드(매트 쿠션, 세미매트, 자연스러운 매트피니시)와 명확히 일치."
+            "reason": "브랜드 제품 '실키 파운데이션'의 매트 텍스처가 트렌드 ingred 키워드 '매트 쿠션·세미매트·자연스러운 매트피니시'와 직접 일치."
           },
           "tnm_fit": {
             "result": "✅",
-            "reason": "트렌드의 '꾸안꾸 자연스러움, 본연의 텍스처' 성격이 브랜드 톤앤매너 '럭셔리·프리미엄'의 '엄선된, 고급스러운' 미감과 친화적으로 결합 가능."
+            "reason": "트렌드의 '꾸안꾸·자연스러움·피부 본연' 철학이 럭셔리·프리미엄 톤의 '정제된 미감·품질 중심' 가치와 친화적."
           },
           "target_fit": {
             "result": "⚠️",
-            "reason": "브랜드 타겟은 30대 일상사용자(자기표현 동기)이나, 트렌드 타겟은 20대 중심(관여도: 데일리 지속력 중시, 번들거림 방지). 연령대 차이로 부분 겹침."
+            "reason": "브랜드 타겟 30대 일상사용자(자기표현)와 트렌드 타겟 20-30대 데일리 사용자(번들거림 방지·지속력)의 연령 겹침은 있으나, 트렌드의 '효율·수정 화장 빈도' 동기가 브랜드의 '자기표현' 동기와 부분 일치."
           },
           "market_fit": {
             "result": "⚠️",
@@ -141,18 +161,23 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "브랜드 product_features에 '매트'가 명시되어 있으며, 트렌드 ingred 키워드 '매트 쿠션, 자연스러운 매트피니시'와 직접 일치.",
-            "source": "브랜드 분석 product_features vs 트렌드 keywords.ingred"
+            "fact": "브랜드 product_features ['매트','파운데이션','고급 텍스처','장시간 지속']이 트렌드 ingred ['매트 쿠션','세미매트','자연스러운 매트피니시']와 매트 마감 개념 직접 대응.",
+            "source": "브랜드 product_features vs 트렌드 keywords.ingred"
           },
           {
-            "category": "트렌드 수명",
-            "fact": "트렌드 stage는 'peak'이며 lifespan_estimate '6개월 이상'으로 안정적 수명 보유.",
-            "source": "트렌드 분석 trend_stage, lifespan_estimate"
+            "category": "톤앤매너",
+            "fact": "트렌드 summary의 '꾸안꾸·자연스러움·피부 표현의 정점이 극도의 광채에서 본연의 텍스처로 전환' 철학이 럭셔리·프리미엄의 '정제·품질·엄선' 가치와 결을 같이함.",
+            "source": "트렌드 meaning vs 브랜드 tone_and_manner"
           },
           {
             "category": "라이프스타일 매칭",
-            "fact": "트렌드 타겟의 motivation '지속력 중시, 꾸안꾸 자연스러움'은 브랜드 product_features '장시간 지속'과 부분 일치.",
-            "source": "트렌드 target.motivation vs 브랜드 product_features"
+            "fact": "브랜드 타겟 '30대 일상사용자'와 트렌드 타겟 '20-30대 데일리 메이크업 지속력 중시 사용자'의 연령대 겹침 있으나, 트렌드의 '수정 화장 빈도·효율' 동기는 브랜드의 '자기표현' 동기와 1개 항목만 일치.",
+            "source": "브랜드 target vs 트렌드 target·audience_signal"
+          },
+          {
+            "category": "트렌드 수명",
+            "fact": "트렌드 lifespan_estimate '6개월 이상', trend_stage 'peak', metrics.growth_rate 0.22로 안정적 성장 추세.",
+            "source": "트렌드 lifespan_estimate·trend_stage·metrics"
           }
         ]
       },
@@ -161,15 +186,15 @@
         "evaluation": {
           "product_fit": {
             "result": "✅",
-            "reason": "브랜드 제품의 '매트, 파운데이션, 고급 텍스처, 장시간 지속'이 트렌드 ingred 키워드(20대 데일리 쿠션, 20대 추천, 20대 여성 베이스)의 '매트·자연스러운 커버·지속력' 요구와 명확히 일치."
+            "reason": "브랜드 제품 '실키 파운데이션'의 '매트·파운데이션·고급 텍스처·장시간 지속'이 트렌드 ingred '20대 데일리 쿠션·20대 추천·20대 여성 베이스'의 매트 베이스 개념과 직접 일치."
           },
           "tnm_fit": {
             "result": "✅",
-            "reason": "트렌드의 '라이프스타일 맞춤, 데일리 효율, 안정적 제품 선호' 성격이 브랜드 톤앤매너 '럭셔리·프리미엄'의 '품질, 엄선된' 미감과 친화적."
+            "reason": "트렌드의 '데일리·효율·지속력·라이프스타일 맞춤' 성격이 럭셔리·프리미엄의 '품질·정제·엄선' 톤과 친화적. 일상 속 품질 추구."
           },
           "target_fit": {
             "result": "⚠️",
-            "reason": "트렌드 타겟은 20대 직장인·학생 여성(라이프스타일 맞춤, 데일리 효율)이나, 브랜드 타겟은 30대 일상사용자. 연령대 차이로 부분 겹침. 동기 '자기표현'은 일치하나 세대 특성 상이."
+            "reason": "브랜드 타겟 '30대 일상사용자·자기표현'과 트렌드 타겟 '20대 직장인·학생 데일리 사용자·라이프스타일 맞춤·데일리 효율·지속력 중시'의 연령이 상이(30대 vs 20대). 라이프스타일·관여도는 일치하나 연령 불일치로 1개 항목만 일치."
           },
           "market_fit": {
             "result": "⚠️",
@@ -181,18 +206,23 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "브랜드 product_features '매트, 파운데이션, 장시간 지속'이 트렌드 ingred '20대 데일리 쿠션, 자연스러운 커버, 지속력'과 직접 일치.",
+            "fact": "브랜드 product_features ['매트','파운데이션','고급 텍스처','장시간 지속']이 트렌드 ingred ['20대 데일리 쿠션','20대 추천','20대 여성 베이스']의 매트 베이스 개념과 직접 대응.",
             "source": "브랜드 product_features vs 트렌드 keywords.ingred"
           },
           {
+            "category": "톤앤매너",
+            "fact": "트렌드 summary의 '데일리·효율·지속력·라이프스타일 맞춤' 성격이 럭셔리·프리미엄의 '품질·정제·엄선된' 톤과 친화적. 일상 속 품질 추구.",
+            "source": "트렌드 meaning vs 브랜드 tone_and_manner"
+          },
+          {
             "category": "라이프스타일 매칭",
-            "fact": "트렌드 audience_signal '직장인·대학생 20대 여성, 출근 전 10-15분 내 완성, 수정 화장 빈번'은 브랜드 타겟 '일상사용자, 자기표현' 동기와 데일리 루틴 중심으로 부분 일치.",
-            "source": "트렌드 audience_signal vs 브랜드 target"
+            "fact": "브랜드 타겟 '30대 일상사용자'와 트렌드 타겟 '20대 직장인·학생 데일리 사용자'의 연령이 상이(30대 vs 20대). 라이프스타일(데일리·효율)과 관여도(일상사용자)는 일치하나 연령 불일치로 1개 항목만 일치.",
+            "source": "브랜드 target vs 트렌드 target·audience_signal"
           },
           {
             "category": "트렌드 수명",
-            "fact": "트렌드 stage 'peak', lifespan_estimate '6개월 이상'으로 안정적 수명 보유.",
-            "source": "트렌드 trend_stage, lifespan_estimate"
+            "fact": "트렌드 lifespan_estimate '6개월 이상', trend_stage 'peak', metrics.growth_rate 0.25로 안정적 성장 추세.",
+            "source": "트렌드 lifespan_estimate·trend_stage·metrics"
           }
         ]
       },
@@ -201,15 +231,15 @@
         "evaluation": {
           "product_fit": {
             "result": "⚠️",
-            "reason": "브랜드 제품은 매트 파운데이션이며, 트렌드 ingred 키워드(스킨케어 성분, 세럼 쿠션, 톤업 프라이머)는 스킨케어 기능 강화를 요구. 브랜드 제품에 스킨케어 성분 강화가 명시되지 않아 부분 무관."
+            "reason": "브랜드 제품 '실키 파운데이션'은 매트 텍스처 파운데이션이며, 트렌드 ingred '스킨케어 성분·세럼 쿠션·톤업 프라이머·미니멀 베이스'는 스킨케어 기능 강화를 핵심으로 함. 제품 유형은 다르나 '베이스' 카테고리 내 기능성 강화 방향은 부분 일치."
           },
           "tnm_fit": {
             "result": "⚠️",
-            "reason": "트렌드의 '피부 건강, 셀프케어, 노 메이크업 스킨' 성격은 브랜드 톤앤매너 '럭셔리·프리미엄'의 '고급, 프리미엄 성분' 미감과 부분 친화하나, 클린뷰티 톤에 더 가까워 부분 충돌."
+            "reason": "트렌드의 '피부 건강·셀프케어·관리하는 화장·노 메이크업 스킨' 성격이 럭셔리·프리미엄의 '고급·정제' 톤과 부분 친화. 그러나 트렌드의 '미니멀·기능성' 강조가 럭셔리의 '화려함·프리미엄 성분' 개념과 다소 상이."
           },
           "target_fit": {
             "result": "⚠️",
-            "reason": "트렌드 타겟의 motivation '피부 건강, 스킨케어·메이크업 통합, 기능성 추구'는 브랜드 타겟 '자기표현' 동기와 부분 겹침. 연령대는 20-30대로 일치하나 관여도 차이."
+            "reason": "브랜드 타겟 '30대 일상사용자·자기표현'과 트렌드 타겟 '20-30대 셀프케어·뷰티 루틴 중시·피부 건강·기능성 추구' 동기가 연령 겹침은 있으나, 트렌드의 '피부 건강·스킨케어 통합' 동기가 브랜드의 '자기표현' 동기와 1개 항목만 일치."
           },
           "market_fit": {
             "result": "✅",
@@ -221,18 +251,23 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "트렌드 ingred 키워드에 '스킨케어 성분, 세럼 쿠션, 톤업 프라이머'가 명시되나, 브랜드 product_features에는 스킨케어 성분 강화 기능 없음.",
+            "fact": "브랜드 product_features ['매트','파운데이션','고급 텍스처','장시간 지속']은 스킨케어 성분 강화를 명시하지 않으며, 트렌드 ingred ['스킨케어 성분','세럼 쿠션','톤업 프라이머','미니멀 베이스']는 스킨케어 기능을 핵심으로 함. 제품 유형 부분 일치.",
             "source": "브랜드 product_features vs 트렌드 keywords.ingred"
           },
           {
-            "category": "톤앤매너 매칭",
-            "fact": "트렌드 summary의 '피부 건강, 셀프케어, 노 메이크업 스킨'은 클린뷰티 톤에 가까우며, 브랜드 톤 '럭셔리·프리미엄'과 부분 충돌.",
-            "source": "트렌드 summary vs 톤앤매너 친화/충돌 표"
+            "category": "톤앤매너",
+            "fact": "트렌드 meaning의 '피부 건강·셀프케어·관리하는 화장·노 메이크업 스킨' 성격이 럭셔리·프리미엄의 '고급·정제' 톤과 부분 친화하나, 트렌드의 '미니멀·기능성' 강조가 럭셔리의 '화려함·프리미엄 성분' 개념과 다소 상이.",
+            "source": "트렌드 meaning vs 브랜드 tone_and_manner"
           },
           {
             "category": "라이프스타일 매칭",
-            "fact": "트렌드 target motivation '피부 건강, 기능성 추구'는 브랜드 target motivation '자기표현'과 부분 겹침. 연령대 20-30대는 일치하나 관여도 차이.",
-            "source": "트렌드 target.motivation vs 브랜드 target"
+            "fact": "브랜드 타겟 '30대 일상사용자'와 트렌드 타겟 '20-30대 셀프케어·뷰티 루틴 중시 사용자'의 연령 겹침 있으나, 트렌드 motivation ['피부 건강','스킨케어·메이크업 통합','기능성 추구'] 중 '자기표현'과 직접 일치하는 항목이 없음. 1개 항목만 부분 일치.",
+            "source": "브랜드 target vs 트렌드 target·audience_signal"
+          },
+          {
+            "category": "트렌드 수명",
+            "fact": "트렌드 lifespan_estimate '6개월 이상', trend_stage 'emerging', metrics.growth_rate 0.45로 높은 성장 추세.",
+            "source": "트렌드 lifespan_estimate·trend_stage·metrics"
           }
         ]
       },
@@ -244,12 +279,12 @@
             "reason": "트렌드 ingred '리퀴드 파운데이션 감소' — 브랜드 제품 제형이 기피 대상 (코드 강제)"
           },
           "tnm_fit": {
-            "result": "⚠️",
-            "reason": "트렌드의 '효율 중시, 갓생 문화, 원 툴 미니멀리즘' 성격은 브랜드 톤앤매너 '럭셔리·프리미엄'의 '고급, 엄선된' 미감과 부분 충돌. 럭셔리는 가성비·효율성과 충돌 경향."
+            "result": "✅",
+            "reason": "트렌드의 '효율·시간 절약·갓생·원 툴 미니멀리즘' 성격이 럭셔리·프리미엄의 '품질·정제·엄선' 톤과 친화적. 효율성과 품질의 결합."
           },
           "target_fit": {
-            "result": "⚠️",
-            "reason": "트렌드 타겟은 MZ세대 수정 화장 빈번 사용자(효율 중시, 휴대 편의)이나, 브랜드 타겟은 30대 일상사용자(안정적 제품 선호). 동기·관여도 부분 겹침."
+            "result": "✅",
+            "reason": "브랜드 타겟 '30대 일상사용자'와 트렌드 타겟 '20-30대 MZ세대 수정 화장 빈번 사용자·효율 중시' 동기가 연령·라이프스타일·관여도에서 명확히 일치."
           },
           "market_fit": {
             "result": "⚠️",
@@ -261,18 +296,23 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "트렌드 ingred 키워드에 '리퀴드 파운데이션 감소'가 명시되어 있으며, 브랜드 제품이 파운데이션 카테고리이므로 트렌드가 기피하는 제형에 해당.",
-            "source": "트렌드 keywords.ingred vs 브랜드 category"
+            "fact": "브랜드 product_features ['파운데이션']이 트렌드 ingred ['리퀴드 파운데이션 감소']의 부정 맥락과 직접 충돌. 트렌드가 일반 파운데이션 사용을 기피하는 방향이므로 파운데이션 제품은 탈락.",
+            "source": "브랜드 product_features vs 트렌드 keywords.ingred (부정 맥락)"
           },
           {
-            "category": "톤앤매너 매칭",
-            "fact": "트렌드 summary의 '효율 중시, 갓생 문화, 원 툴 미니멀리즘'은 더마·과학적 또는 Z세대·트렌디 톤에 가까우며, 브랜드 톤 '럭셔리·프리미엄'과 충돌.",
-            "source": "트렌드 summary vs 톤앤매너 친화/충돌 표"
+            "category": "톤앤매너",
+            "fact": "트렌드 summary의 '효율·시간 절약·갓생 문화·원 툴 미니멀리즘' 성격이 럭셔리·프리미엄의 '품질·정제·엄선된' 톤과 친화적. 효율성과 품질의 결합.",
+            "source": "트렌드 meaning vs 브랜드 tone_and_manner"
           },
           {
             "category": "라이프스타일 매칭",
-            "fact": "트렌드 target motivation '빠른 터치업, 휴대 편의, 효율 중시'는 MZ세대 특성이며, 브랜드 타겟 '30대 일상사용자'와 세대·동기 부분 상이.",
-            "source": "트렌드 target.motivation vs 브랜드 target"
+            "fact": "브랜드 타겟 '30대 일상사용자'와 트렌드 타겟 '20-30대 MZ세대 수정 화장 빈번 직장인·학생·빠른 터치업·휴대 편의·효율 중시' 동기가 연령·라이프스타일·관여도 3개 항목에서 명확히 일치.",
+            "source": "브랜드 target vs 트렌드 target·audience_signal"
+          },
+          {
+            "category": "트렌드 수명",
+            "fact": "트렌드 lifespan_estimate '6개월 이상', trend_stage 'peak', metrics.growth_rate -0.2로 안정적 유지 추세 (검색량 조정 후 높은 기저 유지).",
+            "source": "트렌드 lifespan_estimate·trend_stage·metrics"
           }
         ]
       },
@@ -281,15 +321,15 @@
         "evaluation": {
           "product_fit": {
             "result": "❌",
-            "reason": "브랜드 제품은 매트 텍스처 파운데이션이며, 트렌드 ingred 키워드(핑크 쿠션, 파스텔 톤 베이스, 색감 쿠션)는 컬러 톤 보정 기능을 요구. 브랜드 제품에 파스텔 컬러 톤 보정 기능이 명시되지 않아 무관."
+            "reason": "브랜드 제품 '실키 파운데이션'은 매트 텍스처 파운데이션이며, 트렌드 ingred '핑크 쿠션·파스텔 톤 베이스·톤 보정 CC크림·색감 쿠션'은 색감 보정 기능을 핵심으로 하는 제형으로, 제품 유형과 핵심 기능이 상이."
           },
           "tnm_fit": {
             "result": "⚠️",
-            "reason": "트렌드의 '발랄·로맨틱, 자기표현, Y2K·걸리시 코어' 성격은 브랜드 톤앤매너 '럭셔리·프리미엄'의 '고급, 격식' 미감과 부분 충돌. 럭셔리는 키치·플레이풀과 충돌 경향."
+            "reason": "트렌드의 '발랄·로맨틱·자기표현·Y2K·걸리시 코어' 성격이 럭셔리·프리미엄의 '고급·정제·격식' 톤과 부분 충돌. 자기표현 동기는 공유하나 표현 방식(컬러풀 vs 정제)이 상이."
           },
           "target_fit": {
-            "result": "❌",
-            "reason": "트렌드 타겟은 Z세대 트렌드 민감 소비자(자기표현, 개성 있는 컬러감)이나, 브랜드 타겟은 30대 일상사용자(안정적 제품 선호). 연령대·소비 성향 모두 겹침 없음."
+            "result": "⚠️",
+            "reason": "브랜드 타겟 '30대 일상사용자'와 트렌드 타겟 '20-30대 Z세대 트렌드 민감 사용자'의 연령 겹침 있으나, 트렌드의 '개성·도파민 컬러 소비' 동기가 브랜드의 '자기표현' 동기와 1개 항목만 일치. 30대 일상사용자는 파스텔 톤 트렌드의 주 타깃이 아님."
           },
           "market_fit": {
             "result": "⚠️",
@@ -301,18 +341,23 @@
         "summary_reasons": [
           {
             "category": "성분 적합성",
-            "fact": "트렌드 ingred 키워드에 '핑크 쿠션, 파스텔 톤 베이스, 색감 쿠션' 등 컬러 톤 보정 기능이 명시되나, 브랜드 product_features에는 컬러 톤 기능 없음.",
+            "fact": "브랜드 product_features ['매트','파운데이션','고급 텍스처','장시간 지속']은 색감 보정 기능을 포함하지 않으며, 트렌드 ingred ['핑크 쿠션','파스텔 톤 베이스','톤 보정 CC크림','색감 쿠션']은 색감 쿠션·톤 보정을 핵심으로 함. 제품 유형 불일치.",
             "source": "브랜드 product_features vs 트렌드 keywords.ingred"
           },
           {
-            "category": "톤앤매너 매칭",
-            "fact": "트렌드 summary의 'Y2K, 걸리시 코어, 도파민 컬러 소비'는 키치·플레이풀 톤에 가까우며, 브랜드 톤 '럭셔리·프리미엄'과 충돌.",
-            "source": "트렌드 summary vs 톤앤매너 친화/충돌 표"
+            "category": "톤앤매너",
+            "fact": "트렌드 summary의 '발랄·로맨틱·자기 색을 드러내는 자기표현·Y2K·걸리시 코어' 성격이 럭셔리·프리미엄의 '고급·희소·품질·정제' 톤과 충돌. 자기표현 동기는 공유하나 표현 방식이 상이.",
+            "source": "트렌드 meaning vs 브랜드 tone_and_manner"
           },
           {
             "category": "라이프스타일 매칭",
-            "fact": "트렌드 타겟 motivation '자기표현, 개성 있는 컬러감'은 Z세대 트렌드 민감 소비자 특성이며, 브랜드 타겟 '30대 일상사용자'와 연령대·성향 모두 상이.",
-            "source": "트렌드 target vs 브랜드 target"
+            "fact": "브랜드 타겟 '30대 일상사용자'는 안정적·신뢰성 중심이며, 트렌드 타겟 '20-30대 Z세대 트렌드 민감 컬러 변신 사용자'는 개성·도파민 컬러 소비 중심. 트렌드의 '개성·톤업 효과·개성 있는 컬러감' 동기 중 '자기표현'만 브랜드와 일치.",
+            "source": "브랜드 target vs 트렌드 target·audience_signal"
+          },
+          {
+            "category": "트렌드 수명",
+            "fact": "트렌드 lifespan_estimate '3-6개월', trend_stage 'peak', metrics.growth_rate 0.35로 단기 성장 추세.",
+            "source": "트렌드 lifespan_estimate·trend_stage·metrics"
           }
         ]
       }

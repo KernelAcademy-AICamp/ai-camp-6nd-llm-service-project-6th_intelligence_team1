@@ -157,7 +157,7 @@ const EvaluationItemSchema = z.object({
   }),
   target_score: z.number().int().min(0).max(2), // target_fit: ✅=2, ⚠️=1, ❌=0
   eliminated_by: z.enum(["product", "tone", "category"]).nullable(),
-  summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
+  summary_reasons: z.array(EvidenceReasonSchema).min(1),
   channel_activity: ChannelActivitySchema,
   demand_fit: DemandFitSchema,
   competition_fit: CompetitionFitSchema,
@@ -198,7 +198,7 @@ const LlmEvaluationItemSchema = z.object({
   product_fit: FitResultSchema,
   tnm_fit: FitResultSchema,
   target_fit: FitResultSchema,
-  summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
+  summary_reasons: z.array(EvidenceReasonSchema).min(1),
 });
 
 export const LlmMatchDataSchema = z.object({
