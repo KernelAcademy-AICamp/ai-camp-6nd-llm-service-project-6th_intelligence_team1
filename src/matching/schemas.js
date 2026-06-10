@@ -2,7 +2,7 @@ import { z } from "zod";
 import { envelopeSchema } from "../../shared/envelope.js";
 
 // 매칭가 출력 스키마 v0.5 (3단계 허들: 성분→톤→라이프스타일).
-// 0순위(ingred)·1순위(tone) ❌ 시 eliminated_by 설정. 통과 시 life_score로 순위 결정.
+// 0순위(ingred)·1순위(tone) ❌ 시 eliminated_by 설정. 통과 시 target_score로 순위 결정.
 // safe_fit은 시급성 참고 정보. envelope은 shared/envelope.js가 자동 부여.
 
 // ─── 입력 스키마 (분석가 산출 검증) ─────────────────────────────────
@@ -125,13 +125,13 @@ const EvidenceReasonSchema = z.object({
 const EvaluationItemSchema = z.object({
   trend_name: z.string(),
   evaluation: z.object({
-    ingred_fit: FitResultSchema, // 0순위 허들 — 성분·텍스처
-    visual_fit: FitResultSchema, // 1순위 허들 — 톤앤매너
-    life_fit: FitResultSchema,   // 2순위 순위 결정 — 라이프스타일
+    product_fit: FitResultSchema, // 0순위 허들 — 성분·텍스처
+    tnm_fit: FitResultSchema, // 1순위 허들 — 톤앤매너
+    target_fit: FitResultSchema,   // 2순위 순위 결정 — 라이프스타일
     safe_fit: FitResultSchema,   // 서브 참고 — 트렌드 시급성
   }),
-  life_score: z.number().int().min(0).max(2), // life_fit: ✅=2, ⚠️=1, ❌=0
-  eliminated_by: z.enum(["ingred", "tone", "category"]).nullable(),
+  target_score: z.number().int().min(0).max(2), // target_fit: ✅=2, ⚠️=1, ❌=0
+  eliminated_by: z.enum(["product", "tone", "category"]).nullable(),
   summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
 });
 
@@ -161,9 +161,9 @@ export const MatchResultSchema = envelopeSchema(MatchDataSchema);
 // LLM은 4기준 정성 판정 + summary_reasons만 생성. score·verdict는 코드가 계산.
 const LlmEvaluationItemSchema = z.object({
   trend_name: z.string(),
-  ingred_fit: FitResultSchema,
-  visual_fit: FitResultSchema,
-  life_fit: FitResultSchema,
+  product_fit: FitResultSchema,
+  tnm_fit: FitResultSchema,
+  target_fit: FitResultSchema,
   safe_fit: FitResultSchema,
   summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
 });

@@ -49,16 +49,16 @@ function ageGroupToRange(group, currentYear) {
 }
 
 // ─── 3단계 허들 평가 ─────────────────────────────────────────────────
-// 0순위: ingred_fit ❌ → 탈락 (성분/텍스처 불일치)
-// 1순위: visual_fit ❌ → 탈락 (톤앤매너 충돌)
-// 2순위: life_fit 점수로 순위 결정 (✅=2, ⚠️=1, ❌=0)
+// 0순위: product_fit ❌ → 탈락 (성분/텍스처 불일치)
+// 1순위: tnm_fit ❌ → 탈락 (톤앤매너 충돌)
+// 2순위: target_fit 점수로 순위 결정 (✅=2, ⚠️=1, ❌=0)
 // safe_fit: 시급성 참고 정보 (순위에 미포함)
 const LIFE_SCORE = { "✅": 2, "⚠️": 1, "❌": 0 };
 
 function computeHurdle(fits) {
-  if (fits.ingred_fit?.result === "❌") return { eliminated_by: "ingred", life_score: 0 };
-  if (fits.visual_fit?.result === "❌") return { eliminated_by: "tone", life_score: 0 };
-  return { eliminated_by: null, life_score: LIFE_SCORE[fits.life_fit?.result] ?? 0 };
+  if (fits.product_fit?.result === "❌") return { eliminated_by: "product", target_score: 0 };
+  if (fits.tnm_fit?.result === "❌") return { eliminated_by: "tone", target_score: 0 };
+  return { eliminated_by: null, target_score: LIFE_SCORE[fits.target_fit?.result] ?? 0 };
 }
 
 // LLM 정성 판정(1-A·1-B·2-B) + 코드 계산(2-A·passes·verdict)을 최종 구조로 조립.
@@ -91,15 +91,15 @@ const STATUS_SAFE_FIT = {
 
 function assembleEvaluation(llmEval, trendData, ingredOverride) {
   const fits = {
-    ingred_fit: ingredOverride ?? llmEval.ingred_fit,
-    visual_fit: llmEval.visual_fit,
-    life_fit: llmEval.life_fit,
+    product_fit: ingredOverride ?? llmEval.product_fit,
+    tnm_fit: llmEval.tnm_fit,
+    target_fit: llmEval.target_fit,
     safe_fit: llmEval.safe_fit,
   };
 
   // Life-Fit 코드 보정: audience_signal 없으면 ⚠️ 강제
   if (!trendData?.audience_signal) {
-    fits.life_fit = { result: "⚠️", reason: "타겟 페르소나 정보 없음 — 비교 불가" };
+    fits.target_fit = { result: "⚠️", reason: "타겟 페르소나 정보 없음 — 비교 불가" };
   }
 
   // Safe-Fit 코드 보정: trend_stage 우선, 없으면 status fallback. 둘 다 없으면 ⚠️ 강제
@@ -111,11 +111,11 @@ function assembleEvaluation(llmEval, trendData, ingredOverride) {
     fits.safe_fit = { result: "⚠️", reason: "트렌드 수명 정보 없음 — 지속 가능성 불확실" };
   }
 
-  const { eliminated_by, life_score } = computeHurdle(fits);
+  const { eliminated_by, target_score } = computeHurdle(fits);
   return {
     trend_name: llmEval.trend_name,
     evaluation: fits,
-    life_score,
+    target_score,
     eliminated_by,
     summary_reasons: filterVagueReasons(llmEval.summary_reasons),
   };
@@ -225,12 +225,12 @@ function makeExcludedByCategory(trend, brandCategory) {
   return {
     trend_name: trend.trend_name,
     evaluation: {
-      ingred_fit: skip,
-      visual_fit: skip,
-      life_fit: skip,
+      product_fit: skip,
+      tnm_fit: skip,
+      target_fit: skip,
       safe_fit: skip,
     },
-    life_score: 0,
+    target_score: 0,
     eliminated_by: "category",
     summary_reasons: [
       {
@@ -282,7 +282,7 @@ const systemContent = [
     type: "text",
     text: `## 출력 리마인더
 
-각 트렌드마다 **4기준(ingred_fit·visual_fit·life_fit·safe_fit)의 result(✅/⚠️/❌)+reason**과 **summary_reasons**를 담아 \`evaluations[]\`로 출력하세요.
+각 트렌드마다 **4기준(product_fit·tnm_fit·target_fit·safe_fit)의 result(✅/⚠️/❌)+reason**과 **summary_reasons**를 담아 \`evaluations[]\`로 출력하세요.
 
 score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 **출력하지 마세요.** 코드 블록 표시나 부가 설명 없이 순수 JSON 하나만.`,
     cache_control: { type: "ephemeral" },
@@ -350,7 +350,7 @@ ${JSON.stringify(brandAnalysis, null, 2)}
 ${JSON.stringify(passedTrendInput, null, 2)}
 \`\`\`
 ${mediaOverlapBlock}${lifeFitBlock}
-위 모든 트렌드에 대해 **4기준(ingred_fit·visual_fit·life_fit·safe_fit)의 result+reason과 summary_reasons**를 \`evaluations[]\`에 담아 반환하세요.
+위 모든 트렌드에 대해 **4기준(product_fit·tnm_fit·target_fit·safe_fit)의 result+reason과 summary_reasons**를 \`evaluations[]\`에 담아 반환하세요.
 
 score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
 
@@ -451,10 +451,10 @@ const allTrendByName = new Map(
   trendAnalysis.data.trends.map((t) => [t.trend_name, t]),
 );
 
-// 정렬: 탈락 여부 → life_score 내림 → 트렌드 metrics.score 내림.
+// 정렬: 탈락 여부 → target_score 내림 → 트렌드 metrics.score 내림.
 function sortTuple(ev) {
   const eliminated = ev.eliminated_by !== null ? 1 : 0;
-  const lifeScore = ev.life_score ?? 0;
+  const lifeScore = ev.target_score ?? 0;
   const trendScore = allTrendByName.get(ev.trend_name)?.metrics?.score ?? 0;
   return [eliminated, -lifeScore, -trendScore];
 }
