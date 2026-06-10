@@ -596,37 +596,38 @@ function verdictLine(fitKey, result) {
   return table[result] ?? "그 결과 종합 판정을 내렸어요.";
 }
 
-// 영역별 *방법론* 불렛 — 매칭 이유(사실)와 의미적으로 다른 표현으로 고정.
-// 마지막 불렛엔 verdictLine으로 결과 톤을 자연스럽게 얹음.
+// 영역별 매칭가 기준 라벨 (v0.6 3-허들 + 참고). 매칭가 system.md 기준 순서.
+const FIT_CRITERION_LABEL = {
+  ingred: "1차 기준 ‘제품 적합도(Product-Fit)’",
+  visual: "2차 기준 ‘톤앤매너 적합도(TnM-Fit)’",
+  life: "3차 기준 ‘타겟 적합도(Target-Fit)’",
+  safe: "참고 기준 ‘수요 시급성(Market-Fit)’",
+};
+
+// 결과 심볼 → 매칭가 적합도 점수 (✅=2, ⚠️=1, ❌=0).
+// 매칭가가 FitResult를 점수로 직접 내보내지 않아 작성가가 매핑.
+const POINT_BY_RESULT = { "✅": 2, "⚠️": 1, "❌": 0 };
+const LABEL_BY_RESULT = { "✅": "적합", "⚠️": "부분 적합", "❌": "부적합" };
+const SCORE_TONE = {
+  "✅": "높은 수치로 통과",
+  "⚠️": "중간 수치로 부분 통과",
+  "❌": "낮은 수치로 미통과",
+};
+
+// 영역별 *방법론* 불렛 — 매칭가의 N차 기준 + 적합도 점수를 명시해 매칭 이유
+// (사실 일치)와 의미가 명확히 갈리도록. 마지막 불렛은 결과 심볼별 결론 라인.
 function buildMethodologyBullets(fitKey, result) {
-  switch (fitKey) {
-    case "ingred":
-      return [
-        "브랜드 제품의 성분·제형 단어를 트렌드 핵심 키워드와 하나하나 맞춰 봤어요.",
-        "같은 의미군에 들어오는 표현이 있는지, 정반대 개념이 끼어 있지는 않은지 확인했죠.",
-        verdictLine("ingred", result),
-      ];
-    case "visual":
-      return [
-        "브랜드가 내세우는 톤앤매너와 트렌드의 시각적 무드를 나란히 놓고 비교했어요.",
-        "친화·충돌 키워드 룰로 두 분위기가 같은 결인지, 어색하게 만나는지를 살폈죠.",
-        verdictLine("visual", result),
-      ];
-    case "life":
-      return [
-        "브랜드가 잡은 타겟의 연령·성별·라이프스타일을 트렌드 소비자 데이터와 겹쳐 봤어요.",
-        "어느 연령대가 더 반응했는지, 소비 동기가 우리 타겟과 비슷한 결인지 따졌죠.",
-        verdictLine("life", result),
-      ];
-    case "safe":
-      return [
-        "트렌드가 지금 어느 단계(성장·정점·하락)에 있고 검색 수요가 얼마나 큰지 짚어봤어요.",
-        "단계별 시급성과 수요 규모를 캠페인 시점·기간과 맞물려 평가했죠.",
-        verdictLine("safe", result),
-      ];
-    default:
-      return [];
-  }
+  const criterion = FIT_CRITERION_LABEL[fitKey] ?? "매칭 기준";
+  const score = POINT_BY_RESULT[result];
+  const label = LABEL_BY_RESULT[result];
+  const tone = SCORE_TONE[result];
+  if (score == null) return [`매칭가의 ${criterion} 평가 데이터가 비어 있어요.`];
+
+  return [
+    `브랜드와 트렌드 매칭은 매칭가의 ${criterion} 단계에서 평가했어요.`,
+    `이 단계의 매칭 적합도 점수가 ${score}/2점으로 ${tone}, ‘${label}’으로 분류됐답니다.`,
+    verdictLine(fitKey, result),
+  ];
 }
 
 // ─── usage_plan 전용 LLM (트렌드 분석가 합의 — 채널 매핑 + evidence 인용) ─
