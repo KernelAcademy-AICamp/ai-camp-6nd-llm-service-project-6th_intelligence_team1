@@ -562,6 +562,91 @@ function extractChannelEvidence(td) {
   return null;
 }
 
+// ─── match_fits.reason 전용 LLM (4기준 영역별 1회씩, 총 4회 호출) ────
+// enrichContent의 일괄 풍부화보다 영역별 가이드로 더 정교하게.
+//   - ingred: 제품·제형 관점
+//   - visual: 매체·톤 관점
+//   - life: 타겟 라이프스타일 관점
+//   - safe: 트렌드 수명·이미지 관점
+// 실패 시 enrichContent 결과로 폴백.
+const MatchReasonLlmSchema = z.object({
+  reason: z.string().min(10).max(200),
+});
+
+const MATCH_REASON_FIT_GUIDE = {
+  ingred: "이 영역은 **제품·제형이 트렌드와 맞는지** 평가합니다. 제형·텍스처·성분 키워드 위주로 표현하세요.",
+  visual: "이 영역은 **브랜드 매체·톤이 트렌드와 맞는지** 평가합니다. 채널·콘텐츠 톤·시각 표현 위주로 표현하세요.",
+  life: "이 영역은 **타겟 고객층이 트렌드와 맞는지** 평가합니다. 타겟 연령·라이프스타일·동기 위주로 표현하세요.",
+  safe: "이 영역은 **트렌드가 브랜드 이미지에 안전한지** 평가합니다. 트렌드 수명·정점 시기·이미지 리스크 위주로 표현하세요.",
+};
+
+const MATCH_REASON_SYSTEM_PROMPT = `당신은 마케팅 카드의 매칭 근거 한 줄을 다듬는 사람입니다.
+
+규칙:
+1) 매칭가의 result(✅/⚠️/❌)와 톤이 일치해야 함.
+   - ✅: 적합·일치·강점 표현 (예: "정확히 일치", "강한 부합")
+   - ⚠️: 부분적 일치·조건부 표현 (예: "부분적으로 부합", "주의 필요")
+   - ❌: 부적합·충돌 표현 (예: "어긋남", "불일치")
+2) 트렌드 수치(headline_metric·growth_rate)를 자연스럽게 인용해 정량적 설득력 강화.
+   예: "검색량 47.4(+22%)로 떠오른" / "82점 트렌드가" / "성장률 +22%로 부상 중"
+3) 처음 보는 사람도 이해되는 한 문장 (또는 짧은 두 문장 이내).
+4) 환각 금지 — 주어진 데이터에 없는 수치·사실 만들지 말 것.
+5) 영역별 관점 유지 — 제품(ingred), 매체·톤(visual), 타겟(life), 안전(safe) 각 영역의 시각으로만 표현.
+
+예시(좋음, ingred ✅): "검색량 47.4(+22%)로 부상한 매트 트렌드가 브랜드 매트 제형과 직결돼 적합도가 높습니다."
+예시(좋음, safe ⚠️): "검색량은 47.4로 정점이지만 곧 하락 가능성으로 단기 캠페인에 한정하는 게 안전합니다."`;
+
+async function generateMatchReason({ fitKey, fitData, td, brand, matchEval, client }) {
+  if (!client) return null;
+  if (!fitData || !fitData.result) return null; // fit 데이터 없으면 스킵
+
+  const hm = td?.headline_metric ?? {};
+  const growth =
+    td?.metrics?.growth_rate != null
+      ? `+${(td.metrics.growth_rate * 100).toFixed(0)}%`
+      : "-";
+
+  const userMessage = `## 평가 영역
+${MATCH_REASON_FIT_GUIDE[fitKey] ?? "(영역 가이드 없음)"}
+
+## 매칭가 판정 (raw)
+- result: ${fitData.result}
+- reason: ${fitData.reason ?? "(없음)"}
+
+## 트렌드 수치
+- 이름: ${td?.trend_name ?? "-"}
+- 대표 지표: ${hm.metric ?? "-"} ${hm.value ?? ""}${hm.delta ? ` (${hm.delta})` : ""}
+- 성장률: ${growth}
+- 기간: ${td?.metrics?.period ?? "-"}
+- 트렌드 점수: ${td?.metrics?.score ?? "-"}
+
+## 매칭 종합
+- score: ${matchEval?.score ?? "-"}
+- matching_grade: ${matchEval?.matching_grade ?? "-"}
+
+## 브랜드 정보 (참고)
+- ${brand?.brand_name ?? "-"} / ${brand?.product_name ?? "-"} / ${brand?.category ?? "-"}
+
+위 데이터로 위 영역(${fitKey})의 매칭 근거 한 줄을 다듬어 JSON으로 반환. 환각·추측 금지.`;
+
+  try {
+    const response = await client.messages.parse({
+      model: "claude-haiku-4-5",
+      max_tokens: 512,
+      temperature: 0.3,
+      system: [
+        { type: "text", text: MATCH_REASON_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+      ],
+      messages: [{ role: "user", content: userMessage }],
+      output_config: { format: zodOutputFormat(MatchReasonLlmSchema) },
+    });
+    return response.parsed_output?.reason ?? null;
+  } catch (err) {
+    console.warn(`⚠️ generateMatchReason 실패 (${td?.trend_name ?? "?"}.${fitKey}): ${err.message}`);
+    return null;
+  }
+}
+
 async function generateUsagePlan({ rawContent, td, brand, client }) {
   if (!client) return null;
   const evidence = extractChannelEvidence(td);
@@ -693,37 +778,64 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
     }),
   );
 
-  // 3) raw + enrichment + usage_plan 머지
+  // 2-2) match_fits.reason 전용 LLM — 4영역(ingred·visual·life·safe)별 각 1회.
+  //      enrichContent의 일괄 풍부화보다 영역별 가이드로 정교한 한 줄. 실패 시
+  //      enrichContent 결과로 폴백 (enrichContent도 실패하면 raw matcher reason).
+  const FIT_KEYS = ["ingred", "visual", "life", "safe"];
+  const matchReasons = await Promise.all(
+    rawContents.map(async (c) => {
+      const td = findTrend(c.trend_name);
+      const ev = findEval(c.trend_name);
+      const results = await Promise.all(
+        FIT_KEYS.map((key) =>
+          generateMatchReason({
+            fitKey: key,
+            fitData: c.match_fits?.[key],
+            td,
+            brand: b,
+            matchEval: ev,
+            client,
+          }),
+        ),
+      );
+      return Object.fromEntries(FIT_KEYS.map((k, i) => [k, results[i]]));
+    }),
+  );
+
+  // 3) raw + enrichment + usage_plan + match_reasons 머지
+  // 우선순위 (match_fits.reason): generateMatchReason(dedicated) → enrichContent → raw matcher
+  // 우선순위 (usage_plan): generateUsagePlan(dedicated) → enrichContent → ""
   const contents = rawContents.map((c, i) => {
     const enr = enrichments[i];
     const dedicatedUsagePlan = usagePlans[i];
-    if (!enr) {
-      // 풍부화 실패해도 usage_plan은 별도 LLM 결과가 있으면 채움
-      return dedicatedUsagePlan ? { ...c, usage_plan: dedicatedUsagePlan } : c;
+    const dedicatedReasons = matchReasons[i] ?? {};
+    const pickReason = (fitKey) =>
+      dedicatedReasons[fitKey] || enr?.fit_reasons?.[fitKey] || null;
+
+    const mergedFit = (fitKey) => {
+      const base = c.match_fits[fitKey];
+      if (!base) return base; // 매칭가가 안 준 fit
+      const reason = pickReason(fitKey);
+      return reason ? { ...base, reason } : base;
+    };
+
+    if (!enr && !dedicatedUsagePlan && !Object.values(dedicatedReasons).some(Boolean)) {
+      return c; // 모든 LLM 실패 → raw 그대로
     }
 
     return {
       ...c,
       summary_bullets:
-        Array.isArray(enr.summary_bullets) && enr.summary_bullets.length > 0
+        Array.isArray(enr?.summary_bullets) && enr.summary_bullets.length > 0
           ? enr.summary_bullets
           : c.summary_bullets,
-      // 전용 usage_plan LLM 성공 → 그걸 사용. 실패 시 enrichContent 결과로 폴백.
-      usage_plan: dedicatedUsagePlan || enr.usage_plan || "",
+      usage_plan: dedicatedUsagePlan || enr?.usage_plan || "",
       match_fits: {
         ...c.match_fits,
-        ingred: c.match_fits.ingred && enr.fit_reasons?.ingred
-          ? { ...c.match_fits.ingred, reason: enr.fit_reasons.ingred }
-          : c.match_fits.ingred,
-        visual: c.match_fits.visual && enr.fit_reasons?.visual
-          ? { ...c.match_fits.visual, reason: enr.fit_reasons.visual }
-          : c.match_fits.visual,
-        life: c.match_fits.life && enr.fit_reasons?.life
-          ? { ...c.match_fits.life, reason: enr.fit_reasons.life }
-          : c.match_fits.life,
-        safe: c.match_fits.safe && enr.fit_reasons?.safe
-          ? { ...c.match_fits.safe, reason: enr.fit_reasons.safe }
-          : c.match_fits.safe,
+        ingred: mergedFit("ingred"),
+        visual: mergedFit("visual"),
+        life: mergedFit("life"),
+        safe: mergedFit("safe"),
       },
     };
   });
