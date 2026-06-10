@@ -168,6 +168,8 @@ const RecommendationSchema = z.object({
   trend_id: z.string().nullable(),
   trend_name: z.string(),
   summary_reasons: z.array(EvidenceReasonSchema),
+  market_context: z.string(),               // 2차: 트렌드 단계·수요 레이블
+  competition_context: z.string().optional(), // 3차: 경쟁 강도 레이블 (데이터 있을 때만)
   channel_activity: ChannelActivitySchema,
   demand_fit: DemandFitSchema,
   competition_fit: CompetitionFitSchema,

@@ -143,6 +143,30 @@ function computeMarketFit(trendData) {
   return { result: "⚠️", reason: "트렌드 단계 미확인 — lifespan 기준 추정" };
 }
 
+// 2차·3차 레이블 — recommendations에 인간 가독 맥락으로 첨부
+const COMPETITION_LABELS = {
+  "높음": "경쟁 치열 — 차별화 전략 필요",
+  "중간": "경쟁 보통 — 포지셔닝에 따라 기회",
+  "낮음": "빠른 진입 시 선점 효과 ↑",
+};
+
+function marketFitLabel(trendData) {
+  const stage = trendData?.trend_stage ?? trendData?.status;
+  const searches = trendData?.demand_fit?.monthly_searches ?? null;
+  const highDemand = searches != null && searches > MARKET_FIT_MIN_SEARCHES;
+  const searchWord = searches != null ? `검색 ${highDemand ? "많음" : "적음"}` : null;
+
+  if (stage === "emerging") {
+    if (!searchWord) return "emerging = ✅ 트렌드 성장 중";
+    return `emerging + ${searchWord} = ${highDemand ? "✅ 타이밍·수요 둘 다 좋음" : "⚠️ 타이밍만 좋음 (니치)"}`;
+  }
+  if (stage === "peak") {
+    if (!searchWord) return "peak = ⚠️ 단기 캠페인 적합";
+    return `peak + ${searchWord} = ${highDemand ? "⚠️ 수요 있지만 타이밍 늦음" : "❌ 타이밍·수요 모두 불리"}`;
+  }
+  return "트렌드 단계 정보 없음";
+}
+
 function assembleEvaluation(llmEval, trendData) {
   const fits = {
     product_fit: llmEval.product_fit,
@@ -506,9 +530,22 @@ allEvaluations.sort((a, b) => {
   return 0;
 });
 
-// 추천: 제외가 아닌 것 전부 (최소 3개 기준, 있는 만큼 다양하게).
+// 1차 매칭 완료 — product/tnm/target 허들 통과분
 const nonExcluded = allEvaluations.filter((ev) => ev.eliminated_by === null);
-let topEvals = [...nonExcluded];
+
+// 2차 Market 허들: declining 트렌드 순위권에서 제거 (evaluations엔 그대로 유지)
+const marketFiltered = nonExcluded.filter((ev) => {
+  const t = allTrendByName.get(ev.trend_name);
+  return (t?.trend_stage ?? t?.status) !== "declining";
+});
+if (nonExcluded.length !== marketFiltered.length) {
+  const removed = nonExcluded
+    .filter((ev) => !marketFiltered.includes(ev))
+    .map((ev) => ev.trend_name);
+  console.log(`2차 Market 허들: declining ${removed.length}개 순위권 제거 — ${removed.join(", ")}`);
+}
+
+let topEvals = [...marketFiltered];
 
 // 뷰티 카테고리 정반대 개념 쌍 — 코드 1차 감지용
 const KEYWORD_CONFLICT_PAIRS = [
@@ -591,13 +628,17 @@ ${JSON.stringify(topCtx, null, 2)}
   }
 }
 
+// 3차: market_context(2차 레이블) + competition_context(3차 레이블) 첨부
 const recommendations = topEvals.slice(0, 3).map((ev, i) => {
   const trendRaw = allTrendByName.get(ev.trend_name);
+  const compLevel = trendRaw?.competition_fit?.level;
   return {
     rank: i + 1,
     trend_id: trendRaw?.trend_id ?? null,
-    trend_name: trendRaw?.trend_name ?? ev.trend_name, // 입력 원본 우선 (LLM 변형 방지)
+    trend_name: trendRaw?.trend_name ?? ev.trend_name,
     summary_reasons: ev.summary_reasons,
+    market_context: marketFitLabel(trendRaw),
+    ...(compLevel && { competition_context: `${compLevel} — ${COMPETITION_LABELS[compLevel] ?? compLevel}` }),
     ...(trendRaw?.channel_activity != null && { channel_activity: trendRaw.channel_activity }),
     ...(trendRaw?.demand_fit != null && { demand_fit: trendRaw.demand_fit }),
     ...(trendRaw?.competition_fit != null && { competition_fit: trendRaw.competition_fit }),
