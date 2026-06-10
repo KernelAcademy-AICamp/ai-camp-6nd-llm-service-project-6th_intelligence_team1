@@ -15,6 +15,14 @@ const PROJECT_ROOT = resolve(__dirname, "..");
 const writerOutput = JSON.parse(
   readFileSync(resolve(PROJECT_ROOT, "output-main/output-text/writer-output.json"), "utf-8"),
 );
+// 영역별 "비교한 데이터" 섹션 채우려면 brand·trend 원본도 필요.
+const brandRaw = JSON.parse(
+  readFileSync(resolve(PROJECT_ROOT, "shared/data/brand-analysis.json"), "utf-8"),
+).data;
+const trendRaw = JSON.parse(
+  readFileSync(resolve(PROJECT_ROOT, "shared/data/trend-analysis.json"), "utf-8"),
+).data;
+const trendByName = new Map(trendRaw.trends.map((t) => [t.trend_name, t]));
 
 // 영역별 제목·부제·"이 영역에서 본 것" 불렛.
 // 백엔드 이름(Ingred-Fit 등) 대신 자연 한글 제목 사용 — 마케터·디자이너가 한 눈에 의미 파악.
@@ -71,12 +79,84 @@ function esc(s) {
     .replace(/"/g, "&quot;");
 }
 
-function renderFitItem(fitKey, fit) {
+// 트렌드 keywords 정규화 — 옛 array vs 신 객체({ingred,life}) 둘 다 수용.
+function normalizeTrendKeywords(keywords) {
+  if (Array.isArray(keywords)) return keywords;
+  if (keywords && typeof keywords === "object") {
+    return [...(keywords.ingred ?? []), ...(keywords.life ?? [])];
+  }
+  return [];
+}
+
+// 영역별 비교 데이터 추출 — brand/trend 원본에서 어떤 필드를 봤는지 양쪽 값 명시.
+// "어떤 근거로 매칭했는지" 비전공자도 한 눈에 파악 가능하도록.
+function buildComparisonData(fitKey, brand, td) {
+  const trim = (s) => (s ? String(s).trim() : "");
+  switch (fitKey) {
+    case "ingred": {
+      const brandSide = [
+        ...(brand?.texture_keywords ?? []),
+        ...(brand?.product_features ?? []),
+      ].filter(Boolean).join(", ") || "(없음)";
+      const trendSide = normalizeTrendKeywords(td?.keywords).slice(0, 5).join(", ") || "(없음)";
+      return [
+        ["브랜드 제품 키워드", brandSide],
+        ["트렌드 핵심 키워드", trendSide],
+      ];
+    }
+    case "visual": {
+      const brandSide = (brand?.tone_and_manner ?? []).join(", ") || "(없음)";
+      const channels = (td?.media_channel_status ?? [])
+        .map((c) => c.media_channel || c.name)
+        .filter(Boolean)
+        .join(", ") || "(없음)";
+      return [
+        ["브랜드 톤앤매너", brandSide],
+        ["트렌드 활성 매체", channels],
+      ];
+    }
+    case "life": {
+      const t = brand?.target ?? {};
+      const targetStr = [
+        t.gender,
+        (t.age_groups ?? []).join("·"),
+        (t.motivation ?? []).join("·"),
+        t.involvement,
+      ].filter(Boolean).join(", ") || "(없음)";
+      const trendAud = trim(td?.audience_signal) ||
+        (td?.audience_distribution
+          ? "트렌드 인구분포 데이터 있음"
+          : "(없음)");
+      return [
+        ["브랜드 타겟", targetStr],
+        ["트렌드 향유층", trendAud],
+      ];
+    }
+    case "safe": {
+      const stage = trim(td?.trend_stage) || "(미정)";
+      const lifespan = trim(td?.lifespan_estimate) || "(미정)";
+      const growth =
+        td?.metrics?.growth_rate != null
+          ? `${td.metrics.growth_rate >= 0 ? "+" : ""}${Math.round(td.metrics.growth_rate * 100)}%`
+          : "(없음)";
+      return [
+        ["트렌드 단계", stage],
+        ["트렌드 수명", lifespan],
+        ["성장률", growth],
+      ];
+    }
+    default:
+      return [];
+  }
+}
+
+function renderFitItem(fitKey, fit, brand, td) {
   const meta = FIT_META[fitKey];
   const r = fit?.result ?? "";
   const label = FIT_RESULT_LABEL[r] ?? { label: "-", className: "fit-empty" };
   const reason = fit?.reason || "(매칭 데이터 없음)";
   const checks = Array.isArray(meta.checks) ? meta.checks : [];
+  const compRows = buildComparisonData(fitKey, brand, td);
   return `
     <div class="fit-item ${label.className}">
       <div class="fit-head">
@@ -86,11 +166,23 @@ function renderFitItem(fitKey, fit) {
       <div class="fit-subtitle">${esc(meta.subtitle)}</div>
       ${
         checks.length > 0
-          ? `<div class="fit-checks-label">📌 이 영역에서 본 것</div>
+          ? `<div class="fit-section-label">📌 이 영역에서 본 것</div>
              <ul class="fit-checks">${checks.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>`
           : ""
       }
-      <div class="fit-reason-label">📊 결과</div>
+      ${
+        compRows.length > 0
+          ? `<div class="fit-section-label">🔍 비교한 데이터</div>
+             <table class="fit-compare">
+               ${compRows
+                 .map(
+                   ([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`,
+                 )
+                 .join("")}
+             </table>`
+          : ""
+      }
+      <div class="fit-section-label">📊 판정 결과</div>
       <div class="fit-reason">${esc(reason)}</div>
     </div>
   `;
@@ -127,8 +219,9 @@ function renderMetric(headline) {
 
 function renderCard(c) {
   const period = c.metrics?.period ?? "";
+  const td = trendByName.get(c.trend_name); // 원본 트렌드 데이터 (audience_signal·trend_stage 등)
   const result4 = ["ingred", "visual", "life", "safe"]
-    .map((k) => renderFitItem(k, c.match_fits?.[k]))
+    .map((k) => renderFitItem(k, c.match_fits?.[k], brandRaw, td))
     .join("");
 
   return `
@@ -329,13 +422,13 @@ const html = `<!DOCTYPE html>
     .fit-title { font-size: 14px; font-weight: 800; color: #2a1a20; }
     .fit-result { font-size: 12px; font-weight: 700; color: #6a3a4a; }
     .fit-subtitle { font-size: 11.5px; color: #8a5a6e; margin-bottom: 8px; font-weight: 500; }
-    .fit-checks-label, .fit-reason-label {
+    .fit-section-label {
       font-size: 11px; font-weight: 700; color: #c2185b;
-      margin-top: 8px; margin-bottom: 4px; letter-spacing: -0.2px;
+      margin-top: 10px; margin-bottom: 4px; letter-spacing: -0.2px;
     }
     .fit-checks {
-      list-style: none; padding: 0; margin: 0 0 6px;
-      background: #fff5f7; border-radius: 8px; padding: 8px 10px;
+      list-style: none; padding: 8px 10px; margin: 0 0 4px;
+      background: #fff5f7; border-radius: 8px;
     }
     .fit-checks li {
       position: relative; padding-left: 14px; font-size: 11.5px;
@@ -346,7 +439,27 @@ const html = `<!DOCTYPE html>
       color: #c2185b; font-size: 18px; font-weight: 700;
     }
     .fit-checks li:last-child { margin-bottom: 0; }
-    .fit-reason { font-size: 12.5px; color: #2a1a20; line-height: 1.5; }
+    .fit-compare {
+      width: 100%; border-collapse: collapse;
+      background: #fce4ec; border-radius: 8px; overflow: hidden;
+      margin-bottom: 4px; font-size: 11.5px;
+    }
+    .fit-compare th, .fit-compare td {
+      padding: 6px 10px; text-align: left; vertical-align: top;
+      line-height: 1.45;
+    }
+    .fit-compare th {
+      color: #8a3a55; font-weight: 700; white-space: nowrap;
+      width: 38%; border-bottom: 1px solid #f9c6d5;
+    }
+    .fit-compare td {
+      color: #2a1a20; border-bottom: 1px solid #f9c6d5;
+    }
+    .fit-compare tr:last-child th, .fit-compare tr:last-child td { border-bottom: none; }
+    .fit-reason {
+      font-size: 12.5px; color: #2a1a20; line-height: 1.5;
+      background: #fff5f7; border-radius: 8px; padding: 8px 10px;
+    }
 
     /* 카드 하단 — 활용 방안 */
     .card-foot {
