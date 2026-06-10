@@ -6,18 +6,20 @@
     "hello": "node examples/hello.js",
     "chat": "node examples/chat.js",
     "match": "node src/matching/match.js",
-    "trend:collect": "node trend/youtube.js && node trend/tavily.js && node trend/naver.js && node trend/naver-search.js && node trend/merge.js",
-    "trend": "npm run trend:collect && node src/trend/analyze.js",
+    "trend:collect": "node trend/youtube.js && node trend/tavily.js && node trend/naver.js && node trend/naver-search.js && (node trend/naver-searchad.js || echo '⚠️ searchad 스킵(한도/오류) — 검색량 없이 진행') && (node apify.js || echo '⚠️ apify 스킵(한도/오류) — 채널활동 없이 진행') && node trend/merge.js",
+    "trend": "npm run trend:collect && node src/trend/analyze.js && (node src/trend/merge-search-demand.js || echo '⚠️ demand 병합 스킵') && (node src/trend/merge-channel-activity.js || echo '⚠️ channel 병합 스킵')",
+    "trend:merge-activity": "node src/trend/merge-channel-activity.js",
     "brand": "node src/brand/analyze.js",
     "design": "node src/designer/design.js",
     "design-v2": "node src/designer-v2/design.js",
-    "pipeline": "npm run brand && npm run trend && npm run match"
+    "write": "node output-main/output-text/write.js",
+    "pipeline": "npm run brand && npm run trend && npm run match && npm run write"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.1",
     "@google/genai": "^2.7.0",
     "@tavily/core": "^0.7.3",
-    "apify-client": "^2.23.3",
+    "apify-client": "^2.23.4",
     "axios": "^1.16.1",
     "dotenv": "^17.4.2",
     "zod": "^4.4.3"

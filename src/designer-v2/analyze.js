@@ -65,6 +65,7 @@ export async function analyzeOneSource({ brand, content, source, references }) {
       composition: "",
       color_palette: [],
       key_objects: [],
+      background: "",
       source_specific: "",
       usage: null,
     };
@@ -92,6 +93,7 @@ export async function analyzeOneSource({ brand, content, source, references }) {
       composition: "",
       color_palette: [],
       key_objects: [],
+      background: "",
       source_specific: "",
       usage: null,
     };
@@ -142,6 +144,7 @@ ${sourceLabel(source)}의 강점(${sourceStrength(source)})에 가장 잘 부합
     composition: data.composition,
     color_palette: data.color_palette ?? [],
     key_objects: data.key_objects ?? [],
+    background: data.background ?? "",
     source_specific: data.source_specific,
     usage: response.usage,
   };
