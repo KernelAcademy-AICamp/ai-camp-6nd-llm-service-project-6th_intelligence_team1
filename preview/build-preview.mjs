@@ -88,85 +88,106 @@ function normalizeTrendKeywords(keywords) {
   return [];
 }
 
-// 판정결과 자연어 합성 — "어떤 데이터를 보고 + 왜 이 결과가 나왔는지" 한 문장.
-// 영역별 brand/trend 원본 데이터를 인용 + 결과 라벨에 맞는 톤으로 결론까지.
-// LLM 호출 없음, 결정적·코드 합성. 비전공자도 한 문장으로 매칭 근거 파악 가능.
-function buildVerdictExplanation(fitKey, result, brand, td) {
+// 판정결과 불렛 합성 — "브랜드 쪽 / 트렌드 쪽 / 결과" 3개 불렛으로 영역별 데이터·결론을
+// 시각적으로 분리해 한 눈에 비교 가능하게. LLM 호출 없음, 결정적·코드 합성.
+//
+// 반환: [{label, value, type}, ...] 형태
+//   - type "brand"  → 브랜드 쪽 데이터
+//   - type "trend"  → 트렌드 쪽 데이터
+//   - type "result" → 결과(➜ 시작, 굵게)
+function buildVerdictBullets(fitKey, result, brand, td) {
   const trim = (s) => (s ? String(s).trim() : "");
   const fallback = (v, alt) => (v && v.length > 0 ? v : alt);
 
   switch (fitKey) {
     case "ingred": {
-      const brandKw = esc(fallback(
-        // 중복 제거 — texture_keywords와 product_features에 같은 단어("매트" 등)가
-        // 모두 들어가는 경우가 흔함.
+      const brandKw = fallback(
         [...new Set([...(brand?.texture_keywords ?? []), ...(brand?.product_features ?? [])])]
           .filter(Boolean)
           .join(", "),
         "(브랜드 키워드 없음)",
-      ));
-      const trendKw = esc(fallback(
+      );
+      const trendKw = fallback(
         normalizeTrendKeywords(td?.keywords).slice(0, 5).join(", "),
         "(트렌드 키워드 없음)",
-      ));
-      return {
-        "✅": `브랜드 제품 키워드 <b>"${brandKw}"</b>가 트렌드 핵심 키워드 <b>"${trendKw}"</b>와 직접 매칭되기 때문에 <b>적합</b>으로 판정.`,
-        "⚠️": `브랜드 제품 키워드 <b>"${brandKw}"</b>가 트렌드 핵심 키워드 <b>"${trendKw}"</b> 중 일부와만 겹치기 때문에 <b>부분 적합</b>으로 판정.`,
-        "❌": `브랜드 제품 키워드 <b>"${brandKw}"</b>가 트렌드 핵심 키워드 <b>"${trendKw}"</b>와 거의 겹치지 않아 <b>부적합</b>으로 판정.`,
-      }[result] ?? "(판정 데이터 없음)";
+      );
+      const resultLine = {
+        "✅": "직접 매칭되어 <b>적합</b>으로 판정",
+        "⚠️": "일부와만 겹쳐 <b>부분 적합</b>으로 판정",
+        "❌": "거의 겹치지 않아 <b>부적합</b>으로 판정",
+      }[result] ?? "판정 데이터 없음";
+      return [
+        { type: "brand", label: "브랜드 쪽", value: brandKw },
+        { type: "trend", label: "트렌드 쪽", value: trendKw },
+        { type: "result", label: "판정", html: resultLine },
+      ];
     }
     case "visual": {
-      const brandTone = esc(fallback(
+      const brandTone = fallback(
         (brand?.tone_and_manner ?? []).join(", "),
         "(브랜드 톤 없음)",
-      ));
-      const channels = esc(fallback(
+      );
+      const channels = fallback(
         (td?.media_channel_status ?? [])
           .map((c) => c.media_channel || c.name)
           .filter(Boolean)
           .join(", "),
-        "(트렌드 활성 매체 데이터 없음)",
-      ));
-      return {
-        "✅": `브랜드 톤앤매너 <b>"${brandTone}"</b>가 트렌드의 활성 매체 <b>"${channels}"</b>가 만드는 콘텐츠 성격과 잘 어울려서 <b>적합</b>으로 판정.`,
-        "⚠️": `브랜드 톤 <b>"${brandTone}"</b>이 트렌드 매체 <b>"${channels}"</b>의 콘텐츠 성격과 부분적으로만 부합하여 <b>부분 적합</b>으로 판정.`,
-        "❌": `브랜드 톤 <b>"${brandTone}"</b>이 트렌드 매체 <b>"${channels}"</b>의 시각·콘텐츠 성격과 충돌하여 <b>부적합</b>으로 판정.`,
-      }[result] ?? "(판정 데이터 없음)";
+        "(트렌드 활성 매체 없음)",
+      );
+      const resultLine = {
+        "✅": "톤·콘텐츠 성격이 잘 어울려 <b>적합</b>으로 판정",
+        "⚠️": "부분적으로만 부합하여 <b>부분 적합</b>으로 판정",
+        "❌": "톤·콘텐츠 성격이 충돌하여 <b>부적합</b>으로 판정",
+      }[result] ?? "판정 데이터 없음";
+      return [
+        { type: "brand", label: "브랜드 톤앤매너", value: brandTone },
+        { type: "trend", label: "트렌드 활성 매체", value: channels },
+        { type: "result", label: "판정", html: resultLine },
+      ];
     }
     case "life": {
       const t = brand?.target ?? {};
-      const brandTarget = esc(fallback(
+      const brandTarget = fallback(
         [t.gender, (t.age_groups ?? []).join("·"), (t.motivation ?? []).join("·"), t.involvement]
           .filter(Boolean)
           .join(", "),
         "(브랜드 타겟 없음)",
-      ));
-      const trendAud = esc(fallback(
+      );
+      const trendAud = fallback(
         trim(td?.audience_signal),
-        td?.audience_distribution ? "트렌드 인구분포 데이터 참고" : "(트렌드 향유층 데이터 없음)",
-      ));
-      return {
-        "✅": `브랜드 타겟 <b>"${brandTarget}"</b>이 트렌드 향유층 <b>"${trendAud}"</b>와 연령·라이프스타일·동기에서 일치하여 <b>적합</b>으로 판정.`,
-        "⚠️": `브랜드 타겟 <b>"${brandTarget}"</b>과 트렌드 향유층 <b>"${trendAud}"</b> 사이 일부 일치하나 차이가 있어 <b>부분 적합</b>으로 판정.`,
-        "❌": `브랜드 타겟 <b>"${brandTarget}"</b>과 트렌드 향유층 <b>"${trendAud}"</b>의 연령·라이프스타일이 명확히 달라 <b>부적합</b>으로 판정.`,
-      }[result] ?? "(판정 데이터 없음)";
+        td?.audience_distribution ? "트렌드 인구분포 데이터 참고" : "(트렌드 향유층 없음)",
+      );
+      const resultLine = {
+        "✅": "연령·라이프스타일·동기 일치로 <b>적합</b>으로 판정",
+        "⚠️": "일부 일치하나 차이가 있어 <b>부분 적합</b>으로 판정",
+        "❌": "연령·라이프스타일 명확히 달라 <b>부적합</b>으로 판정",
+      }[result] ?? "판정 데이터 없음";
+      return [
+        { type: "brand", label: "브랜드 타겟", value: brandTarget },
+        { type: "trend", label: "트렌드 향유층", value: trendAud },
+        { type: "result", label: "판정", html: resultLine },
+      ];
     }
     case "safe": {
-      const stage = esc(fallback(trim(td?.trend_stage), "미정"));
-      const lifespan = esc(fallback(trim(td?.lifespan_estimate), "미정"));
-      const growth = esc(
+      const stage = fallback(trim(td?.trend_stage), "미정");
+      const lifespan = fallback(trim(td?.lifespan_estimate), "미정");
+      const growth =
         td?.metrics?.growth_rate != null
           ? `${td.metrics.growth_rate >= 0 ? "+" : ""}${Math.round(td.metrics.growth_rate * 100)}%`
-          : "데이터 없음",
-      );
-      return {
-        "✅": `트렌드가 <b>"${stage}"</b> 단계 + 수명 <b>"${lifespan}"</b> + 성장률 <b>${growth}</b>로 안정적이라 브랜드 이미지에 안전하여 <b>적합</b>으로 판정.`,
-        "⚠️": `트렌드가 <b>"${stage}"</b> 단계라 곧 하락 가능 (수명 <b>"${lifespan}"</b>, 성장률 <b>${growth}</b>). 단기 캠페인에 한정해 <b>부분 적합</b>으로 판정.`,
-        "❌": `트렌드가 <b>"${stage}"</b> 단계로 브랜드 이미지에 리스크가 있어 (수명 <b>"${lifespan}"</b>, 성장률 <b>${growth}</b>) <b>부적합</b>으로 판정.`,
-      }[result] ?? "(판정 데이터 없음)";
+          : "데이터 없음";
+      const resultLine = {
+        "✅": "안정 성장 중이라 브랜드 이미지에 안전 — <b>적합</b>으로 판정",
+        "⚠️": "정점·하락 임박이라 단기 캠페인 한정 — <b>부분 적합</b>으로 판정",
+        "❌": "브랜드 이미지에 리스크 — <b>부적합</b>으로 판정",
+      }[result] ?? "판정 데이터 없음";
+      return [
+        { type: "trend", label: "트렌드 단계", value: stage },
+        { type: "trend", label: "트렌드 수명", value: `${lifespan} (성장률 ${growth})` },
+        { type: "result", label: "판정", html: resultLine },
+      ];
     }
     default:
-      return "(판정 데이터 없음)";
+      return [{ type: "result", label: "판정", html: "데이터 없음" }];
   }
 }
 
@@ -175,10 +196,18 @@ function renderFitItem(fitKey, fit, brand, td) {
   const r = fit?.result ?? "";
   const label = FIT_RESULT_LABEL[r] ?? { label: "-", className: "fit-empty" };
   const checks = Array.isArray(meta.checks) ? meta.checks : [];
-  // 판정결과 = brand/trend 데이터 인용 + 왜 그 결과인지 한 문장 설명.
-  // (esc 안 하는 이유: 함수 내부에서 안전한 <b> 태그만 직접 삽입 — 사용자 입력 esc는 함수 내부에서 처리 안 함.
-  //  brand·trend 값은 esc 처리한 뒤 템플릿에 넣어야 안전하나, 현재는 작성가 통제 데이터라 신뢰 가정.)
-  const verdictHtml = buildVerdictExplanation(fitKey, r, brand, td);
+  const verdictBullets = buildVerdictBullets(fitKey, r, brand, td);
+
+  // 판정결과 = 영역별 데이터(브랜드/트렌드) + 결과 한 줄을 각각 분리된 불렛으로
+  // 한 눈에 비교 가능. value는 esc 처리, html(result line)은 <b> 마크업 통제됨.
+  const verdictListHtml = verdictBullets
+    .map((b) => {
+      const inner = b.html
+        ? b.html // <b> 태그 포함된 통제 마크업
+        : esc(b.value ?? "");
+      return `<li class="verdict-${b.type}"><span class="verdict-label">${esc(b.label)}:</span> <span class="verdict-value">${inner}</span></li>`;
+    })
+    .join("");
 
   return `
     <div class="fit-item ${label.className}">
@@ -194,7 +223,7 @@ function renderFitItem(fitKey, fit, brand, td) {
           : ""
       }
       <div class="fit-section-label">📊 판정 결과</div>
-      <div class="fit-verdict">${verdictHtml}</div>
+      <ul class="fit-verdict">${verdictListHtml}</ul>
     </div>
   `;
 }
@@ -451,8 +480,28 @@ const html = `<!DOCTYPE html>
     }
     .fit-checks li:last-child { margin-bottom: 0; }
     .fit-verdict {
-      font-size: 12.5px; color: #2a1a20; line-height: 1.6;
-      background: #fff5f7; border-radius: 8px; padding: 10px 12px;
+      list-style: none; padding: 10px 12px; margin: 0;
+      background: #fff5f7; border-radius: 8px;
+      font-size: 12px; color: #2a1a20; line-height: 1.55;
+    }
+    .fit-verdict li {
+      position: relative; padding-left: 14px; margin-bottom: 5px;
+    }
+    .fit-verdict li:last-child { margin-bottom: 0; }
+    .fit-verdict li::before {
+      content: "·"; position: absolute; left: 4px; top: -3px;
+      color: #c2185b; font-size: 18px; font-weight: 700;
+    }
+    .fit-verdict .verdict-label {
+      font-weight: 700; color: #8a3a55; margin-right: 4px;
+    }
+    .fit-verdict .verdict-value { color: #2a1a20; }
+    .fit-verdict li.verdict-result {
+      margin-top: 6px; padding-top: 6px;
+      border-top: 1px dashed #f9c6d5; padding-left: 14px;
+    }
+    .fit-verdict li.verdict-result::before {
+      content: "→"; font-size: 13px; left: 0; top: 6px;
     }
     .fit-verdict b { color: #c2185b; font-weight: 700; }
 
