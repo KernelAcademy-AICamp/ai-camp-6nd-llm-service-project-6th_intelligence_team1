@@ -82,7 +82,7 @@ async function generateTrendKeywords(input) {
 - 뷰티관여도: ${input.target.involvement}
 - 소비동기: ${input.target.motivation.join(", ")}
 
-\`search_keywords\`(Tavily용 자연 문장형 5~6개), \`short_keywords\`(YouTube용 짧은 평면 배열 4~6개), \`datalab_keywords\`(Naver용 짧은 단어 그룹 2~3개), \`hashtag_keywords\`(Instagram·TikTok용 띄어쓰기 없는 해시태그 5~7개) 모두 채워서 JSON으로만 반환.`;
+\`keyword_pairs\`(Tavily 자연 문장 + Instagram·TikTok 해시태그 짝 5~6쌍, i번째 쌍의 search·hashtag가 같은 트렌드를 가리켜야 함), \`short_keywords\`(YouTube용 짧은 평면 배열 4~6개), \`datalab_keywords\`(Naver용 짧은 단어 그룹 2~3개) 모두 채워서 JSON으로만 반환.`;
 
   const response = await client.messages.parse({
     model: "claude-haiku-4-5",
@@ -101,11 +101,17 @@ async function generateTrendKeywords(input) {
     throw new Error("키워드 생성 실패");
   }
 
+  // keyword_pairs(쌍 묶음) → search_keywords / hashtag_keywords 두 배열로 분리.
+  // 코드 레벨 짝짓기 보장: 두 배열의 i번째는 항상 같은 트렌드를 가리킨다.
+  const pairs = parsed.keyword_pairs ?? [];
+  const search_keywords = pairs.map((p) => p.search);
+  const hashtag_keywords = pairs.map((p) => p.hashtag);
+
   return {
-    search_keywords: parsed.search_keywords,
+    search_keywords,
     short_keywords: parsed.short_keywords,
     datalab_keywords: parsed.datalab_keywords,
-    hashtag_keywords: parsed.hashtag_keywords,
+    hashtag_keywords,
     usage: response.usage,
   };
 }
