@@ -150,6 +150,7 @@ function assembleEvaluation(llmEval, trendData) {
     target_score,
     eliminated_by,
     summary_reasons: filterVagueReasons(llmEval.summary_reasons),
+    ...(trendData?.channel_activity != null && { channel_activity: trendData.channel_activity }),
   };
 }
 
@@ -577,6 +578,7 @@ const recommendations = topEvals.slice(0, 3).map((ev, i) => {
     trend_id: trendRaw?.trend_id ?? null,
     trend_name: trendRaw?.trend_name ?? ev.trend_name, // 입력 원본 우선 (LLM 변형 방지)
     summary_reasons: ev.summary_reasons,
+    ...(trendRaw?.channel_activity != null && { channel_activity: trendRaw.channel_activity }),
   };
 });
 

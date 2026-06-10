@@ -114,6 +114,20 @@ const FitResultSchema = z.object({
   reason: z.string(),
 });
 
+const ChannelScoreSchema = z.object({
+  score: z.number(),
+  evidence: z.string(),
+  source: z.string(),
+});
+const ChannelActivitySchema = z.object({
+  scores: z.object({
+    youtube: ChannelScoreSchema.optional(),
+    instagram: ChannelScoreSchema.optional(),
+    tiktok: ChannelScoreSchema.optional(),
+  }),
+  top_channel: z.string(),
+}).optional();
+
 // 데이터 근거 — 입력에서 직접 확인 가능한 사실 + 출처만. 정성 판단은 제외.
 const EvidenceReasonSchema = z.object({
   category: z.string(), // 예: "성분 적합성", "매체 매칭", "라이프스타일 매칭", "트렌드 수명"
@@ -132,6 +146,7 @@ const EvaluationItemSchema = z.object({
   target_score: z.number().int().min(0).max(2), // target_fit: ✅=2, ⚠️=1, ❌=0
   eliminated_by: z.enum(["product", "tone", "category"]).nullable(),
   summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
+  channel_activity: ChannelActivitySchema,
 });
 
 const RecommendationSchema = z.object({
@@ -139,6 +154,7 @@ const RecommendationSchema = z.object({
   trend_id: z.string().nullable(),
   trend_name: z.string(),
   summary_reasons: z.array(EvidenceReasonSchema),
+  channel_activity: ChannelActivitySchema,
 });
 
 export const MatchDataSchema = z.object({
