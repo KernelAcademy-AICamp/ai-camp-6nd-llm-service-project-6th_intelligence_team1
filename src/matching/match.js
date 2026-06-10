@@ -112,7 +112,7 @@ function filterVagueReasons(reasons) {
 
 // Market-Fit: 라이프사이클(trend_stage) × 수요 규모(demand_fit.monthly_searches) 2×2 매트릭스
 // 검색량 기준 임계값 — 카테고리 볼륨에 따라 조정 필요
-const MARKET_FIT_MIN_SEARCHES = 10000;
+const MARKET_FIT_MIN_SEARCHES = 5000; // 하위 카테고리 키워드 기준 — 필요 시 조정
 
 function computeMarketFit(trendData) {
   const stage = trendData?.trend_stage ?? trendData?.status;
@@ -158,7 +158,7 @@ function marketFitLabel(trendData) {
 
   if (stage === "emerging") {
     if (!searchWord) return "emerging = ✅ 트렌드 성장 중";
-    return `emerging + ${searchWord} = ${highDemand ? "✅ 타이밍·수요 둘 다 좋음" : "⚠️ 타이밍만 좋음 (니치)"}`;
+    return `emerging + ${searchWord} = ${highDemand ? "✅ 타이밍·수요 둘 다 좋음" : "⚠️ 타이밍은 좋지만 이 조합으론 수요가 작게 잡혀요 — 참고하세요"}`;
   }
   if (stage === "peak") {
     if (!searchWord) return "peak = ⚠️ 단기 캠페인 적합";
