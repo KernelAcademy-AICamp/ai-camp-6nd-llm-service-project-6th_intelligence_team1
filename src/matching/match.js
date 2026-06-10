@@ -48,7 +48,7 @@ function ageGroupToRange(group, currentYear) {
 }
 
 // ─── 3단계 허들 평가 ─────────────────────────────────────────────────
-// 0순위: product_fit ❌ → 탈락 (성분/텍스처 불일치)
+// 0순위: product_fit ❌ → 탈락 (제품 유형·성분 불일치, LLM + 코드 안전망)
 // 1순위: tnm_fit ❌ → 탈락 (톤앤매너 충돌)
 // 2순위: target_fit 점수로 순위 결정 (✅=2, ⚠️=1, ❌=0)
 // safe_fit: 시급성 참고 정보 (순위에 미포함)
@@ -129,8 +129,8 @@ function assembleEvaluation(llmEval, trendData) {
   const negConflict = checkNegationConflict(trendData);
   if (negConflict) fits.product_fit = negConflict;
 
-  // Life-Fit 코드 보정: audience_signal 없으면 ⚠️ 강제
-  if (!trendData?.audience_signal) {
+  // Target-Fit 코드 보정: t.target 우선, 없으면 audience_signal 폴백, 둘 다 없으면 ⚠️ 강제
+  if (!trendData?.target && !trendData?.audience_signal) {
     fits.target_fit = { result: "⚠️", reason: "타겟 페르소나 정보 없음 — 비교 불가" };
   }
 
@@ -347,10 +347,10 @@ const passedTrendInput = {
   data: { ...trendAnalysis.data, trends: passedTrends },
 };
 const mediaOverlapBlock = mediaOverlapByTrend.length
-  ? `\n## 매체 교집합 (코드 계산 — 브랜드 매체 ∩ 트렌드 매체)\n${mediaOverlapByTrend.map((m) => `- ${m.trend_name}: 겹치는 매체 ${m.overlap_count}개 [${m.overlap.join(", ") || "없음"}]`).join("\n")}\n\n## 매체 데이터 신뢰도\n- youtube: 직접 수집 데이터 (높음) — Visual-Fit 강신호로 반영\n- instagram·tiktok: 웹 기사 2차 정보 (낮음) — 참고 수준으로만 반영\n- naver·blog: 검색 데이터 기반 (중간)\n`
+  ? `\n## 매체 교집합 (코드 계산 — 브랜드 매체 ∩ 트렌드 매체)\n${mediaOverlapByTrend.map((m) => `- ${m.trend_name}: 겹치는 매체 ${m.overlap_count}개 [${m.overlap.join(", ") || "없음"}]`).join("\n")}\n\n## 매체 데이터 신뢰도\n- youtube: 직접 수집 데이터 (높음)\n- instagram·tiktok: 웹 기사 2차 정보 (낮음) — 참고 수준\n- naver·blog: 검색 데이터 기반 (중간)\n`
   : "";
 
-// 관여도·소비동기 의미 테이블 — LLM이 일관된 기준으로 Life-Fit 판단하도록
+// 관여도·소비동기 의미 테이블 — LLM이 일관된 기준으로 Target-Fit 판단하도록
 const INVOLVEMENT_DESC = {
   "입문자": "뷰티 루틴 막 시작, 간단하고 쉬운 제품 선호, 트렌드보다 기본에 집중",
   "일상사용자": "데일리 루틴 중심, 기능성·편의성 중시, 안정적 제품 선호",
@@ -367,7 +367,7 @@ const target = brandAnalysis.data.target ?? {};
 const involvementDesc = INVOLVEMENT_DESC[target.involvement] ?? target.involvement ?? "";
 const motivationDescs = (target.motivation ?? []).map((m) => `${m}(${MOTIVATION_DESC[m] ?? m})`).join(", ");
 const lifeFitBlock = (involvementDesc || motivationDescs)
-  ? `\n## 브랜드 타겟 특성 (Life-Fit 판단 기준)\n- 관여도: ${target.involvement} → ${involvementDesc}\n- 소비동기: ${motivationDescs}\n`
+  ? `\n## 브랜드 타겟 특성 (Target-Fit 판단 기준)\n- 관여도: ${target.involvement} → ${involvementDesc}\n- 소비동기: ${motivationDescs}\n`
   : "";
 
 const userMessage = `다음 입력 데이터로 매칭 평가를 수행하세요.

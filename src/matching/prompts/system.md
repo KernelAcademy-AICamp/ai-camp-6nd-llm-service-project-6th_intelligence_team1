@@ -29,7 +29,8 @@
 - `trend_name`, `summary`, `meaning`, `status`
 - `keywords` / `core_keywords`
 - `media_channel_status[]` (선택): 매체별 콘텐츠 활용 양상 — 참고용만 (평가 기준에서 제외)
-- `audience_distribution` / `audience_signal` (선택): 인구통계·페르소나 — Target-Fit 참고
+- `target` (선택): 트렌드 타겟 `{ gender, age_groups, motivation[], involvement }` — Target-Fit 핵심
+- `audience_distribution` / `audience_signal` (선택): 인구통계·페르소나 — `target` 없을 때 Target-Fit 참고
 - `lifespan_estimate` / `metrics.growth_rate` (선택): 트렌드 수명·성장 추세 — Safe-Fit
 
 ---
@@ -60,7 +61,10 @@
 - **❌**: 충돌 (예: 럭셔리·프리미엄 + 키치·밈 성격 트렌드)
 
 ### 3. Target-Fit (라이프스타일·페르소나 적합성)
-**비교**: 브랜드 `target` (age·motivation·involvement) ↔ 트렌드 `summary`·`audience_signal` (타겟의 일상·가치관과 연결되는가)
+**비교**: 브랜드 `target` (age·motivation·involvement) ↔ 트렌드 `target`·`audience_signal`·`summary` 순으로 참조 (타겟의 일상·가치관과 연결되는가)
+
+- 트렌드에 `target.motivation`·`target.involvement`가 있으면 그것을 기준으로 비교
+- 없으면 `audience_signal`·`summary`로 추론
 
 단순 인구통계가 아닌 **가치관·일상 맥락** 매칭. 예: 갓생 라이프(빠른 멀티케어), 가치 소비(비건), 도파민 소비(재미·바이럴).
 
