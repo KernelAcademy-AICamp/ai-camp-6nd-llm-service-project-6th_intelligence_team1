@@ -88,106 +88,103 @@ function normalizeTrendKeywords(keywords) {
   return [];
 }
 
-// 판정결과 불렛 합성 — "브랜드 쪽 / 트렌드 쪽 / 결과" 3개 불렛으로 영역별 데이터·결론을
-// 시각적으로 분리해 한 눈에 비교 가능하게. LLM 호출 없음, 결정적·코드 합성.
-//
-// 반환: [{label, value, type}, ...] 형태
-//   - type "brand"  → 브랜드 쪽 데이터
-//   - type "trend"  → 트렌드 쪽 데이터
-//   - type "result" → 결과(➜ 시작, 굵게)
+// 판정결과 불렛 — 이전 한 문장 자연어를 자연스러운 분기점에서 나눠 3개 불렛으로.
+// 문장 단어·표현은 그대로 유지. 마지막 불렛은 "결과 라인"으로 화살표·점선 구분.
+// LLM 호출 없음. 반환: HTML 문자열 배열 (이미 esc·<b> 마크업 처리됨).
 function buildVerdictBullets(fitKey, result, brand, td) {
   const trim = (s) => (s ? String(s).trim() : "");
   const fallback = (v, alt) => (v && v.length > 0 ? v : alt);
 
   switch (fitKey) {
     case "ingred": {
-      const brandKw = fallback(
+      const brandKw = esc(fallback(
         [...new Set([...(brand?.texture_keywords ?? []), ...(brand?.product_features ?? [])])]
           .filter(Boolean)
           .join(", "),
         "(브랜드 키워드 없음)",
-      );
-      const trendKw = fallback(
+      ));
+      const trendKw = esc(fallback(
         normalizeTrendKeywords(td?.keywords).slice(0, 5).join(", "),
         "(트렌드 키워드 없음)",
-      );
+      ));
       const resultLine = {
-        "✅": "직접 매칭되어 <b>적합</b>으로 판정",
-        "⚠️": "일부와만 겹쳐 <b>부분 적합</b>으로 판정",
-        "❌": "거의 겹치지 않아 <b>부적합</b>으로 판정",
-      }[result] ?? "판정 데이터 없음";
+        "✅": `직접 매칭되기 때문에 <b>적합</b>으로 판정.`,
+        "⚠️": `일부와만 겹치기 때문에 <b>부분 적합</b>으로 판정.`,
+        "❌": `거의 겹치지 않아 <b>부적합</b>으로 판정.`,
+      }[result] ?? "(판정 데이터 없음)";
       return [
-        { type: "brand", label: "브랜드 쪽", value: brandKw },
-        { type: "trend", label: "트렌드 쪽", value: trendKw },
-        { type: "result", label: "판정", html: resultLine },
+        `브랜드 제품 키워드 <b>"${brandKw}"</b>`,
+        `트렌드 핵심 키워드 <b>"${trendKw}"</b>`,
+        resultLine,
       ];
     }
     case "visual": {
-      const brandTone = fallback(
+      const brandTone = esc(fallback(
         (brand?.tone_and_manner ?? []).join(", "),
         "(브랜드 톤 없음)",
-      );
-      const channels = fallback(
+      ));
+      const channels = esc(fallback(
         (td?.media_channel_status ?? [])
           .map((c) => c.media_channel || c.name)
           .filter(Boolean)
           .join(", "),
-        "(트렌드 활성 매체 없음)",
-      );
+        "(트렌드 활성 매체 데이터 없음)",
+      ));
       const resultLine = {
-        "✅": "톤·콘텐츠 성격이 잘 어울려 <b>적합</b>으로 판정",
-        "⚠️": "부분적으로만 부합하여 <b>부분 적합</b>으로 판정",
-        "❌": "톤·콘텐츠 성격이 충돌하여 <b>부적합</b>으로 판정",
-      }[result] ?? "판정 데이터 없음";
+        "✅": `트렌드 매체가 만드는 콘텐츠 성격과 잘 어울려서 <b>적합</b>으로 판정.`,
+        "⚠️": `콘텐츠 성격과 부분적으로만 부합하여 <b>부분 적합</b>으로 판정.`,
+        "❌": `시각·콘텐츠 성격과 충돌하여 <b>부적합</b>으로 판정.`,
+      }[result] ?? "(판정 데이터 없음)";
       return [
-        { type: "brand", label: "브랜드 톤앤매너", value: brandTone },
-        { type: "trend", label: "트렌드 활성 매체", value: channels },
-        { type: "result", label: "판정", html: resultLine },
+        `브랜드 톤앤매너 <b>"${brandTone}"</b>`,
+        `트렌드의 활성 매체 <b>"${channels}"</b>`,
+        resultLine,
       ];
     }
     case "life": {
       const t = brand?.target ?? {};
-      const brandTarget = fallback(
+      const brandTarget = esc(fallback(
         [t.gender, (t.age_groups ?? []).join("·"), (t.motivation ?? []).join("·"), t.involvement]
           .filter(Boolean)
           .join(", "),
         "(브랜드 타겟 없음)",
-      );
-      const trendAud = fallback(
+      ));
+      const trendAud = esc(fallback(
         trim(td?.audience_signal),
-        td?.audience_distribution ? "트렌드 인구분포 데이터 참고" : "(트렌드 향유층 없음)",
-      );
+        td?.audience_distribution ? "트렌드 인구분포 데이터 참고" : "(트렌드 향유층 데이터 없음)",
+      ));
       const resultLine = {
-        "✅": "연령·라이프스타일·동기 일치로 <b>적합</b>으로 판정",
-        "⚠️": "일부 일치하나 차이가 있어 <b>부분 적합</b>으로 판정",
-        "❌": "연령·라이프스타일 명확히 달라 <b>부적합</b>으로 판정",
-      }[result] ?? "판정 데이터 없음";
+        "✅": `연령·라이프스타일·동기에서 일치하여 <b>적합</b>으로 판정.`,
+        "⚠️": `사이 일부 일치하나 차이가 있어 <b>부분 적합</b>으로 판정.`,
+        "❌": `연령·라이프스타일이 명확히 달라 <b>부적합</b>으로 판정.`,
+      }[result] ?? "(판정 데이터 없음)";
       return [
-        { type: "brand", label: "브랜드 타겟", value: brandTarget },
-        { type: "trend", label: "트렌드 향유층", value: trendAud },
-        { type: "result", label: "판정", html: resultLine },
+        `브랜드 타겟 <b>"${brandTarget}"</b>`,
+        `트렌드 향유층 <b>"${trendAud}"</b>`,
+        resultLine,
       ];
     }
     case "safe": {
-      const stage = fallback(trim(td?.trend_stage), "미정");
-      const lifespan = fallback(trim(td?.lifespan_estimate), "미정");
-      const growth =
+      const stage = esc(fallback(trim(td?.trend_stage), "미정"));
+      const lifespan = esc(fallback(trim(td?.lifespan_estimate), "미정"));
+      const growth = esc(
         td?.metrics?.growth_rate != null
           ? `${td.metrics.growth_rate >= 0 ? "+" : ""}${Math.round(td.metrics.growth_rate * 100)}%`
-          : "데이터 없음";
+          : "데이터 없음",
+      );
       const resultLine = {
-        "✅": "안정 성장 중이라 브랜드 이미지에 안전 — <b>적합</b>으로 판정",
-        "⚠️": "정점·하락 임박이라 단기 캠페인 한정 — <b>부분 적합</b>으로 판정",
-        "❌": "브랜드 이미지에 리스크 — <b>부적합</b>으로 판정",
-      }[result] ?? "판정 데이터 없음";
+        "✅": `안정적이라 브랜드 이미지에 안전하여 <b>적합</b>으로 판정.`,
+        "⚠️": `곧 하락 가능. 단기 캠페인에 한정해 <b>부분 적합</b>으로 판정.`,
+        "❌": `브랜드 이미지에 리스크가 있어 <b>부적합</b>으로 판정.`,
+      }[result] ?? "(판정 데이터 없음)";
       return [
-        { type: "trend", label: "트렌드 단계", value: stage },
-        { type: "trend", label: "트렌드 수명", value: `${lifespan} (성장률 ${growth})` },
-        { type: "result", label: "판정", html: resultLine },
+        `트렌드 단계 <b>"${stage}"</b>`,
+        `수명 <b>"${lifespan}"</b>, 성장률 <b>${growth}</b>`,
+        resultLine,
       ];
     }
     default:
-      return [{ type: "result", label: "판정", html: "데이터 없음" }];
+      return ["(판정 데이터 없음)"];
   }
 }
 
@@ -198,14 +195,12 @@ function renderFitItem(fitKey, fit, brand, td) {
   const checks = Array.isArray(meta.checks) ? meta.checks : [];
   const verdictBullets = buildVerdictBullets(fitKey, r, brand, td);
 
-  // 판정결과 = 영역별 데이터(브랜드/트렌드) + 결과 한 줄을 각각 분리된 불렛으로
-  // 한 눈에 비교 가능. value는 esc 처리, html(result line)은 <b> 마크업 통제됨.
+  // 판정결과 = 이전 한 문장을 자연스러운 분기점에서 나눈 불렛들. 마지막 불렛이
+  // 결과 라인(verdict-result). 각 불렛은 이미 esc·<b> 처리된 HTML 문자열.
   const verdictListHtml = verdictBullets
-    .map((b) => {
-      const inner = b.html
-        ? b.html // <b> 태그 포함된 통제 마크업
-        : esc(b.value ?? "");
-      return `<li class="verdict-${b.type}"><span class="verdict-label">${esc(b.label)}:</span> <span class="verdict-value">${inner}</span></li>`;
+    .map((html, i) => {
+      const isResult = i === verdictBullets.length - 1;
+      return `<li class="${isResult ? "verdict-result" : ""}">${html}</li>`;
     })
     .join("");
 
@@ -492,10 +487,6 @@ const html = `<!DOCTYPE html>
       content: "·"; position: absolute; left: 4px; top: -3px;
       color: #c2185b; font-size: 18px; font-weight: 700;
     }
-    .fit-verdict .verdict-label {
-      font-weight: 700; color: #8a3a55; margin-right: 4px;
-    }
-    .fit-verdict .verdict-value { color: #2a1a20; }
     .fit-verdict li.verdict-result {
       margin-top: 6px; padding-top: 6px;
       border-top: 1px dashed #f9c6d5; padding-left: 14px;
