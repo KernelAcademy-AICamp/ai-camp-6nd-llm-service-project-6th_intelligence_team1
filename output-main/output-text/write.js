@@ -1,8 +1,12 @@
+import "dotenv/config";
+import Anthropic from "@anthropic-ai/sdk";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import { z } from "zod";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
-// 작성가 v1 — LLM 호출 없이 순수 데이터 매핑으로 마케터 리포트 생성.
+// 작성가 v1 — 순수 데이터 매핑 + 카드 텍스트 LLM 풍부화 (디자인 담당 합의).
 //
 // 입력 (shared/data/):
 //   - brand-analysis.json  (엄남경)
@@ -10,6 +14,7 @@ import { dirname, resolve } from "node:path";
 //   - match-result.json    (오주연)
 // 출력:
 //   - output-main/output-text/report.md  (이 파일 옆)
+//   - output-main/output-text/writer-output.json (UI 서빙용)
 //
 // 사용법:
 //   node output-main/output-text/write.js
@@ -313,12 +318,28 @@ function slimFit(f) {
   return { result: f.result, reason: f.reason };
 }
 
-// 4기준(ingred·visual·life·safe) result → 옛 question_1/question_2 passes 호환 매핑.
+// 매칭가가 기준명을 옛(ingred·visual·life) ↔ 신(product·tnm·target) 둘 중
+// 어느 쪽으로 보내든 폴백으로 정규화. UI엔 옛 이름(ingred·visual·life·safe)으로 노출.
+function pickFit(fits, ...keys) {
+  for (const k of keys) if (fits?.[k]) return fits[k];
+  return null;
+}
+function normalizeFits(fits) {
+  return {
+    ingred: pickFit(fits, "ingred_fit", "product_fit"),
+    visual: pickFit(fits, "visual_fit", "tnm_fit"),
+    life: pickFit(fits, "life_fit", "target_fit"),
+    safe: pickFit(fits, "safe_fit"),
+  };
+}
+
+// 4기준 result → 옛 question_1/question_2 passes 호환 매핑.
 // q1=브랜드 적합성(ingred+visual), q2=타겟·격 적합성(life+safe). 4점 만점에서 0/1/2로 압축.
 const FIT_POINT = { "✅": 2, "⚠️": 1, "❌": 0 };
 function legacyPasses(fits) {
-  const q1Raw = (FIT_POINT[fits?.ingred_fit?.result] ?? 0) + (FIT_POINT[fits?.visual_fit?.result] ?? 0);
-  const q2Raw = (FIT_POINT[fits?.life_fit?.result] ?? 0) + (FIT_POINT[fits?.safe_fit?.result] ?? 0);
+  const n = normalizeFits(fits);
+  const q1Raw = (FIT_POINT[n.ingred?.result] ?? 0) + (FIT_POINT[n.visual?.result] ?? 0);
+  const q2Raw = (FIT_POINT[n.life?.result] ?? 0) + (FIT_POINT[n.safe?.result] ?? 0);
   const compress = (s) => (s >= 4 ? 2 : s >= 2 ? 1 : 0);
   const q1 = compress(q1Raw);
   const q2 = compress(q2Raw);
@@ -364,7 +385,99 @@ function buildChannels(td) {
     }));
 }
 
-export function generateWriterOutput({ brand, trend, match } = {}) {
+// ─── LLM 카드 풍부화 (디자인 담당 합의) ────────────────────────────
+// 콘텐츠 카드 1장당 LLM 1회 호출로 다음 3가지를 한 번에 만든다:
+//   1) fit_reasons.{ingred,visual,life,safe} — 매칭가 raw reason + 트렌드 수치
+//      를 합쳐 정량적 설득력 있는 한 줄로 다듬기
+//   2) usage_plan — 트렌드 + 마케터 매체·타겟·KPI로 행동 제안 한 줄
+//   3) summary_bullets — 기존 분석체 bullets를 구어체로 다듬기 (내용 유지)
+// 실패 시 raw 값 그대로 유지 — 시스템이 안 무너지게.
+
+const ContentEnrichmentSchema = z.object({
+  fit_reasons: z.object({
+    ingred: z.string(),
+    visual: z.string(),
+    life: z.string(),
+    safe: z.string(),
+  }),
+  usage_plan: z.string(),
+  summary_bullets: z.array(z.string()).min(1).max(5),
+});
+
+const ENRICH_SYSTEM_PROMPT = `당신은 마케팅 리포트 카드의 카피를 다듬는 사람입니다.
+주어진 데이터만 활용해 풍부하게 다듬되, 환각·새 사실 추가는 금지.
+
+3가지 작업:
+
+1. fit_reasons.{ingred,visual,life,safe} — 각 4기준의 매칭가 raw reason과 트렌드 수치(headline_metric·growth_rate)를 합쳐 정량적으로 설득되는 한 줄로 다듬기.
+   예: "검색량 47.4(+22%)로 떠오른 매트 트렌드가 브랜드 매트 제형과 직결돼 적합도가 높습니다."
+
+2. usage_plan — 트렌드 + 마케터 매체(current_channels)·타겟·KPI를 보고 구체적 행동 제안 한 줄.
+   예: "인스타 릴스로 매트 쿠션 결 살리기 챌린지를 열어 20대 타겟에 도달."
+
+3. summary_bullets — 기존 분석체 bullets를 구어체로 다듬기. 내용 그대로, 표현만 부드럽게.
+   예: "~로 자리 잡고 있다" → "요즘 ~가 대세예요"
+
+스타일 규칙:
+- 매번 같은 입력엔 같은 출력 (temperature 낮게).
+- 데이터에 없는 수치·사실 만들지 말 것.
+- 한국어, 한 문장 또는 짧은 두 문장 이내.`;
+
+async function enrichContent({ rawContent, td, brand, matchEval, client }) {
+  if (!client) return null;
+  const fits = matchEval?.evaluation ?? {};
+  const n = normalizeFits(fits);
+  if (!n.ingred && !n.visual && !n.life && !n.safe) {
+    return null; // 매칭 데이터 없으면 LLM 건너뜀
+  }
+
+  const hm = td?.headline_metric ?? {};
+  const userMessage = `## 매칭가 4-Fit 판정 (raw)
+- Ingred: ${n.ingred?.result ?? "-"} — ${n.ingred?.reason ?? "(없음)"}
+- Visual: ${n.visual?.result ?? "-"} — ${n.visual?.reason ?? "(없음)"}
+- Life: ${n.life?.result ?? "-"} — ${n.life?.reason ?? "(없음)"}
+- Safe: ${n.safe?.result ?? "-"} — ${n.safe?.reason ?? "(없음)"}
+- 매칭 점수: ${matchEval?.score ?? "-"}/8
+- 매칭 등급: ${matchEval?.matching_grade ?? "-"}
+
+## 트렌드 정보
+- 이름: ${td?.trend_name ?? "-"}
+- 키워드: ${(rawContent?.keywords ?? []).join(", ") || "-"}
+- 대표 지표: ${hm.metric ?? "-"} ${hm.value ?? ""}${hm.delta ? ` (${hm.delta})` : ""}
+- 증가율: ${td?.metrics?.growth_rate != null ? `+${(td.metrics.growth_rate * 100).toFixed(0)}%` : "-"}
+- 기간: ${td?.metrics?.period ?? "-"}
+- 의미(meaning): ${td?.meaning ?? "-"}
+- 유행현황(status): ${td?.status ?? "-"}
+- 기존 summary_bullets (분석체):
+${(rawContent?.summary_bullets ?? []).map((s) => "  - " + s).join("\n") || "  (없음)"}
+
+## 마케터 정보
+- 브랜드: ${brand?.brand_name ?? "-"} / ${brand?.product_name ?? "-"}
+- 타겟: ${brand?.target?.gender ?? ""} ${(brand?.target?.age_groups ?? []).join("·")} ${(brand?.tone_and_manner ?? []).join("·")}
+- 활용 매체(current_channels): ${(brand?.current_channels ?? []).join(", ") || "(없음)"}
+- 캠페인 KPI: ${brand?.campaign_kpi ?? "-"}
+
+위 데이터로 3가지 작업 수행. JSON으로만 반환.`;
+
+  try {
+    const response = await client.messages.parse({
+      model: "claude-haiku-4-5",
+      max_tokens: 1024,
+      temperature: 0.3,
+      system: [
+        { type: "text", text: ENRICH_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+      ],
+      messages: [{ role: "user", content: userMessage }],
+      output_config: { format: zodOutputFormat(ContentEnrichmentSchema) },
+    });
+    return response.parsed_output ?? null;
+  } catch (err) {
+    console.warn(`⚠️ enrichContent 실패 (${td?.trend_name ?? "?"}): ${err.message}`);
+    return null;
+  }
+}
+
+export async function generateWriterOutput({ brand, trend, match } = {}) {
   const b = unwrap(brand);
   const t = unwrap(trend);
   const m = unwrap(match);
@@ -374,7 +487,11 @@ export function generateWriterOutput({ brand, trend, match } = {}) {
   const findTrend = (name) => (t.trends ?? []).find((x) => x.trend_name === name);
   const findEval = (name) => evaluations.find((e) => e.trend_name === name);
 
-  const contents = top.map((r, i) => {
+  // LLM 클라이언트 — ANTHROPIC_API_KEY 없으면 풍부화 단계 자동 스킵.
+  const client = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null;
+
+  // 1) 카드 raw 생성 (LLM 호출 없음, 순수 매핑)
+  const rawContents = top.map((r, i) => {
     const td = findTrend(r.trend_name);
     const ev = findEval(r.trend_name);
     const fits = ev?.evaluation ?? {};
@@ -396,13 +513,58 @@ export function generateWriterOutput({ brand, trend, match } = {}) {
       // 옛 UI 호환: 4기준을 2질문(passes 0/1/2)으로 압축
       match_passes: legacyPasses(fits),
       match_strength: deriveStrength(ev?.matching_grade),
-      // 신 UI용: 4기준 result + reason만 노출. gap/solution은 작성가가 안 씀.
+      // 신 UI용: 4기준 result + reason만 노출. 매칭가의 옛(ingred_fit)·신(product_fit)
+      // 두 이름 모두 폴백으로 수용. UI엔 옛 이름(ingred·visual·life·safe)으로 유지.
+      match_fits: (() => {
+        const n = normalizeFits(fits);
+        return {
+          ingred: slimFit(n.ingred),
+          visual: slimFit(n.visual),
+          life: slimFit(n.life),
+          safe: slimFit(n.safe),
+          score: ev?.score ?? 0, // 0-8
+        };
+      })(),
+      usage_plan: "", // 풍부화 단계에서 채움 (실패 시 빈 문자열 유지)
+    };
+  });
+
+  // 2) LLM 풍부화 — 카드 1장당 1회 호출, 병렬 실행.
+  //    실패한 카드는 raw 값 그대로 유지 (시스템 안 무너짐).
+  const enrichments = await Promise.all(
+    rawContents.map((c) => {
+      const td = findTrend(c.trend_name);
+      const ev = findEval(c.trend_name);
+      return enrichContent({ rawContent: c, td, brand: b, matchEval: ev, client });
+    }),
+  );
+
+  // 3) raw + enrichment 머지
+  const contents = rawContents.map((c, i) => {
+    const enr = enrichments[i];
+    if (!enr) return c; // 풍부화 실패 → raw 그대로
+
+    return {
+      ...c,
+      summary_bullets:
+        Array.isArray(enr.summary_bullets) && enr.summary_bullets.length > 0
+          ? enr.summary_bullets
+          : c.summary_bullets,
+      usage_plan: enr.usage_plan || "",
       match_fits: {
-        ingred: slimFit(fits.ingred_fit),
-        visual: slimFit(fits.visual_fit),
-        life: slimFit(fits.life_fit),
-        safe: slimFit(fits.safe_fit),
-        score: ev?.score ?? 0, // 0-8
+        ...c.match_fits,
+        ingred: c.match_fits.ingred && enr.fit_reasons?.ingred
+          ? { ...c.match_fits.ingred, reason: enr.fit_reasons.ingred }
+          : c.match_fits.ingred,
+        visual: c.match_fits.visual && enr.fit_reasons?.visual
+          ? { ...c.match_fits.visual, reason: enr.fit_reasons.visual }
+          : c.match_fits.visual,
+        life: c.match_fits.life && enr.fit_reasons?.life
+          ? { ...c.match_fits.life, reason: enr.fit_reasons.life }
+          : c.match_fits.life,
+        safe: c.match_fits.safe && enr.fit_reasons?.safe
+          ? { ...c.match_fits.safe, reason: enr.fit_reasons.safe }
+          : c.match_fits.safe,
       },
     };
   });
@@ -448,7 +610,8 @@ if (isDirectRun) {
   // 2) JSON 구조화 산출물 (UI 서빙용) — 팀 합의로 output-main/output-text/에 저장하고
   //    git 추적함. shared/data/는 gitignore라 UI 작업자(mockup HTML·web/) 디스크엔 안
   //    생기는 문제 때문에 서빙용 파일은 추적되는 위치에 보관.
-  const writerJson = generateWriterOutput({ brand, trend, match });
+  //    카드 1장당 LLM 1회로 fit_reasons·usage_plan·summary_bullets 풍부화.
+  const writerJson = await generateWriterOutput({ brand, trend, match });
   const jsonPath = resolve(__dirname, "writer-output.json");
   writeFileSync(jsonPath, JSON.stringify(writerJson, null, 2));
 
