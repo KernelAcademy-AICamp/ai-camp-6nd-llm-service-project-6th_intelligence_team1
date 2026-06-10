@@ -120,7 +120,7 @@ function computeMarketFit(trendData) {
   const lifespan = trendData?.lifespan_estimate;
 
   const searchLabel = searches != null
-    ? `월 검색 ${searches >= 10000 ? (searches / 10000).toFixed(1) + "만" : searches.toLocaleString()}`
+    ? `네이버 월 검색 ${searches >= 10000 ? (searches / 10000).toFixed(1) + "만" : searches.toLocaleString()}`
     : null;
 
   if (stage === "declining") {
@@ -162,7 +162,7 @@ function marketFitLabel(trendData) {
   }[stage] ?? "트렌드 단계 정보 없음";
 
   const searchDesc = searches != null
-    ? `월 검색 ${searches >= 10000 ? (searches / 10000).toFixed(1) + "만" : searches.toLocaleString()}회`
+    ? `네이버 월 검색 ${searches >= 10000 ? (searches / 10000).toFixed(1) + "만" : searches.toLocaleString()}회`
     : "검색량 데이터 없음";
 
   if (stage === "emerging") {
