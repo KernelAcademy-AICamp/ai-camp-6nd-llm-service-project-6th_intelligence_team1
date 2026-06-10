@@ -70,7 +70,7 @@ Python 등 다른 언어 에이전트는 동일 구조를 직접 구현하되, `
 
 매칭가의 4비교(1-A, 1-B, 2-A, 2-B)가 동작하려면 다음 필드가 필수.
 
-**브랜드 분석가가 줄 brand-analysis.json**
+**브랜드 분석가가 줄 brand-analysis.json** (v1.2)
 
 | 필드 | 형식 | 비고 |
 |---|---|---|
@@ -79,8 +79,17 @@ Python 등 다른 언어 에이전트는 동일 구조를 직접 구현하되, `
 | `data.target.gender` | `"여성"` / `"남성"` / `"여성·남성"` | 2-A 성별 오버랩 계산 |
 | `data.target.age_range` 또는 `target.age_groups` | `"20-30"` 문자열 또는 `["20대","30대"]` 배열 | 둘 중 하나, 매칭가가 흡수 |
 | `data.tone_and_manner` | 배열, 7종 enum 중 선택 | 1-A·1-B 친화/충돌 판정. `클린뷰티`/`로맨틱·감성`/`럭셔리·프리미엄`/`키치·플레이풀`/`더마·과학적`/`Z세대·트렌디`/`비건` |
+| `data.product_features` | 배열 | Ingred-Fit 핵심 입력. 룰베이스로 합성 (texture·category 소분류·tone phrase 조합) |
+| `data.search_keywords` | 배열 (자연 문장형, 5~6개) | Tavily 웹 기사 검색용 |
+| `data.short_keywords` | 배열 (짧은 명사, 4~6개) | YouTube 영상 검색용 |
+| `data.datalab_keywords` | `[{groupName, keywords}]` (2~3 그룹) | Naver DataLab 검색 지수용 (그룹 단위 OR 합산) |
+| `data.hashtag_keywords` | 배열 (띄어쓰기 없는 한글 명사, 5~7개) | **Instagram·TikTok 해시태그 수집용**. 띄어쓰기 있으면 # 한 덩어리로 안 잡힘 |
 
 부가 필드(`match_keywords` 등)는 자유 — 매칭가는 패스스루.
+
+**버전 이력:**
+- v1.0 → v1.1: `product_features` 추가 (룰베이스 합성, Ingred-Fit 입력)
+- v1.1 → v1.2: `hashtag_keywords` 추가 (SNS 해시태그 수집용)
 
 **트렌드 분석가가 줄 trend-analysis.json**
 
