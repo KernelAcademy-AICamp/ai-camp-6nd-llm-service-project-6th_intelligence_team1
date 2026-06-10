@@ -5,6 +5,7 @@ import { wrap } from "../../shared/envelope.js";
 import {
   BrandInputSchema,
   BrandKeywordsLlmSchema,
+  buildProductFeatures,
   expandAgeGroupForMatching,
 } from "./schemas.js";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
@@ -115,23 +116,29 @@ export async function analyzeBrand(userInput) {
   // 2) match_keywords 자동 생성 (LLM 호출 없음)
   const match_keywords = buildMatchKeywords(validated);
 
-  // 3) LLM으로 트렌드 수집용 키워드 세 종류 생성
+  // 3) product_features 룰베이스 합성 (LLM 호출 없음, 매칭가 Ingred-Fit 핵심 입력)
+  //    texture_keywords·category 소분류·tone별 안전 표현으로 조립. 카테고리
+  //    위반·환각 위험 0이며 마케터 입력에서 결정적으로 생성됨.
+  const product_features = buildProductFeatures(validated);
+
+  // 4) LLM으로 트렌드 수집용 키워드 세 종류 생성
   const { search_keywords, short_keywords, datalab_keywords, usage } =
     await generateTrendKeywords(validated);
 
-  // 4) "40대 이상" 같은 폼-전용 값은 매칭가가 모르는 포맷이므로 풀어줌
+  // 5) "40대 이상" 같은 폼-전용 값은 매칭가가 모르는 포맷이므로 풀어줌
   //    (예: "40대 이상" → "40대"·"50대"·"60대"). 폼에 표시할 원본 값은
   //    target_display.age_groups_display로 별도 보존.
   const expandedAges = validated.target.age_groups.flatMap(expandAgeGroupForMatching);
   const targetForMatching = { ...validated.target, age_groups: expandedAges };
 
-  // 5) envelope으로 감싸 반환
+  // 6) envelope으로 감싸 반환
   const output = wrap({
     source: "브랜드 분석",
     ...validated,
     target: targetForMatching,
     target_display: { age_groups: validated.target.age_groups }, // UI 복원용
     match_keywords,
+    product_features,
     search_keywords,
     short_keywords,
     datalab_keywords,
