@@ -41,11 +41,12 @@ function loadCacheFromDisk() {
 let cache = {};
 // ──────────────────────────────────────────────────────────────
 
-// brand-analysis.json에서 short_keywords 읽어옴
+// brand-analysis.json에서 search_keywords 읽어옴
+// (트렌드 분석의 source_search_keywords가 search_keywords 기반이라, 조인 키를 맞추려면 동일하게 search_keywords 사용)
 const brandAnalysis = JSON.parse(
   fs.readFileSync("shared/data/brand-analysis.json", "utf-8")
 );
-const KEYWORDS = brandAnalysis.data.short_keywords;
+const KEYWORDS = brandAnalysis.data.search_keywords;
 
 // ── HMAC-SHA256 서명 생성 (네이버 공식 인증 방식) ──────────────
 // 네이버 검색광고 API는 키를 URL에 붙이는 게 아니라,
@@ -193,7 +194,7 @@ async function main({ fresh = false } = {}) {
   if (fresh) console.log("⚡ FRESH 모드: 캐시 무시하고 새로 받습니다\n");
 
   console.log("네이버 검색광고 수요 수집 시작...\n");
-  console.log(`short_keywords ${KEYWORDS.length}개 조회\n`);
+  console.log(`search_keywords ${KEYWORDS.length}개 조회\n`);
 
   const output = {};
   for (const keyword of KEYWORDS) {
