@@ -193,16 +193,27 @@ function renderFitItem(fitKey, fit, brand, td) {
   const r = fit?.result ?? "";
   const label = FIT_RESULT_LABEL[r] ?? { label: "-", className: "fit-empty" };
   const checks = Array.isArray(meta.checks) ? meta.checks : [];
-  const verdictBullets = buildVerdictBullets(fitKey, r, brand, td);
 
-  // 판정결과 = 이전 한 문장을 자연스러운 분기점에서 나눈 불렛들. 마지막 불렛이
-  // 결과 라인(verdict-result). 각 불렛은 이미 esc·<b> 처리된 HTML 문자열.
-  const verdictListHtml = verdictBullets
-    .map((html, i) => {
-      const isResult = i === verdictBullets.length - 1;
-      return `<li class="${isResult ? "verdict-result" : ""}">${html}</li>`;
-    })
-    .join("");
+  // 우선순위:
+  //   1) writer의 casual_bullets (LLM 구어체 풀어쓴 버전) — 있으면 사용
+  //   2) buildVerdictBullets (코드 템플릿) — 폴백
+  let verdictListHtml;
+  if (Array.isArray(fit?.casual_bullets) && fit.casual_bullets.length > 0) {
+    verdictListHtml = fit.casual_bullets
+      .map((b, i) => {
+        const isResult = i === fit.casual_bullets.length - 1;
+        return `<li class="${isResult ? "verdict-result" : ""}">${esc(b)}</li>`;
+      })
+      .join("");
+  } else {
+    const verdictBullets = buildVerdictBullets(fitKey, r, brand, td);
+    verdictListHtml = verdictBullets
+      .map((html, i) => {
+        const isResult = i === verdictBullets.length - 1;
+        return `<li class="${isResult ? "verdict-result" : ""}">${html}</li>`;
+      })
+      .join("");
+  }
 
   return `
     <div class="fit-item ${label.className}">
