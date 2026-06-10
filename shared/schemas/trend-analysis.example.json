@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.3",
-  "generated_at": "2026-06-05T10:05:00+09:00",
+  "schema_version": "0.4",
+  "generated_at": "2026-06-10T10:05:00+09:00",
   "status": "success",
   "data": {
     "analyzed_at": "",
@@ -11,8 +11,7 @@
         "trend_name": "",
         "category": "",
         "keywords": {
-          "ingred": [],
-          "life": []
+          "ingred": []
         },
         "summary": "",
         "headline_metric": {
@@ -57,6 +56,12 @@
           "source": ""
         },
         "audience_signal": "",
+        "target": {
+          "gender": "",
+          "age_groups": [],
+          "involvement": "",
+          "motivation": []
+        },
         "media_channel_status": [
           {
             "media_channel": "",
@@ -67,7 +72,11 @@
     ]
   },
   "_field_guide": {
-    "_comment": "이 _field_guide 블록은 example 파일에만 있는 작성 가이드입니다. 실제 trend-analysis.json에는 포함하지 않습니다. 매칭가 요청에 따른 v0.3 변경 사항을 정리합니다.",
+    "_comment": "이 _field_guide 블록은 example 파일에만 있는 작성 가이드입니다. 실제 trend-analysis.json에는 포함하지 않습니다. 매칭가 요청에 따른 v0.4 변경 사항(target 추가 + keywords.life 제거)을 정리합니다.",
+    "v0.4_changelog": [
+      "추가: trends[].target 필드 — 브랜드 target과 구조적으로 비교하기 위한 정형 데이터",
+      "제거: trends[].keywords.life — target 필드와 중복이므로 제거. 라이프스타일·동기 정보는 target.involvement / target.motivation으로 이동"
+    ],
     "keywords": {
       "ingred": {
         "purpose": "제형·텍스처·성분 키워드. 매칭가가 브랜드 product_features와 임베딩 유사도(>=0.7)로 비교해 Ingred-Fit을 판정합니다.",
@@ -79,30 +88,47 @@
         ],
         "exclude": [
           "베이스/메이크업/뷰티 (너무 광범위 → 모든 브랜드 통과)",
-          "20대/직장인/데일리 (소비자 특성 → life로)",
-          "수정 화장/편리함 (사용 행태 → life로)",
+          "20대/직장인/데일리 (소비자 특성 → target.age_groups / target.involvement로)",
+          "수정 화장/편리함 (사용 행태 → target.involvement / target.motivation으로)",
           "인스타그램/유튜브 (매체 정보 → summary 또는 제거)"
         ],
         "good_example": ["매트 쿠션", "세미매트 마감", "고커버 밀착", "자연스러운 매트피니시"],
         "bad_example": ["베이스 메이크업", "데일리 쿠션", "20대 추천"]
       },
-      "life": {
-        "purpose": "타겟 가치관·라이프스타일·동기 키워드. 매칭가 LLM이 브랜드 타겟(연령·관여도·동기)과 비교해 라이프스타일 적합도를 판단합니다.",
-        "count": "3~5개 권장",
-        "include": [
-          "소비 동기·가치관: 자기표현, 피부 건강 중시, 가치 소비, 셀프케어, 갓생",
-          "일상 맥락: 출근 전 빠른 완성, 수정 화장 빈번, 데일리 효율, 이동 중 터치업",
-          "관여도 수준: 트렌드 민감, 얼리어답터, 뷰티 루틴 중시, 일상 사용자",
-          "연령보다는 그 연령의 라이프스타일: '20대 직장인 루틴' 같은 형태"
-        ],
-        "exclude": [
-          "매트/촉촉/고커버 (텍스처·성분 → ingred로)",
-          "여성/소비자 (너무 광범위)",
-          "인스타그램/유튜브 (매체 정보 → summary 또는 제거)",
-          "72%/38.8% (수치는 LLM이 오용 → evidence 필드)"
-        ],
-        "good_example": ["출근 전 빠른 완성", "수정 화장 빈번", "번들거림 민감", "데일리 효율 중시"],
-        "bad_example": ["20대", "여성", "베이스 메이크업 관심"]
+      "_note": "v0.3에서 있던 keywords.life는 v0.4에서 제거됨. 라이프스타일·동기는 target 필드로 이동."
+    },
+    "target": {
+      "purpose": "트렌드 소비자의 타겟 프로파일. 매칭가가 브랜드 target과 구조적으로 비교해 Life-Fit / Target-Fit을 판정합니다. brand-analysis.data.target과 동일 형식이라 직접 비교 가능.",
+      "fields": {
+        "gender": {
+          "type": "enum",
+          "values": ["여성", "남성", "공용"],
+          "example": "여성"
+        },
+        "age_groups": {
+          "type": "array<enum> (복수 선택 가능)",
+          "values": ["10대", "20대", "30대", "Z세대", "MZ세대", "밀레니얼"],
+          "example": ["20대", "30대"]
+        },
+        "involvement": {
+          "type": "string",
+          "purpose": "이 트렌드 소비자의 사용 패턴·관여 방식을 한 줄로",
+          "good_example": "데일리 메이크업 지속력 중시 사용자",
+          "bad_example": "여성 (광범위), 20대 (연령만)"
+        },
+        "motivation": {
+          "type": "array<string>",
+          "count": "2~4개",
+          "purpose": "이 트렌드를 따르는 핵심 동기",
+          "good_example": ["번들거림 방지", "꾸안꾸 연출", "지속력 중시"],
+          "bad_example": ["메이크업", "관심"]
+        }
+      },
+      "good_example": {
+        "gender": "여성",
+        "age_groups": ["20대", "30대"],
+        "involvement": "데일리 메이크업 지속력 중시 사용자",
+        "motivation": ["번들거림 방지", "꾸안꾸 자연스러움", "지속력 중시"]
       }
     },
     "summary": {
