@@ -513,11 +513,14 @@
             #page-step4 .stepper,
             #page-step4 .step-header,
             #page-step4 .submit-row,
-            .toast { display: none !important; }
+            .toast,
+            header, .ambient-layer, .micro-element { display: none !important; }
             #page-step4 .form-card { box-shadow: none !important; border: none !important; max-width: none !important; width: 100% !important; padding: 0 !important; }
             body { background: #fff !important; }
             /* 카드가 페이지 경계에서 잘리지 않게 */
             .mr-trend-card, .mr-summary-card, .mr-data-card, .rp-card { break-inside: avoid; page-break-inside: avoid; }
+            /* 섹션 제목(PART I/II)이 내용과 떨어져 페이지 끝에 홀로 남지 않게 */
+            .mr-section-head { break-after: avoid; page-break-after: avoid; }
             /* 배경색·뱃지색 유지하며 인쇄 */
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             @page { margin: 12mm; }
@@ -824,9 +827,12 @@
         <div class="form-group">
             <label class="form-label">주력 채널 <span class="req">*</span></label>
             <div class="pill-group" data-field="media_channels">
+                <label class="pill"><input type="checkbox" value="인스타그램"><span>인스타그램</span></label>
                 <label class="pill"><input type="checkbox" value="유튜브"><span>유튜브</span></label>
-                <label class="pill"><input type="checkbox" value="메타"><span>메타</span></label>
-                <label class="pill"><input type="checkbox" value="카카오"><span>카카오</span></label>
+                <label class="pill"><input type="checkbox" value="틱톡"><span>틱톡</span></label>
+                <label class="pill"><input type="checkbox" value="자사몰"><span>자사몰</span></label>
+                <label class="pill"><input type="checkbox" value="네이버 스토어"><span>네이버 스토어</span></label>
+                <label class="pill"><input type="checkbox" value="오프라인 스토어"><span>오프라인 스토어</span></label>
             </div>
         </div>
 
