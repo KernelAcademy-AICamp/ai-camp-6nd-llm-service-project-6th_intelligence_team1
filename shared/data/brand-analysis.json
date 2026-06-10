@@ -1,0 +1,129 @@
+{
+  "schema_version": "0.2",
+  "generated_at": "2026-06-10T06:28:01.096Z",
+  "status": "success",
+  "data": {
+    "source": "브랜드 분석",
+    "brand_name": "헤라",
+    "current_channels": [
+      "인스타그램",
+      "유튜브",
+      "자사몰",
+      "네이버 스토어"
+    ],
+    "brand_channel_url": "",
+    "product_name": "실키 파운데이션",
+    "category": "메이크업 > 베이스 > 파운데이션",
+    "texture_keywords": [
+      "매트"
+    ],
+    "tone_and_manner": [
+      "럭셔리·프리미엄"
+    ],
+    "target": {
+      "gender": "여성",
+      "age_groups": [
+        "30대"
+      ],
+      "involvement": "일상사용자",
+      "motivation": [
+        "자기표현"
+      ]
+    },
+    "mood_image_url": "",
+    "campaign_kpi": "시즌 프로모션",
+    "campaign_period": "한달",
+    "campaign_budget": "500~1000만원",
+    "media_channels": [
+      "유튜브",
+      "메타"
+    ],
+    "reference_campaign_url": "",
+    "competitors": [],
+    "target_display": {
+      "age_groups": [
+        "30대"
+      ]
+    },
+    "match_keywords": {
+      "character": [
+        "럭셔리·프리미엄"
+      ],
+      "benefit_texture": [
+        "메이크업",
+        "베이스",
+        "파운데이션",
+        "매트"
+      ],
+      "target": [
+        "여성",
+        "30대",
+        "일상사용자",
+        "자기표현"
+      ],
+      "campaign": [
+        "시즌 프로모션",
+        "한달",
+        "500~1000만원",
+        "유튜브",
+        "메타"
+      ]
+    },
+    "product_features": [
+      "매트",
+      "파운데이션",
+      "고급 텍스처",
+      "장시간 지속"
+    ],
+    "search_keywords": [
+      "실키 매트 파운데이션 추천",
+      "30대 베이스 메이크업 파운데이션",
+      "럭셔리 매트 베이스 메이크업",
+      "세련된 데일리 파운데이션 추천",
+      "30대 여성 커버력 파운데이션",
+      "프리미엄 실크 텍스처 베이스"
+    ],
+    "short_keywords": [
+      "실키 파운데이션",
+      "매트 베이스 메이크업",
+      "30대 파운데이션",
+      "커버력 파운데이션",
+      "세련된 베이스",
+      "럭셔리 메이크업"
+    ],
+    "datalab_keywords": [
+      {
+        "groupName": "실키파운데이션",
+        "keywords": [
+          "실키파운데이션",
+          "매트파운데이션",
+          "실키매트"
+        ]
+      },
+      {
+        "groupName": "30대베이스",
+        "keywords": [
+          "30대파운데이션",
+          "30대베이스",
+          "데일리파운데이션"
+        ]
+      },
+      {
+        "groupName": "럭셔리베이스",
+        "keywords": [
+          "럭셔리파운데이션",
+          "프리미엄베이스",
+          "커버력파운데이션"
+        ]
+      }
+    ],
+    "hashtag_keywords": [
+      "실키매트파운데이션",
+      "30대파운데이션",
+      "럭셔리매트베이스",
+      "세련된데일리파운데이션",
+      "30대커버력파운데이션",
+      "프리미엄실크베이스"
+    ]
+  }
+}

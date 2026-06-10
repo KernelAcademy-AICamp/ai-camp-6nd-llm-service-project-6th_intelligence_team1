@@ -10,6 +10,18 @@ import { wrap, wrapError } from "../../shared/envelope.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, "../..");
 
+// keywords가 flat 배열 또는 {ingred, life} 객체 모두 처리
+function getKeywords(trend, type = "all") {
+  const kw = trend.keywords;
+  if (Array.isArray(kw)) return kw;
+  if (kw != null && typeof kw === "object") {
+    if (type === "ingred") return kw.ingred ?? [];
+    if (type === "life") return kw.life ?? [];
+    return [...(kw.ingred ?? []), ...(kw.life ?? [])];
+  }
+  return trend.core_keywords ?? [];
+}
+
 // 1. 시스템 프롬프트 로드 (매칭가의 두뇌 + 톤앤매너 친화/충돌 테이블 포함)
 const systemPrompt = readFileSync(
   resolve(__dirname, "prompts/system.md"),
@@ -35,34 +47,46 @@ function ageGroupToRange(group, currentYear) {
   return null;
 }
 
-// ─── 4기준 score·matching_grade 코드 계산 ───────────────────────────────
-// 각 fit: ✅=2, ⚠️=1, ❌=0. 4기준 합산 max 8.
-// matching_grade 규칙:
-//   - ❌ 2개 이상 → 제외 (합산 무관)
-//   - score 8 → 상
-//   - score 6-7 → 중
-//   - score 2-5 → 하 (❌ 1개 가능)
-//   - score < 2 → 제외
-const FIT_POINT = { "✅": 2, "⚠️": 1, "❌": 0 };
+// ─── 3단계 허들 평가 ─────────────────────────────────────────────────
+// 0순위: product_fit ❌ → 탈락 (제품 유형·성분 불일치, LLM + 코드 안전망)
+// 1순위: tnm_fit ❌ → 탈락 (톤앤매너 충돌)
+// 2순위: target_fit 점수로 순위 결정 (✅=2, ⚠️=1, ❌=0)
+// safe_fit: 시급성 참고 정보 (순위에 미포함)
+const LIFE_SCORE = { "✅": 2, "⚠️": 1, "❌": 0 };
 
-function computeScoreAndGrade(fits /* { ingred_fit, visual_fit, life_fit, safe_fit } */) {
-  const results = [
-    fits.ingred_fit?.result,
-    fits.visual_fit?.result,
-    fits.life_fit?.result,
-    fits.safe_fit?.result,
-  ];
-  const failCount = results.filter((r) => r === "❌").length;
-  const score = results.reduce((sum, r) => sum + (FIT_POINT[r] ?? 0), 0);
+function computeHurdle(fits) {
+  if (fits.product_fit?.result === "❌") return { eliminated_by: "product", target_score: 0 };
+  if (fits.tnm_fit?.result === "❌") return { eliminated_by: "tone", target_score: 0 };
+  return { eliminated_by: null, target_score: LIFE_SCORE[fits.target_fit?.result] ?? 0 };
+}
 
-  let matching_grade;
-  if (failCount >= 2) matching_grade = "제외";
-  else if (score === 8) matching_grade = "상";
-  else if (score >= 6) matching_grade = "중";
-  else if (score >= 2) matching_grade = "하";
-  else matching_grade = "제외";
+// Product-Fit 코드 안전망: ingred 키워드에 부정 맥락 + 브랜드 제형 일치 → ❌ 강제.
+// LLM이 ⚠️로 판단해도 코드가 덮어씀.
+const NEGATION_TERMS = ["감소", "대체", "줄이는", "피하는", "기피", "감소세", "하락", "외면"];
 
-  return { score, matching_grade };
+function checkNegationConflict(trendData) {
+  const ingredKws = getKeywords(trendData, "ingred");
+  // brandAnalysis는 모듈 스코프 — 이 함수는 brandAnalysis 초기화 이후에만 호출됨
+  const brandFeatures = (brandAnalysis.data.product_features ?? brandAnalysis.data.texture_keywords ?? []).map((f) => f.toLowerCase());
+  const brandCategory = (brandAnalysis.data.category ?? "").toLowerCase();
+
+  for (const kw of ingredKws) {
+    const kwLower = kw.toLowerCase();
+    if (!NEGATION_TERMS.some((t) => kwLower.includes(t))) continue;
+
+    // 부정어 제거 후 핵심 제형 추출
+    let core = kwLower;
+    for (const t of NEGATION_TERMS) core = core.replace(t, "").trim();
+    if (core.length < 2) continue;
+
+    // 브랜드 features 또는 category에 핵심 제형이 포함되는지 확인
+    const hit = brandFeatures.some((f) => f.includes(core) || core.includes(f)) ||
+                brandCategory.includes(core);
+    if (hit) {
+      return { result: "❌", reason: `트렌드 ingred '${kw}' — 브랜드 제품 제형이 기피 대상 (코드 강제)` };
+    }
+  }
+  return null;
 }
 
 // LLM 정성 판정(1-A·1-B·2-B) + 코드 계산(2-A·passes·verdict)을 최종 구조로 조립.
@@ -86,20 +110,49 @@ function filterVagueReasons(reasons) {
   return kept.length > 0 ? kept : reasons;
 }
 
-function assembleEvaluation(llmEval) {
+// status → Safe-Fit result 매핑
+const STATUS_SAFE_FIT = {
+  emerging: { result: "✅", reason: "트렌드 성장 중 (emerging) — 브랜드 격 손상 위험 낮음" },
+  peak:     { result: "⚠️", reason: "트렌드 정점 (peak) — 곧 하락 가능, 단기 캠페인 적합" },
+  declining: { result: "❌", reason: "트렌드 하락 중 (declining) — 이미 식는 트렌드" },
+};
+
+function assembleEvaluation(llmEval, trendData) {
   const fits = {
-    ingred_fit: llmEval.ingred_fit,
-    visual_fit: llmEval.visual_fit,
-    life_fit: llmEval.life_fit,
+    product_fit: llmEval.product_fit,
+    tnm_fit: llmEval.tnm_fit,
+    target_fit: llmEval.target_fit,
     safe_fit: llmEval.safe_fit,
   };
-  const { score, matching_grade } = computeScoreAndGrade(fits);
+
+  // Product-Fit 코드 안전망: 부정 맥락 ingred 키워드 감지 시 ❌ 강제
+  const negConflict = checkNegationConflict(trendData);
+  if (negConflict) fits.product_fit = negConflict;
+
+  // Target-Fit 코드 보정: t.target 우선, 없으면 audience_signal 폴백, 둘 다 없으면 ⚠️ 강제
+  if (!trendData?.target && !trendData?.audience_signal) {
+    fits.target_fit = { result: "⚠️", reason: "타겟 페르소나 정보 없음 — 비교 불가" };
+  }
+
+  // Safe-Fit 코드 보정: trend_stage 우선, 없으면 status fallback. 둘 다 없으면 ⚠️ 강제
+  const status = trendData?.trend_stage ?? trendData?.status;
+  const lifespan = trendData?.lifespan_estimate;
+  if (STATUS_SAFE_FIT[status]) {
+    fits.safe_fit = STATUS_SAFE_FIT[status];
+  } else if (!lifespan) {
+    fits.safe_fit = { result: "⚠️", reason: "트렌드 수명 정보 없음 — 지속 가능성 불확실" };
+  }
+
+  const { eliminated_by, target_score } = computeHurdle(fits);
   return {
     trend_name: llmEval.trend_name,
     evaluation: fits,
-    score,
-    matching_grade,
+    target_score,
+    eliminated_by,
     summary_reasons: filterVagueReasons(llmEval.summary_reasons),
+    ...(trendData?.channel_activity != null && { channel_activity: trendData.channel_activity }),
+    ...(trendData?.demand_fit != null && { demand_fit: trendData.demand_fit }),
+    ...(trendData?.competition_fit != null && { competition_fit: trendData.competition_fit }),
   };
 }
 
@@ -207,13 +260,13 @@ function makeExcludedByCategory(trend, brandCategory) {
   return {
     trend_name: trend.trend_name,
     evaluation: {
-      ingred_fit: skip,
-      visual_fit: skip,
-      life_fit: skip,
+      product_fit: skip,
+      tnm_fit: skip,
+      target_fit: skip,
       safe_fit: skip,
     },
-    score: 0,
-    matching_grade: "제외",
+    target_score: 0,
+    eliminated_by: "category",
     summary_reasons: [
       {
         category: "카테고리 적합성",
@@ -264,7 +317,7 @@ const systemContent = [
     type: "text",
     text: `## 출력 리마인더
 
-각 트렌드마다 **4기준(ingred_fit·visual_fit·life_fit·safe_fit)의 result(✅/⚠️/❌)+reason**과 **summary_reasons**를 담아 \`evaluations[]\`로 출력하세요.
+각 트렌드마다 **4기준(product_fit·tnm_fit·target_fit·safe_fit)의 result(✅/⚠️/❌)+reason**과 **summary_reasons**를 담아 \`evaluations[]\`로 출력하세요.
 
 score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 **출력하지 마세요.** 코드 블록 표시나 부가 설명 없이 순수 JSON 하나만.`,
     cache_control: { type: "ephemeral" },
@@ -272,10 +325,54 @@ score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 **
 ];
 
 // 4. 사용자 메시지 — 카테고리 게이트 통과 트렌드만 LLM에 전달
+
+// 매체명 정규화 — "Instagram Reels" / "Instagram" 등 동일 매체 통일
+function normalizeChannel(ch) {
+  const s = String(ch ?? "").toLowerCase();
+  if (s.includes("instagram")) return "instagram";
+  if (s.includes("youtube")) return "youtube";
+  if (s.includes("tiktok") || s.includes("틱톡")) return "tiktok";
+  if (s.includes("naver") || s.includes("네이버")) return "naver";
+  if (s.includes("blog") || s.includes("블로그")) return "blog";
+  return s;
+}
+
+// 브랜드 매체 ∩ 트렌드 매체 교집합 사전 계산 — LLM에 팩트로 전달
+const brandChannelNorm = (brandAnalysis.data.media_channels ?? []).map(normalizeChannel);
+const mediaOverlapByTrend = passedTrends.map((t) => {
+  const trendChannelNorm = (t.media_channel_status ?? []).map((s) => normalizeChannel(s.media_channel));
+  const overlap = brandChannelNorm.filter((b) => trendChannelNorm.includes(b));
+  return { trend_name: t.trend_name, overlap, overlap_count: overlap.length };
+});
+
 const passedTrendInput = {
   ...trendAnalysis,
   data: { ...trendAnalysis.data, trends: passedTrends },
 };
+const mediaOverlapBlock = mediaOverlapByTrend.length
+  ? `\n## 매체 교집합 (코드 계산 — 브랜드 매체 ∩ 트렌드 매체)\n${mediaOverlapByTrend.map((m) => `- ${m.trend_name}: 겹치는 매체 ${m.overlap_count}개 [${m.overlap.join(", ") || "없음"}]`).join("\n")}\n\n## 매체 데이터 신뢰도\n- youtube: 직접 수집 데이터 (높음)\n- instagram·tiktok: 웹 기사 2차 정보 (낮음) — 참고 수준\n- naver·blog: 검색 데이터 기반 (중간)\n`
+  : "";
+
+// 관여도·소비동기 의미 테이블 — LLM이 일관된 기준으로 Target-Fit 판단하도록
+const INVOLVEMENT_DESC = {
+  "입문자": "뷰티 루틴 막 시작, 간단하고 쉬운 제품 선호, 트렌드보다 기본에 집중",
+  "일상사용자": "데일리 루틴 중심, 기능성·편의성 중시, 안정적 제품 선호",
+  "얼리어답터": "새 트렌드·신제품 빠르게 수용, 실험적 소비, 바이럴 민감",
+};
+const MOTIVATION_DESC = {
+  "자기표현": "개성·스타일 표현, 나를 드러내는 소비",
+  "관리/케어": "피부 건강·유지가 우선, 기능성·성분 중시",
+  "사회적 인정": "타인 시선 의식, 유행 따라가기, 보여지는 것 중요",
+  "가성비·가심비": "가격 대비 가치 중시, 실용적 소비",
+};
+
+const target = brandAnalysis.data.target ?? {};
+const involvementDesc = INVOLVEMENT_DESC[target.involvement] ?? target.involvement ?? "";
+const motivationDescs = (target.motivation ?? []).map((m) => `${m}(${MOTIVATION_DESC[m] ?? m})`).join(", ");
+const lifeFitBlock = (involvementDesc || motivationDescs)
+  ? `\n## 브랜드 타겟 특성 (Target-Fit 판단 기준)\n- 관여도: ${target.involvement} → ${involvementDesc}\n- 소비동기: ${motivationDescs}\n`
+  : "";
+
 const userMessage = `다음 입력 데이터로 매칭 평가를 수행하세요.
 
 ## 브랜드 프로필
@@ -287,8 +384,8 @@ ${JSON.stringify(brandAnalysis, null, 2)}
 \`\`\`json
 ${JSON.stringify(passedTrendInput, null, 2)}
 \`\`\`
-
-위 모든 트렌드에 대해 **4기준(ingred_fit·visual_fit·life_fit·safe_fit)의 result+reason과 summary_reasons**를 \`evaluations[]\`에 담아 반환하세요.
+${mediaOverlapBlock}${lifeFitBlock}
+위 모든 트렌드에 대해 **4기준(product_fit·tnm_fit·target_fit·safe_fit)의 result+reason과 summary_reasons**를 \`evaluations[]\`에 담아 반환하세요.
 
 score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
 
@@ -360,7 +457,10 @@ if (passedTrends.length > 0) {
   }
 
   // LLM 정성 판정(4기준) + 코드 계산(score·verdict)을 조립.
-  llmEvaluations = dedupedEvals.map((le) => assembleEvaluation(le));
+  const passedTrendByName = new Map(passedTrends.map((t) => [t.trend_name, t]));
+  llmEvaluations = dedupedEvals.map((le) =>
+    assembleEvaluation(le, passedTrendByName.get(le.trend_name))
+  );
   usage = response.usage;
   modelName = response.model;
 } else {
@@ -374,13 +474,12 @@ const allTrendByName = new Map(
   trendAnalysis.data.trends.map((t) => [t.trend_name, t]),
 );
 
-// 정렬: matching_grade → 4기준 score 내림 → 트렌드 metrics.score 내림.
-const GRADE_RANK = { "상": 1, "중": 2, "하": 3, 제외: 99 };
+// 정렬: 탈락 여부 → target_score 내림 → 트렌드 metrics.score 내림.
 function sortTuple(ev) {
-  const vr = GRADE_RANK[ev.matching_grade] ?? 99;
-  const fitScore = ev.score ?? 0;
+  const eliminated = ev.eliminated_by !== null ? 1 : 0;
+  const lifeScore = ev.target_score ?? 0;
   const trendScore = allTrendByName.get(ev.trend_name)?.metrics?.score ?? 0;
-  return [vr, -fitScore, -trendScore];
+  return [eliminated, -lifeScore, -trendScore];
 }
 allEvaluations.sort((a, b) => {
   const ka = sortTuple(a);
@@ -390,12 +489,56 @@ allEvaluations.sort((a, b) => {
 });
 
 // 추천: 제외가 아닌 것 전부 (최소 3개 기준, 있는 만큼 다양하게).
-const nonExcluded = allEvaluations.filter((ev) => ev.matching_grade !== "제외");
+const nonExcluded = allEvaluations.filter((ev) => ev.eliminated_by === null);
 let topEvals = [...nonExcluded];
 
-// 충돌 체크 — 추천 트렌드 간 정반대 개념 쌍 감지 + 제거.
-if (topEvals.length >= 2) {
-  const conflictClient = new Anthropic();
+// 뷰티 카테고리 정반대 개념 쌍 — 코드 1차 감지용
+const KEYWORD_CONFLICT_PAIRS = [
+  ["글로우", "매트"],
+  ["광채", "매트"],
+  ["글로시", "매트"],
+  ["쿨톤", "웜톤"],
+];
+
+function detectKeywordConflict(evs) {
+  for (const [keyA, keyB] of KEYWORD_CONFLICT_PAIRS) {
+    const hasA = (ev) => {
+      const t = allTrendByName.get(ev.trend_name);
+      return getKeywords(t ?? {})
+        .some((k) => k.toLowerCase().includes(keyA));
+    };
+    const hasB = (ev) => {
+      const t = allTrendByName.get(ev.trend_name);
+      return getKeywords(t ?? {})
+        .some((k) => k.toLowerCase().includes(keyB));
+    };
+    const groupA = evs.filter(hasA);
+    const groupB = evs.filter(hasB);
+    if (groupA.length > 0 && groupB.length > 0) {
+      // 이미 정렬된 상태 — 가장 낮은 순위(인덱스 큰 것) 제거
+      const conflicting = [...groupA, ...groupB];
+      const toRemove = conflicting.reduce((worst, ev) =>
+        evs.indexOf(ev) > evs.indexOf(worst) ? ev : worst
+      );
+      return { remove: toRemove.trend_name, reason: `키워드 충돌: '${keyA}' vs '${keyB}'` };
+    }
+  }
+  return null;
+}
+
+// 충돌 체크 — 코드 감지 우선, 못 잡으면 LLM. 충돌 없을 때까지 반복 (최대 5회).
+const MAX_CONFLICT_ROUNDS = 5;
+const conflictClient = new Anthropic();
+for (let round = 0; round < MAX_CONFLICT_ROUNDS && topEvals.length >= 2; round++) {
+  // 1차: 코드 키워드 감지
+  const codeConflict = detectKeywordConflict(topEvals);
+  if (codeConflict) {
+    console.log(`⚠️ 방향성 충돌 감지 (${round + 1}회, 코드) — '${codeConflict.remove}' 제거: ${codeConflict.reason}`);
+    topEvals = topEvals.filter((ev) => ev.trend_name !== codeConflict.remove);
+    continue;
+  }
+
+  // 2차: LLM 감지 (코드가 못 잡은 경우)
   const topCtx = topEvals.map((ev) => {
     const t = allTrendByName.get(ev.trend_name);
     return { trend_name: ev.trend_name, keywords: t?.keywords ?? t?.core_keywords ?? [], summary: t?.summary ?? "" };
@@ -423,16 +566,25 @@ ${JSON.stringify(topCtx, null, 2)}
 
   const cd = conflictRes.parsed_output;
   if (cd?.has_conflict && cd.remove) {
-    console.log(`⚠️ 방향성 충돌 감지 — '${cd.remove}' 제거: ${cd.reason}`);
+    console.log(`⚠️ 방향성 충돌 감지 (${round + 1}회, LLM) — '${cd.remove}' 제거: ${cd.reason}`);
     topEvals = topEvals.filter((ev) => ev.trend_name !== cd.remove);
+  } else {
+    break;
   }
 }
 
-const recommendations = topEvals.map((ev, i) => ({
-  rank: i + 1,
-  trend_name: ev.trend_name,
-  summary_reasons: ev.summary_reasons,
-}));
+const recommendations = topEvals.slice(0, 3).map((ev, i) => {
+  const trendRaw = allTrendByName.get(ev.trend_name);
+  return {
+    rank: i + 1,
+    trend_id: trendRaw?.trend_id ?? null,
+    trend_name: trendRaw?.trend_name ?? ev.trend_name, // 입력 원본 우선 (LLM 변형 방지)
+    summary_reasons: ev.summary_reasons,
+    ...(trendRaw?.channel_activity != null && { channel_activity: trendRaw.channel_activity }),
+    ...(trendRaw?.demand_fit != null && { demand_fit: trendRaw.demand_fit }),
+    ...(trendRaw?.competition_fit != null && { competition_fit: trendRaw.competition_fit }),
+  };
+});
 
 // envelope은 매칭가가 wrap()으로 추가. brand_name은 입력값을 신뢰(LLM 오타 방지).
 const finalData = {

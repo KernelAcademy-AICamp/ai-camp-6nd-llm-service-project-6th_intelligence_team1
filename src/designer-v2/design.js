@@ -8,6 +8,7 @@ import { analyzeOneSource } from "./analyze.js";
 import { generatePromptFromSources } from "./prompt.js";
 import { wrap, wrapError } from "../../shared/envelope.js";
 import { generateImage } from "./generateImage.js";
+import { generateConcept } from "./concept.js";
 
 // 시안가 v2 — 매체별 강점 활용 흐름:
 //   1단계 검색 — 트렌드별 매체별 수집 (Pinterest·Instagram·Mintoiro 각 10장)
@@ -16,7 +17,7 @@ import { generateImage } from "./generateImage.js";
 //                · Instagram → 무드·트렌드
 //                · Mintoiro → 컬러·패키지
 //   3단계 프롬프트 — 3매체 분석 종합 → 영문 generation_prompt 한 줄
-//   4단계 이미지 — Flux Dev (Replicate, 미구현)
+//   4단계 이미지 — Google Imagen 4.0 (generateImage.js)
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, "../..");
@@ -80,6 +81,20 @@ let totalOutputTokens = 0;
 
 for (const c of writerData.contents) {
   console.log(`▶ ${c.trend_name} (${c.content_id ?? "id 없음"})`);
+
+  // concept 없으면 summary_bullets로 자동 생성
+  if (!c.concept) {
+    try {
+      const r = await generateConcept({ brand: brandData, content: c });
+      c.concept = r.concept;
+      totalInputTokens += r.usage?.input_tokens ?? 0;
+      totalOutputTokens += r.usage?.output_tokens ?? 0;
+      console.log(`  [0단계] concept 자동 생성: ${c.concept.slice(0, 60)}...`);
+    } catch (err) {
+      console.error(`  ❌ [0단계] concept 생성 실패: ${err.message}`);
+      continue;
+    }
+  }
 
   // 1단계: 매체별 수집
   let queries = [];
@@ -152,6 +167,7 @@ for (const c of writerData.contents) {
       prompt: generation_prompt,
       outputPath: outputImagePath,
       aspectRatio: "3:4",
+      referenceImagePath: productImagePath,
     });
     console.log(`  [4단계] 이미지 저장: ${generatedImageUrl}`);
   } catch (err) {
@@ -179,7 +195,7 @@ const result = wrap(finalData);
 
 const outputDir = resolve(PROJECT_ROOT, "shared/data");
 mkdirSync(outputDir, { recursive: true });
-const outputPath = resolve(outputDir, "design-v2-output.json");
+const outputPath = resolve(outputDir, "design-output.json");
 writeFileSync(outputPath, JSON.stringify(result, null, 2), "utf-8");
 
 console.log("\n=== 메타 ===");
@@ -188,4 +204,3 @@ console.log(`산출 시안     : ${visuals.length}개`);
 console.log(`입력 토큰     : ${totalInputTokens} (Anthropic 누적)`);
 console.log(`출력 토큰     : ${totalOutputTokens} (Anthropic 누적)`);
 console.log(`결과 저장     : ${outputPath}`);
-console.log(`\n⚠️ 4단계(이미지 생성)는 Replicate 키 도착 후.`);

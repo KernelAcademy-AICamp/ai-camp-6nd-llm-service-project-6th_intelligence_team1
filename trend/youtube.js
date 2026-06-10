@@ -7,16 +7,17 @@ dotenv.config();
 const API_KEY = process.env.YOUTUBE_API_KEY;
 const BASE_URL = "https://www.googleapis.com/youtube/v3";
 
-// 브랜드 분석가가 만든 brand-analysis.json을 읽어옴
-// 여기에 search_keywords(LLM이 생성한 검색어)와 brand_context가 들어있음
+// ── 품질 튜닝 다이얼 ──────────────────────────────
+const RECENT_DAYS = 180;   // 최근 N일 (30 → 180: 표본 확보. 더 최신만 원하면 90)
+const MAX_RESULTS = 25;    // 키워드당 영상 수 (search.list 비용은 결과수와 무관)
+// ────────────────────────────────────────────────
+
 const brandAnalysis = JSON.parse(
   fs.readFileSync("shared/data/brand-analysis.json", "utf-8")
 );
 
-// search_keywords를 검색어로 사용 (하드코딩 대신 동적으로)
-const QUERIES = brandAnalysis.data.short_keywords;
+const QUERIES = brandAnalysis.data.search_keywords;
 
-// brand_context도 brand-analysis.json에서 가져옴
 const brandContext = {
   target_gender: brandAnalysis.data.target.gender,
   target_age: brandAnalysis.data.target.age_groups.join(", "),
@@ -24,17 +25,18 @@ const brandContext = {
 };
 
 async function fetchTrendingVideos(query) {
-  // 1단계: search.list로 영상 ID 수집
+  // 1단계: search.list로 영상 ID 수집 (관련도순)
   const searchResponse = await axios.get(`${BASE_URL}/search`, {
     params: {
       key: API_KEY,
       q: query,
       part: "snippet",
       type: "video",
-      order: "viewCount",
-      maxResults: 10,
+      order: "relevance",   // viewCount → relevance: 주제에 맞는 영상이 옴
+      maxResults: MAX_RESULTS,
       relevanceLanguage: "ko",
-      publishedAfter: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      regionCode: "KR",
+      publishedAfter: new Date(Date.now() - RECENT_DAYS * 24 * 60 * 60 * 1000).toISOString()
     }
   });
 
@@ -64,7 +66,7 @@ async function fetchTrendingVideos(query) {
     description: item.snippet.description,
     view_count: parseInt(statsMap[item.id.videoId]?.viewCount || 0),
     like_count: parseInt(statsMap[item.id.videoId]?.likeCount || 0),
-    url: `https://www.youtube.com/watch?v=${item.id.videoId}`  // ← videoId로 근거 링크 생성
+    url: `https://www.youtube.com/watch?v=${item.id.videoId}`
   }));
 }
 
@@ -76,6 +78,7 @@ async function main() {
   for (const query of QUERIES) {
     console.log(`"${query}" 검색 중...`);
     const videos = await fetchTrendingVideos(query);
+    console.log(`  → ${videos.length}개 수집`);
     results.push(...videos);
   }
 

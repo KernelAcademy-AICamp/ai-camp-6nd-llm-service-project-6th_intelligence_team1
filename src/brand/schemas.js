@@ -127,6 +127,53 @@ export const CURRENT_CHANNELS = [
 // "40+"는 매칭가로 넘기기 전 "40대"·"50대"·"60대"로 자동 확장됨.
 export const AGE_GROUPS = ["10대", "20대", "30대", "40+"];
 
+// ─── product_features 합성용 톤별 표현 사전 ──────────────────────
+// 매칭가의 Ingred-Fit 입력 product_features를 룰베이스로 만들 때 사용.
+// 톤앤매너별로 카테고리 무관·안전한 표현 2개씩. LLM 환각·카테고리 위반 위험 0.
+// (톤 enum과 키 동기화 필수 — 톤 추가/변경 시 여기도 같이 갱신)
+export const TONE_FEATURE_PHRASES = {
+  "클린뷰티":       ["저자극", "민감 피부 친화"],
+  "로맨틱·감성":     ["촉촉한 발색", "은은한 마무리"],
+  "럭셔리·프리미엄": ["고급 텍스처", "장시간 지속"],
+  "키치·플레이풀":   ["트렌디한 컬러", "데일리 발색"],
+  "더마·과학적":     ["기능성 성분", "피부 친화"],
+  "Z세대·트렌디":    ["바이럴 핫템", "셀카용"],
+  "비건":           ["식물성 성분", "크루얼티프리"],
+};
+
+// 검증된 입력(input)에서 매칭가의 Ingred-Fit 핵심 입력인 product_features를
+// 합성. LLM 호출 없이 입력 필드만으로 만들어 카테고리 위반·환각 위험 0.
+//
+// 합성 규칙:
+//   1) texture_keywords — 마케터가 명시한 정확한 텍스처
+//   2) category 소분류 — "메이크업 > 립 > 틴트" → "틴트"
+//   3) tone별 안전 표현 — TONE_FEATURE_PHRASES에서 톤마다 2개씩
+// 모든 결과는 Set으로 중복 제거 후 배열로 반환.
+export function buildProductFeatures(input) {
+  const features = [];
+
+  // 1) 텍스처 키워드 (마케터 명시)
+  if (Array.isArray(input.texture_keywords)) {
+    features.push(...input.texture_keywords);
+  }
+
+  // 2) 카테고리 소분류 명사 — "메이크업 > 립 > 틴트" → "틴트"
+  if (typeof input.category === "string") {
+    const parts = input.category.split(">").map((s) => s.trim()).filter(Boolean);
+    if (parts.length > 0) features.push(parts[parts.length - 1]);
+  }
+
+  // 3) 톤별 안전 표현
+  if (Array.isArray(input.tone_and_manner)) {
+    for (const tone of input.tone_and_manner) {
+      const phrases = TONE_FEATURE_PHRASES[tone];
+      if (Array.isArray(phrases)) features.push(...phrases);
+    }
+  }
+
+  return [...new Set(features)];
+}
+
 // 매칭가가 기대하는 age_groups 포맷("20대"·"Z세대" 등)으로 확장. 폼이 보낸
 // "40+"는 매칭가가 모르는 값이므로 여기서 ["40대","50대","60대"]로 풀어줌.
 export function expandAgeGroupForMatching(group) {
@@ -194,11 +241,29 @@ const DatalabGroupSchema = z.object({
     .max(5, "그룹당 키워드 최대 5개"),
 });
 
+// search_keywords와 hashtag_keywords의 짝짓기를 코드 레벨에서 강제하기 위한
+// 묶음 스키마. LLM이 i번째 쌍이 같은 트렌드를 가리키도록 한 객체에 묶어 출력.
+// 트렌드 분석가 합의 — 짝 어긋남 문제 방지(예: search="실키 파운데이션 리뷰"인데
+// hashtag="#30대메이크업"으로 잘못 매칭되던 케이스).
+const SearchHashtagPairSchema = z.object({
+  search: z
+    .string()
+    .min(2, "검색 쿼리는 2글자 이상")
+    .max(50, "검색 쿼리는 50글자 이하"),
+  hashtag: z
+    .string()
+    .min(2, "해시태그는 2글자 이상")
+    .max(15, "해시태그는 15글자 이하")
+    .refine((s) => !/\s/.test(s), "해시태그는 공백 없는 한 덩어리여야 함"),
+});
+
 export const BrandKeywordsLlmSchema = z.object({
-  search_keywords: z
-    .array(z.string().min(2, "검색 쿼리는 2글자 이상").max(50, "검색 쿼리는 50글자 이하"))
-    .min(5, "최소 5개")
-    .max(6, "최대 6개"),
+  // Tavily(자연 문장)·Instagram·TikTok(해시태그) 짝 5~6쌍.
+  // analyze.js가 search_keywords/hashtag_keywords 두 배열로 분리해 envelope에 노출.
+  keyword_pairs: z
+    .array(SearchHashtagPairSchema)
+    .min(5, "최소 5쌍")
+    .max(6, "최대 6쌍"),
   short_keywords: z
     .array(z.string().min(2, "키워드 2글자 이상").max(15, "키워드 15글자 이하"))
     .min(4, "YouTube용 최소 4개")
