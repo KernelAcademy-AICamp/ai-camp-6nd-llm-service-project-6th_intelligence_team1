@@ -10,7 +10,7 @@ import { envelopeSchema } from "../../shared/envelope.js";
 const WriterContentSchema = z
   .object({
     trend_name: z.string().min(1, "trend_name 비어있음"),
-    concept: z.string().min(1, "concept 비어있음 (시안 방향의 근거)"),
+    concept: z.string().min(1).optional(), // 없으면 summary_bullets로 자동 생성
   })
   .passthrough();
 
@@ -48,6 +48,7 @@ export const LlmSourceAnalysisSchema = z.object({
   composition: z.string(), // 한국어
   color_palette: z.array(z.string()).optional(),
   key_objects: z.array(z.string()).optional(),
+  background: z.string().optional(), // 배경·장소·환경 (한국어)
   source_specific: z.string(), // 이 매체에서 특히 강조할 1-2문장 (한국어)
 });
 
@@ -74,6 +75,7 @@ const SourceAnalysisSchema = z.object({
   composition: z.string(),
   color_palette: z.array(z.string()).optional(),
   key_objects: z.array(z.string()).optional(),
+  background: z.string().optional(),
   source_specific: z.string(),
 });
 
