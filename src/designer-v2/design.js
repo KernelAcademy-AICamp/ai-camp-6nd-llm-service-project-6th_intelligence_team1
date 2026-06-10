@@ -35,6 +35,12 @@ function readJsonOrExit(dataRelPath, agentLabel) {
 
 const writerRaw = readJsonOrExit("shared/data/writer-output.json", "작성가");
 const brandRaw = readJsonOrExit("shared/data/brand-analysis.json", "브랜드 분석가");
+const trendRaw = readJsonOrExit("shared/data/trend-analysis.json", "트렌드 분석가");
+
+// trend_name으로 트렌드 원본 데이터 조회 (meaning·audience_signal·keywords)
+const trendByName = new Map(
+  (trendRaw?.data?.trends ?? []).map((t) => [t.trend_name, t])
+);
 
 const parsed = InputWriterSchema.safeParse(writerRaw);
 if (!parsed.success) {
@@ -82,14 +88,15 @@ let totalOutputTokens = 0;
 for (const c of writerData.contents) {
   console.log(`▶ ${c.trend_name} (${c.content_id ?? "id 없음"})`);
 
-  // concept 없으면 summary_bullets로 자동 생성
+  // concept 없으면 자동 생성 — 트렌드 원본(meaning·audience_signal) + 매칭 근거 추가 투입
   if (!c.concept) {
+    const trendData = trendByName.get(c.trend_name) ?? null;
     try {
-      const r = await generateConcept({ brand: brandData, content: c });
+      const r = await generateConcept({ brand: brandData, content: c, trendData });
       c.concept = r.concept;
       totalInputTokens += r.usage?.input_tokens ?? 0;
       totalOutputTokens += r.usage?.output_tokens ?? 0;
-      console.log(`  [0단계] concept 자동 생성: ${c.concept.slice(0, 60)}...`);
+      console.log(`  [0단계] concept 자동 생성: ${c.concept.one_line?.slice(0, 60) ?? ""}...`);
     } catch (err) {
       console.error(`  ❌ [0단계] concept 생성 실패: ${err.message}`);
       continue;
