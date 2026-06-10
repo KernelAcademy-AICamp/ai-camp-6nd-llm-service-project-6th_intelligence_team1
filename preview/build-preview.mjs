@@ -189,7 +189,7 @@ function renderFitItem(fitKey, fit, brand, td) {
       <div class="fit-subtitle">${esc(meta.subtitle)}</div>
       ${
         checks.length > 0
-          ? `<div class="fit-section-label">📌 이 영역에서 본 것</div>
+          ? `<div class="fit-section-label">📌 평가 기준</div>
              <ul class="fit-checks">${checks.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>`
           : ""
       }
