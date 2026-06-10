@@ -55,6 +55,7 @@
 .mr-card-cols {
   display: grid;
   grid-template-columns: 1.7fr 1fr;
+  align-items: start;   /* 컬럼을 위 정렬 — 짧은 쪽 아래 늘어나는 빈 공간 통일 */
   gap: 20px;
   padding: 18px 20px;
 }
