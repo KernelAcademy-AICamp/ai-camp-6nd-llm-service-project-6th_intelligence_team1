@@ -151,6 +151,8 @@ function assembleEvaluation(llmEval, trendData) {
     eliminated_by,
     summary_reasons: filterVagueReasons(llmEval.summary_reasons),
     ...(trendData?.channel_activity != null && { channel_activity: trendData.channel_activity }),
+    ...(trendData?.demand_fit != null && { demand_fit: trendData.demand_fit }),
+    ...(trendData?.competition_fit != null && { competition_fit: trendData.competition_fit }),
   };
 }
 
@@ -579,6 +581,8 @@ const recommendations = topEvals.slice(0, 3).map((ev, i) => {
     trend_name: trendRaw?.trend_name ?? ev.trend_name, // 입력 원본 우선 (LLM 변형 방지)
     summary_reasons: ev.summary_reasons,
     ...(trendRaw?.channel_activity != null && { channel_activity: trendRaw.channel_activity }),
+    ...(trendRaw?.demand_fit != null && { demand_fit: trendRaw.demand_fit }),
+    ...(trendRaw?.competition_fit != null && { competition_fit: trendRaw.competition_fit }),
   };
 });
 
