@@ -154,17 +154,30 @@ function marketFitLabel(trendData) {
   const stage = trendData?.trend_stage ?? trendData?.status;
   const searches = trendData?.demand_fit?.monthly_searches ?? null;
   const highDemand = searches != null && searches > MARKET_FIT_MIN_SEARCHES;
-  const searchWord = searches != null ? `검색 ${highDemand ? "많음" : "적음"}` : null;
+
+  const stageDesc = {
+    emerging: "트렌드 성장 중 (emerging)",
+    peak:     "트렌드 정점 (peak)",
+    declining:"트렌드 하락 중 (declining)",
+  }[stage] ?? "트렌드 단계 정보 없음";
+
+  const searchDesc = searches != null
+    ? `월 검색 ${searches >= 10000 ? (searches / 10000).toFixed(1) + "만" : searches.toLocaleString()}회`
+    : "검색량 데이터 없음";
 
   if (stage === "emerging") {
-    if (!searchWord) return "emerging = ✅ 트렌드 성장 중";
-    return `emerging + ${searchWord} = ${highDemand ? "✅ 타이밍·수요 둘 다 좋음" : "⚠️ 타이밍은 좋지만 이 조합으론 수요가 작게 잡혀요 — 참고하세요"}`;
+    const verdict = searches == null ? "✅ 성장 중"
+      : highDemand ? "✅ 타이밍·수요 둘 다 좋음"
+      : "⚠️ 타이밍은 좋지만 이 조합으론 수요가 작게 잡혀요 — 참고하세요";
+    return `${stageDesc} / ${searchDesc} → ${verdict}`;
   }
   if (stage === "peak") {
-    if (!searchWord) return "peak = ⚠️ 단기 캠페인 적합";
-    return `peak + ${searchWord} = ${highDemand ? "⚠️ 수요 있지만 타이밍 늦음" : "❌ 타이밍·수요 모두 불리"}`;
+    const verdict = searches == null ? "⚠️ 단기 캠페인 적합"
+      : highDemand ? "⚠️ 수요 있지만 진입 타이밍 늦음"
+      : "❌ 타이밍·수요 모두 불리";
+    return `${stageDesc} / ${searchDesc} → ${verdict}`;
   }
-  return "트렌드 단계 정보 없음";
+  return `${stageDesc} / ${searchDesc}`;
 }
 
 function assembleEvaluation(llmEval, trendData) {
