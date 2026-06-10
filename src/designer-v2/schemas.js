@@ -2,26 +2,31 @@ import { z } from "zod";
 import { envelopeSchema } from "../../shared/envelope.js";
 
 // 시안가 v2 입출력 스키마.
-// 입력: 작성가 산출 — 트렌드 N개.
+// 입력: 매칭가 산출(match-result) + 트렌드 분석가 산출(trend-analysis) + 브랜드 분석가 산출(brand-analysis)
 // 처리: 트렌드별 × 매체별(Pinterest·Instagram·Mintoiro) 검색 → 매체별 선별·분석 → 매체별 분석 종합 → 시안 1개.
 // 출력: 트렌드 1개당 시안 1장.
 
-// ─── 입력 스키마 (작성가 산출 검증) ─────────────────────────────────
-const WriterContentSchema = z
-  .object({
-    trend_name: z.string().min(1, "trend_name 비어있음"),
-    concept: z.string().min(1).optional(), // 없으면 summary_bullets로 자동 생성
-  })
-  .passthrough();
+// ─── 입력 스키마 (매칭가 산출 검증) ─────────────────────────────────
+const MatchReasonSchema = z.object({
+  category: z.string(),
+  fact: z.string(),
+  source: z.string().optional(),
+}).passthrough();
 
-export const InputWriterSchema = z
+const MatchRecommendationSchema = z.object({
+  rank: z.number().int().min(1),
+  trend_name: z.string().min(1, "trend_name 비어있음"),
+  summary_reasons: z.array(MatchReasonSchema).min(1),
+}).passthrough();
+
+export const InputMatchSchema = z
   .object({
     data: z
       .object({
         brand_name: z.string().min(1, "brand_name 비어있음"),
-        contents: z
-          .array(WriterContentSchema)
-          .min(1, "contents 배열 비어있음 (시안 만들 콘텐츠 없음)"),
+        recommendations: z
+          .array(MatchRecommendationSchema)
+          .min(1, "recommendations 배열 비어있음 (시안 만들 추천 없음)"),
       })
       .passthrough(),
   })

@@ -2,7 +2,7 @@ import "dotenv/config";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { InputWriterSchema } from "./schemas.js";
+import { InputMatchSchema } from "./schemas.js";
 import { generateQueriesAndSearch } from "./search.js";
 import { analyzeOneSource } from "./analyze.js";
 import { generatePromptFromSources } from "./prompt.js";
@@ -33,18 +33,18 @@ function readJsonOrExit(dataRelPath, agentLabel) {
   }
 }
 
-const writerRaw = readJsonOrExit("shared/data/writer-output.json", "작성가");
+const matchRaw = readJsonOrExit("shared/data/match-result.json", "매칭가");
 const brandRaw = readJsonOrExit("shared/data/brand-analysis.json", "브랜드 분석가");
 const trendRaw = readJsonOrExit("shared/data/trend-analysis.json", "트렌드 분석가");
 
-// trend_name으로 트렌드 원본 데이터 조회 (meaning·audience_signal·keywords)
+// trend_name으로 트렌드 원본 데이터 조회 (meaning·audience_signal·keywords·summary)
 const trendByName = new Map(
   (trendRaw?.data?.trends ?? []).map((t) => [t.trend_name, t])
 );
 
-const parsed = InputWriterSchema.safeParse(writerRaw);
+const parsed = InputMatchSchema.safeParse(matchRaw);
 if (!parsed.success) {
-  console.error("❌ 작성가 산출 유효성 검사 실패");
+  console.error("❌ 매칭가 산출 유효성 검사 실패");
   parsed.error.issues.forEach((iss) => {
     const path = iss.path.length ? iss.path.join(".") : "(root)";
     console.error(`  - ${path}: ${iss.message}`);
@@ -52,9 +52,29 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-const writerData = writerRaw.data;
+const matchData = matchRaw.data;
 const brandData = brandRaw?.data ?? {};
-const brandName = writerData.brand_name;
+const brandName = matchData.brand_name;
+
+// 매칭가 recommendations → designer contents 변환 (rank 1~3, 오름차순)
+const contents = matchData.recommendations
+  .slice()
+  .sort((a, b) => a.rank - b.rank)
+  .map((rec) => {
+    const trendData = trendByName.get(rec.trend_name);
+    const summaryBullets = trendData?.summary
+      ? [trendData.summary]
+      : [];
+    const reasonBullets = (rec.summary_reasons ?? []).map(
+      (r) => `${r.category}: ${r.fact}${r.source ? ` (${r.source})` : ""}`
+    );
+    return {
+      content_id: `R${rec.rank}`,
+      trend_name: rec.trend_name,
+      summary_bullets: summaryBullets,
+      reason_bullets: reasonBullets,
+    };
+  });
 
 // 제품 사진 탐지
 function findProductImage(brand) {
@@ -78,14 +98,14 @@ if (!productImagePath) {
 }
 
 // ─── 콘텐츠별 처리 ─────────────────────────────────────────────────────
-console.log(`\n시안가 v2 시작 — 콘텐츠 ${writerData.contents.length}개\n`);
+console.log(`\n시안가 v2 시작 — 콘텐츠 ${contents.length}개\n`);
 const startTime = Date.now();
 
 const visuals = [];
 let totalInputTokens = 0;
 let totalOutputTokens = 0;
 
-for (const c of writerData.contents) {
+for (const c of contents) {
   console.log(`▶ ${c.trend_name} (${c.content_id ?? "id 없음"})`);
 
   // concept 없으면 자동 생성 — 트렌드 원본(meaning·audience_signal) + 매칭 근거 추가 투입
