@@ -464,6 +464,84 @@ function getEffectiveMarketerChannels(brand) {
   return [...new Set(mapped)];
 }
 
+// ─── usage_plan 코드 템플릿 (LLM 호출 없음) ─────────────────────────
+// 원칙: 트렌드가 채널 evidence(media_channel_status)를 채워서 보내고, 브랜드는
+// 매체·KPI를 입력으로 주므로 작성가는 이 둘을 결정적으로 합성만 함. LLM 불필요.
+//
+// 흐름:
+//   1) 트렌드 활성 채널 = media_channel_status의 채널명을 youtube/instagram/tiktok로 정규화
+//   2) 마케터 활용 채널 = getEffectiveMarketerChannels (이미 정규화된 동일 식별자)
+//   3) 교집합 있으면 "이미 활용 중인 X로 강화", 없으면 "X로 확장 고려"
+//   4) 캠페인 KPI에 맞춘 톤·동사 + 트렌드 이름을 1줄로 결합
+
+const TREND_CHANNEL_KEYS = [
+  { key: "youtube", needles: ["youtube", "유튜브"] },
+  { key: "instagram", needles: ["instagram", "인스타"] },
+  { key: "tiktok", needles: ["tiktok", "틱톡"] },
+];
+const CHANNEL_LABEL = {
+  youtube: "유튜브",
+  instagram: "인스타그램",
+  tiktok: "틱톡",
+};
+
+// 트렌드 media_channel_status[]를 정규 채널 식별자 배열로. Instagram/TikTok처럼
+// 한 항목에 두 채널이 묶여 있을 수 있어 needle 매칭으로 양쪽 다 잡음.
+function getActiveTrendChannels(td) {
+  const items = Array.isArray(td?.media_channel_status) ? td.media_channel_status : [];
+  const result = [];
+  for (const item of items) {
+    const raw = String(item?.media_channel ?? item?.name ?? "").toLowerCase();
+    for (const { key, needles } of TREND_CHANNEL_KEYS) {
+      if (needles.some((n) => raw.includes(n)) && !result.includes(key)) {
+        result.push(key);
+      }
+    }
+  }
+  return result;
+}
+
+// 채널 우선순위 — 영상 콘텐츠가 트렌드 노출 효율 가장 높음 → 유튜브 > 인스타 > 틱톡
+const CHANNEL_PRIORITY = ["youtube", "instagram", "tiktok"];
+function pickPreferredChannel(channels) {
+  for (const c of CHANNEL_PRIORITY) if (channels.includes(c)) return c;
+  return channels[0] ?? null;
+}
+
+// 캠페인 KPI별 콘텐츠 톤·동사. 작성가가 합성할 표현 정의.
+const KPI_PLAN = {
+  "신제품 런칭": { tone: "신제품 인지 확보", verb: "강화" },
+  "시즌 프로모션": { tone: "프로모션 콘텐츠 전개", verb: "강화" },
+  "재구매 유도": { tone: "리뷰·재구매 캠페인", verb: "강화" },
+};
+function getKpiPlan(kpi) {
+  return KPI_PLAN[kpi] ?? { tone: "캠페인 콘텐츠", verb: "전개" };
+}
+
+// 결과: "이미 활용 중인 X에서 '<트렌드명>' 관련 콘텐츠를 <KPI 톤>으로 강화하세요." 등.
+// 매칭/확장/폴백 3분기로 환각 0·결정적.
+function buildUsagePlan(brand, td) {
+  if (!td?.trend_name) return "";
+  const marketer = getEffectiveMarketerChannels(brand);
+  const trendCh = getActiveTrendChannels(td);
+  const kpi = getKpiPlan(brand?.campaign_kpi);
+  const topic = td.trend_name;
+
+  const overlap = marketer.filter((c) => trendCh.includes(c));
+  const expand = trendCh.filter((c) => !marketer.includes(c));
+
+  if (overlap.length > 0) {
+    const ch = CHANNEL_LABEL[pickPreferredChannel(overlap)];
+    return `이미 활용 중인 ${ch}에서 '${topic}' 관련 콘텐츠를 ${kpi.tone} 톤으로 ${kpi.verb}하세요.`;
+  }
+  if (expand.length > 0) {
+    const ch = CHANNEL_LABEL[pickPreferredChannel(expand)];
+    return `트렌드가 활발한 ${ch}로 확장해 '${topic}' 관련 콘텐츠를 ${kpi.tone} 톤으로 풀어보세요.`;
+  }
+  // 양쪽 다 매칭 안 되면 — 트렌드는 있는데 채널 정합성 정보가 부족한 경우
+  return `'${topic}' 트렌드를 ${kpi.tone} 톤으로 기존 활용 매체에 녹여보세요.`;
+}
+
 // ─── LLM 카드 풍부화 (디자인 담당 합의) ────────────────────────────
 // 콘텐츠 카드 1장당 LLM 1회 호출로 다음 3가지를 한 번에 만든다:
 //   1) fit_reasons.{ingred,visual,life,safe} — 매칭가 raw reason + 트렌드 수치
@@ -630,55 +708,6 @@ function buildMethodologyBullets(fitKey, result) {
   ];
 }
 
-// ─── usage_plan 전용 LLM (트렌드 분석가 합의 — 채널 매핑 + evidence 인용) ─
-// 마케터 채널과 트렌드의 채널 활성도를 비교해 활용 방안 한 줄 생성.
-// score·top_channel 메타데이터가 없을 때도 안전한 표현으로 강제:
-//   - "없다"로 단정 X (수집 누락 가능성)
-//   - 채널 간 절대 점수 비교 X
-//   - 인스타는 경향 표현만 (수치 X)
-//   - evidence(media_channel_status status 텍스트)를 자연스럽게 인용
-//   - 새 사실 추가 X (환각 방지)
-const UsagePlanLlmSchema = z.object({
-  usage_plan: z.string().min(10).max(200),
-});
-
-const USAGE_PLAN_SYSTEM_PROMPT = `당신은 마케팅 카드의 활용 방안을 1줄 행동 제안으로 만드는 사람입니다.
-
-입력에 두 가지 형식이 들어올 수 있음:
-- structured: channel_activity의 pool별 top_channel + 채널별 score + evidence
-- text: media_channel_status의 채널별 status 서술 (top_channel·score 메타 없음)
-
-규칙:
-1) 마케터 활용 채널(매핑 후)이 트렌드 활성 채널(structured면 top_channel, text면 evidence가 활발한 채널)과 일치 → "이미 활용 중인 [채널]을 강화" 방향. 불일치면 → "[채널]로 확장 고려" 방향.
-2) 채널 정보가 누락된 경우 "없다"·"활동 없음"으로 단정하지 말 것. (수집 누락 가능)
-   - score=0이어도 "없다"로 표현 금지.
-3) 채널 간 절대 점수 비교 금지 (예: "유튜브 80점 vs 인스타 60점" X).
-   - 점수는 LLM 자체 판단의 힌트로만 사용. 출력 문장에 점수 숫자 노출 금지.
-4) Instagram·메타는 절대 수치 사용 금지. "활발한 편", "콘텐츠 증가" 같은 경향 표현만 사용.
-5) evidence 텍스트를 자연스럽게 인용. 거기 없는 새 사실·수치 추가 금지.
-6) 한국어, 한 문장(또는 짧은 두 문장 이내), 구체적 행동 제안 형태.
-
-예시(좋음): "유튜브에서 매트 쿠션 튜토리얼 콘텐츠가 활발하니, 이미 활용 중인 유튜브 채널을 통해 30대 데일리 베이스 콘텐츠를 강화하세요."
-예시(좋음): "TikTok에서 데일리 룩 콘텐츠가 증가 중이라, 이 채널로 확장해 짧은 비포·애프터 영상으로 도달 확대를 고려하세요."`;
-
-// 트렌드의 채널 활성도 추출 — 두 형식 모두 수용 (트렌드 분석가 진화 단계 대응).
-//   1) structured: td.channel_activity[]가 채워져 있으면 (top_channel + score
-//      + evidence). 트렌드 분석가 합의 신 형식.
-//   2) text: media_channel_status[]만 있으면 (status 텍스트로 추론). 폴백.
-function extractChannelEvidence(td) {
-  const pools = Array.isArray(td?.channel_activity) ? td.channel_activity : [];
-  const populated = pools.filter((p) =>
-    p && p.scores && Object.values(p.scores).some(
-      (c) => (c?.score ?? 0) > 0 || (c?.evidence && c.evidence.length > 0),
-    ),
-  );
-  if (populated.length > 0) return { format: "structured", pools: populated };
-
-  const items = Array.isArray(td?.media_channel_status) ? td.media_channel_status : [];
-  if (items.length > 0) return { format: "text", items };
-  return null;
-}
-
 // ─── match_fits.reason 코드 템플릿 합성 (LLM 호출 없음) ─────────────
 // 매칭가 raw reason + 트렌드 수치(headline_metric.value + growth_rate)를
 // 대괄호 prefix로 결합. 환각 위험 0, 비용 0, 결정적.
@@ -715,65 +744,6 @@ function buildMatchReason(fitData, td) {
   const polished = naturalizeMatcherText(rawReason);
   const prefix = buildMetricPrefix(td);
   return prefix ? `${prefix} ${polished}` : polished;
-}
-
-async function generateUsagePlan({ rawContent, td, brand, client }) {
-  if (!client) return null;
-  const evidence = extractChannelEvidence(td);
-  if (!evidence) return null; // 채널 정보 0건 → LLM 건너뜀
-
-  const marketerChannels = getEffectiveMarketerChannels(brand);
-
-  // 구조화된 channel_activity / 옛 텍스트 둘 다 사람·LLM이 읽기 좋게 직렬화.
-  let channelBlock;
-  if (evidence.format === "structured") {
-    channelBlock = evidence.pools
-      .map((p, i) => {
-        const lines = [`[Pool ${i + 1}] search_keyword: "${p.search_keyword ?? "-"}"`];
-        if (p.top_channel) lines.push(`  top_channel: ${p.top_channel}`);
-        if (p.interpretation) lines.push(`  interpretation: ${p.interpretation}`);
-        for (const [ch, data] of Object.entries(p.scores ?? {})) {
-          const score = data?.score ?? 0;
-          const ev = data?.evidence ? ` — ${data.evidence}` : "";
-          lines.push(`  ${ch}: score=${score}${ev}`);
-        }
-        return lines.join("\n");
-      })
-      .join("\n\n");
-  } else {
-    channelBlock = evidence.items
-      .map((c) => `- ${c.media_channel ?? c.name ?? "?"}: ${c.status ?? "(상태 미상)"}`)
-      .join("\n");
-  }
-
-  const userMessage = `## 마케터 활용 채널 (트렌드 채널 형식으로 매핑됨, 자사몰·오프라인 등은 제외됨)
-${marketerChannels.length > 0 ? marketerChannels.join(", ") : "(매핑된 비교 가능 채널 없음)"}
-
-## 트렌드 채널별 상태 (evidence, 형식: ${evidence.format})
-${channelBlock}
-
-## 트렌드 정보
-- 이름: ${td?.trend_name ?? "-"}
-- 의미(meaning): ${td?.meaning ?? "-"}
-
-위 데이터로 활용 방안 한 줄 만들어 JSON으로만 반환. 환각·추측 금지, 위 evidence에 있는 표현만 활용.`;
-
-  try {
-    const response = await client.messages.parse({
-      model: "claude-haiku-4-5",
-      max_tokens: 512,
-      temperature: 0.3,
-      system: [
-        { type: "text", text: USAGE_PLAN_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
-      ],
-      messages: [{ role: "user", content: userMessage }],
-      output_config: { format: zodOutputFormat(UsagePlanLlmSchema) },
-    });
-    return response.parsed_output?.usage_plan ?? null;
-  } catch (err) {
-    console.warn(`⚠️ generateUsagePlan 실패 (${td?.trend_name ?? "?"}): ${err.message}`);
-    return null;
-  }
 }
 
 export async function generateWriterOutput({ brand, trend, match } = {}) {
@@ -838,14 +808,11 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
     }),
   );
 
-  // 2-1) usage_plan 전용 LLM — 채널 매핑 + evidence 인용으로 별도 호출.
-  //      트렌드 분석가 합의 규칙 적용. enrichContent의 usage_plan보다 우선.
-  //      실패 시 enrichContent 값으로 폴백.
-  const usagePlans = await Promise.all(
-    rawContents.map((c) => {
-      const td = findTrend(c.trend_name);
-      return generateUsagePlan({ rawContent: c, td, brand: b, client });
-    }),
+  // 2-1) usage_plan — 코드 템플릿(LLM 호출 X). 트렌드의 media_channel_status +
+  //      브랜드 채널·KPI를 결정적으로 합성. 트렌드가 evidence를 채워서 보내고
+  //      마케터가 채널·KPI를 주므로 작성가는 두 데이터를 결합만 하면 됨.
+  const usagePlans = rawContents.map((c) =>
+    buildUsagePlan(b, findTrend(c.trend_name)),
   );
 
   // 2-2) match_fits.reason 코드 합성 (LLM 호출 X).
@@ -874,10 +841,9 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
 
   // 3) raw + enrichment + usage_plan + match_reasons 머지
   // 우선순위 (match_fits.reason): buildMatchReason(코드 합성) → enrichContent → raw matcher
-  // 우선순위 (usage_plan): generateUsagePlan(dedicated) → enrichContent → ""
+  // usage_plan: 항상 buildUsagePlan 코드 템플릿 (LLM 미사용).
   const contents = rawContents.map((c, i) => {
     const enr = enrichments[i];
-    const dedicatedUsagePlan = usagePlans[i];
     const dedicatedReasons = matchReasons[i] ?? {};
     const pickReason = (fitKey) =>
       dedicatedReasons[fitKey] || enr?.fit_reasons?.[fitKey] || null;
@@ -896,17 +862,13 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
       return next;
     };
 
-    if (!enr && !dedicatedUsagePlan && !Object.values(dedicatedReasons).some(Boolean)) {
-      return c; // 모든 LLM 실패 → raw 그대로
-    }
-
     return {
       ...c,
       summary_bullets:
         Array.isArray(enr?.summary_bullets) && enr.summary_bullets.length > 0
           ? enr.summary_bullets
           : c.summary_bullets,
-      usage_plan: dedicatedUsagePlan || enr?.usage_plan || "",
+      usage_plan: usagePlans[i] || "",
       match_fits: {
         ...c.match_fits,
         ingred: mergedFit("ingred"),
