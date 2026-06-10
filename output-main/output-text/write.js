@@ -465,14 +465,19 @@ function getEffectiveMarketerChannels(brand) {
 }
 
 // ─── usage_plan 코드 템플릿 (LLM 호출 없음) ─────────────────────────
-// 원칙: 트렌드가 채널 evidence(media_channel_status)를 채워서 보내고, 브랜드는
-// 매체·KPI를 입력으로 주므로 작성가는 이 둘을 결정적으로 합성만 함. LLM 불필요.
+// 원칙: 트렌드가 채널 evidence(media_channel_status[i].status)를 채워서 보내고
+// 마케터가 채널·KPI를 입력으로 주므로 작성가는 두 데이터를 결정적으로 합성만 함.
+// LLM 불필요.
 //
-// 흐름:
-//   1) 트렌드 활성 채널 = media_channel_status의 채널명을 youtube/instagram/tiktok로 정규화
-//   2) 마케터 활용 채널 = getEffectiveMarketerChannels (이미 정규화된 동일 식별자)
-//   3) 교집합 있으면 "이미 활용 중인 X로 강화", 없으면 "X로 확장 고려"
-//   4) 캠페인 KPI에 맞춘 톤·동사 + 트렌드 이름을 1줄로 결합
+// 데이터 매핑:
+//   - top_channel  ← trend.media_channel_status[]에서 마케터 채널과 겹치는 첫 항목
+//                   (없으면 트렌드의 첫 정규화 가능 채널)
+//   - evidence     ← 그 항목의 status 텍스트 (트렌드 분석가가 채워둠)
+//   - 마케터 채널  ← brand.current_channels + media_channels (매핑 후 정규화)
+//
+// 출력 템플릿 (사양):
+//   잘 맞음 케이스: "[{top_channel} 활성] {evidence}. 지금 채널과 잘 맞습니다."
+//   확장 케이스:   "[{top_channel} 활성] {evidence}. {마케터 채널} 외 {top_channel} 확장도 고려해보세요."
 
 const TREND_CHANNEL_KEYS = [
   { key: "youtube", needles: ["youtube", "유튜브"] },
@@ -485,61 +490,55 @@ const CHANNEL_LABEL = {
   tiktok: "틱톡",
 };
 
-// 트렌드 media_channel_status[]를 정규 채널 식별자 배열로. Instagram/TikTok처럼
-// 한 항목에 두 채널이 묶여 있을 수 있어 needle 매칭으로 양쪽 다 잡음.
-function getActiveTrendChannels(td) {
-  const items = Array.isArray(td?.media_channel_status) ? td.media_channel_status : [];
-  const result = [];
-  for (const item of items) {
-    const raw = String(item?.media_channel ?? item?.name ?? "").toLowerCase();
-    for (const { key, needles } of TREND_CHANNEL_KEYS) {
-      if (needles.some((n) => raw.includes(n)) && !result.includes(key)) {
-        result.push(key);
-      }
-    }
+// 한 항목(`media_channel_status[i]`)을 정규 채널 키 배열로. "Instagram/TikTok"
+// 처럼 두 채널이 한 항목에 묶여 있을 수 있어 needle 매칭으로 양쪽 다 잡음.
+function normalizeChannelItem(item) {
+  const raw = String(item?.media_channel ?? item?.name ?? "").toLowerCase();
+  const keys = [];
+  for (const { key, needles } of TREND_CHANNEL_KEYS) {
+    if (needles.some((n) => raw.includes(n))) keys.push(key);
   }
-  return result;
+  return {
+    keys,
+    status: String(item?.status ?? "").trim(),
+    rawName: item?.media_channel ?? item?.name ?? "",
+  };
 }
 
-// 채널 우선순위 — 영상 콘텐츠가 트렌드 노출 효율 가장 높음 → 유튜브 > 인스타 > 틱톡
-const CHANNEL_PRIORITY = ["youtube", "instagram", "tiktok"];
-function pickPreferredChannel(channels) {
-  for (const c of CHANNEL_PRIORITY) if (channels.includes(c)) return c;
-  return channels[0] ?? null;
-}
-
-// 캠페인 KPI별 콘텐츠 톤·동사. 작성가가 합성할 표현 정의.
-const KPI_PLAN = {
-  "신제품 런칭": { tone: "신제품 인지 확보", verb: "강화" },
-  "시즌 프로모션": { tone: "프로모션 콘텐츠 전개", verb: "강화" },
-  "재구매 유도": { tone: "리뷰·재구매 캠페인", verb: "강화" },
-};
-function getKpiPlan(kpi) {
-  return KPI_PLAN[kpi] ?? { tone: "캠페인 콘텐츠", verb: "전개" };
-}
-
-// 결과: "이미 활용 중인 X에서 '<트렌드명>' 관련 콘텐츠를 <KPI 톤>으로 강화하세요." 등.
-// 매칭/확장/폴백 3분기로 환각 0·결정적.
+// usage_plan 한 줄 합성. 우선순위:
+//   1) 마케터 채널과 겹치는 트렌드 항목이 있으면 → 잘 맞음 케이스
+//   2) 겹치는 게 없고 트렌드 활성 채널은 있으면 → 확장 케이스
+//   3) 트렌드 채널 evidence 0건 → 빈 문자열 (UI에서 "(활용 방안 없음)" 표시되게)
 function buildUsagePlan(brand, td) {
   if (!td?.trend_name) return "";
-  const marketer = getEffectiveMarketerChannels(brand);
-  const trendCh = getActiveTrendChannels(td);
-  const kpi = getKpiPlan(brand?.campaign_kpi);
-  const topic = td.trend_name;
+  const items = Array.isArray(td?.media_channel_status)
+    ? td.media_channel_status.map(normalizeChannelItem).filter((x) => x.keys.length > 0)
+    : [];
+  if (items.length === 0) return ""; // 트렌드 채널 evidence 0건
 
-  const overlap = marketer.filter((c) => trendCh.includes(c));
-  const expand = trendCh.filter((c) => !marketer.includes(c));
+  const marketer = getEffectiveMarketerChannels(brand); // ['instagram', 'youtube'] 등
 
-  if (overlap.length > 0) {
-    const ch = CHANNEL_LABEL[pickPreferredChannel(overlap)];
-    return `이미 활용 중인 ${ch}에서 '${topic}' 관련 콘텐츠를 ${kpi.tone} 톤으로 ${kpi.verb}하세요.`;
+  // 1) 잘 맞음 — 마케터 채널과 겹치는 트렌드 항목 첫 번째 사용
+  for (const item of items) {
+    const matchedKey = item.keys.find((k) => marketer.includes(k));
+    if (matchedKey) {
+      const channel = CHANNEL_LABEL[matchedKey] ?? item.rawName;
+      const evidence = item.status || "활성도 있음";
+      return `[${channel} 활성] ${evidence}. 지금 채널과 잘 맞습니다.`;
+    }
   }
-  if (expand.length > 0) {
-    const ch = CHANNEL_LABEL[pickPreferredChannel(expand)];
-    return `트렌드가 활발한 ${ch}로 확장해 '${topic}' 관련 콘텐츠를 ${kpi.tone} 톤으로 풀어보세요.`;
-  }
-  // 양쪽 다 매칭 안 되면 — 트렌드는 있는데 채널 정합성 정보가 부족한 경우
-  return `'${topic}' 트렌드를 ${kpi.tone} 톤으로 기존 활용 매체에 녹여보세요.`;
+
+  // 2) 확장 — 트렌드 첫 활성 채널로 확장 제안
+  const first = items[0];
+  const firstKey = first.keys[0];
+  const channel = CHANNEL_LABEL[firstKey] ?? first.rawName;
+  const evidence = first.status || "활성도 있음";
+  const marketerLabels = marketer
+    .map((k) => CHANNEL_LABEL[k])
+    .filter(Boolean)
+    .join("·");
+  const fallbackMarketer = marketerLabels || "기존 채널";
+  return `[${channel} 활성] ${evidence}. ${fallbackMarketer} 외 ${channel} 확장도 고려해보세요.`;
 }
 
 // ─── LLM 카드 풍부화 (디자인 담당 합의) ────────────────────────────
