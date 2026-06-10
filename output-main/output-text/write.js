@@ -505,40 +505,94 @@ function normalizeChannelItem(item) {
   };
 }
 
-// usage_plan 한 줄 합성. 우선순위:
-//   1) 마케터 채널과 겹치는 트렌드 항목이 있으면 → 잘 맞음 케이스
-//   2) 겹치는 게 없고 트렌드 활성 채널은 있으면 → 확장 케이스
-//   3) 트렌드 채널 evidence 0건 → 빈 문자열 (UI에서 "(활용 방안 없음)" 표시되게)
+// KPI별 콘텐츠 추천 한 줄. 매칭 없으면 null 반환(해당 부분 생략).
+// 본인이 나중에 표현 다듬기 쉽도록 상수로 분리.
+const KPI_RECOMMENDATION = {
+  "신제품 런칭": "신제품 런칭에 맞춰 언박싱·첫 사용 후기 콘텐츠 추천",
+  "시즌 프로모션": "시즌 프로모션에 맞춰 시즌 루틴·한정 할인 메시지 추천",
+  "재구매 유도": "재구매 유도에 맞춰 공병 후기·데일리 루틴 콘텐츠 추천",
+};
+
+// 기간/예산 조합 → 트렌드 활용 성격 한 줄. period 단독 매핑이 우선이고
+// "한달"만 budget 갈래 둘로 분기.
+function mapPeriodBudget(period, budget) {
+  if (period === "1주") return "단기 빠른 진입형 트렌드로 적합";
+  if (period === "3개월") return "중기 안정형 트렌드로 적합";
+  if (period === "1년") return "장기 안정형 트렌드로 적합";
+  if (period === "한달") {
+    if (budget === "200만원 미만" || budget === "200~500만원") {
+      return "단기 효율형 트렌드로 적합";
+    }
+    if (budget === "500~1000만원" || budget === "1000만원 초과") {
+      return "단기 화제 트렌드로 적합";
+    }
+    return null; // 한달인데 예산 미상 → 매핑 생략 (시스템 안전)
+  }
+  return null;
+}
+
+// usage_plan 한 줄 합성. 세 정보를 마침표로 이어 출력:
+//   1) 채널 비교 (마케터 매핑 가능 채널 0건이면 생략)
+//   2) KPI 추천 문장 (campaign_kpi 매핑 없으면 생략)
+//   3) 기간/예산 매핑 문장 (조합 매핑 없으면 생략)
+//
+// 결과 예:
+//   "[유튜브 활성] 베이스 메이크업 튜토리얼 다수. 지금 채널과 잘 맞습니다.
+//    시즌 프로모션에 맞춰 시즌 루틴·한정 할인 메시지 추천.
+//    단기 화제 트렌드로 적합."
 function buildUsagePlan(brand, td) {
   if (!td?.trend_name) return "";
+
+  const parts = []; // 한 줄을 구성할 절(節)들. join(". ")으로 합침.
+
+  // ─ 1) 채널 비교 ─────────────────────────────────────────────────
+  // 자사몰·네이버스토어·오프라인만 입력된 마케터(마케터 매핑 결과 0건)는
+  // 채널 비교 자체를 생략하고 KPI·기간/예산 부분만 노출.
+  const marketer = getEffectiveMarketerChannels(brand);
   const items = Array.isArray(td?.media_channel_status)
     ? td.media_channel_status.map(normalizeChannelItem).filter((x) => x.keys.length > 0)
     : [];
-  if (items.length === 0) return ""; // 트렌드 채널 evidence 0건
 
-  const marketer = getEffectiveMarketerChannels(brand); // ['instagram', 'youtube'] 등
-
-  // 1) 잘 맞음 — 마케터 채널과 겹치는 트렌드 항목 첫 번째 사용
-  for (const item of items) {
-    const matchedKey = item.keys.find((k) => marketer.includes(k));
-    if (matchedKey) {
-      const channel = CHANNEL_LABEL[matchedKey] ?? item.rawName;
-      const evidence = item.status || "활성도 있음";
-      return `[${channel} 활성] ${evidence}. 지금 채널과 잘 맞습니다.`;
+  if (items.length > 0 && marketer.length > 0) {
+    // 잘 맞음 — 마케터 채널과 겹치는 트렌드 항목 첫 번째 우선
+    let matched = null;
+    let matchedKey = null;
+    for (const item of items) {
+      const k = item.keys.find((k) => marketer.includes(k));
+      if (k) { matched = item; matchedKey = k; break; }
+    }
+    if (matched) {
+      const channel = CHANNEL_LABEL[matchedKey] ?? matched.rawName;
+      const evidence = matched.status || "활성도 있음";
+      parts.push(`[${channel} 활성] ${evidence}`);
+      parts.push("지금 채널과 잘 맞습니다");
+    } else {
+      // 확장 — 트렌드 첫 활성 채널로 확장 제안
+      const first = items[0];
+      const firstKey = first.keys[0];
+      const channel = CHANNEL_LABEL[firstKey] ?? first.rawName;
+      const evidence = first.status || "활성도 있음";
+      const marketerLabels = marketer
+        .map((k) => CHANNEL_LABEL[k])
+        .filter(Boolean)
+        .join("·");
+      parts.push(`[${channel} 활성] ${evidence}`);
+      parts.push(`${marketerLabels} 외 ${channel} 확장 추천`);
     }
   }
+  // 마케터가 자사몰·오프라인만 가진 케이스, 또는 트렌드 채널 evidence 0건은
+  // 채널 비교 절을 생략. 아래 KPI·기간/예산만 노출.
 
-  // 2) 확장 — 트렌드 첫 활성 채널로 확장 제안
-  const first = items[0];
-  const firstKey = first.keys[0];
-  const channel = CHANNEL_LABEL[firstKey] ?? first.rawName;
-  const evidence = first.status || "활성도 있음";
-  const marketerLabels = marketer
-    .map((k) => CHANNEL_LABEL[k])
-    .filter(Boolean)
-    .join("·");
-  const fallbackMarketer = marketerLabels || "기존 채널";
-  return `[${channel} 활성] ${evidence}. ${fallbackMarketer} 외 ${channel} 확장도 고려해보세요.`;
+  // ─ 2) KPI 추천 ──────────────────────────────────────────────────
+  const kpi = KPI_RECOMMENDATION[brand?.campaign_kpi];
+  if (kpi) parts.push(kpi);
+
+  // ─ 3) 기간/예산 매핑 ────────────────────────────────────────────
+  const pb = mapPeriodBudget(brand?.campaign_period, brand?.campaign_budget);
+  if (pb) parts.push(pb);
+
+  if (parts.length === 0) return "";
+  return parts.join(". ") + ".";
 }
 
 // ─── LLM 카드 풍부화 (디자인 담당 합의) ────────────────────────────
