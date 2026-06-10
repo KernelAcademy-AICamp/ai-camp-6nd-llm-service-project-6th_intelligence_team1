@@ -254,6 +254,18 @@ export const BrandKeywordsLlmSchema = z.object({
     .array(DatalabGroupSchema)
     .min(2, "Naver DataLab 그룹 최소 2개")
     .max(3, "Naver DataLab 그룹 최대 3개"),
+  // Instagram·TikTok 해시태그 수집용 — 띄어쓰기 없는 짧은 한글 명사형.
+  // search_keywords와 짝지어 같은 의미의 해시태그 버전.
+  hashtag_keywords: z
+    .array(
+      z
+        .string()
+        .min(2, "해시태그는 2글자 이상")
+        .max(15, "해시태그는 15글자 이하")
+        .refine((s) => !/\s/.test(s), "해시태그는 공백 없는 한 덩어리여야 함"),
+    )
+    .min(5, "해시태그 최소 5개")
+    .max(7, "해시태그 최대 7개"),
 });
 
 // 하위 호환 alias (이름만 바꾼 거)
