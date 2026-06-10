@@ -527,33 +527,75 @@ const UsagePlanLlmSchema = z.object({
 
 const USAGE_PLAN_SYSTEM_PROMPT = `당신은 마케팅 카드의 활용 방안을 1줄 행동 제안으로 만드는 사람입니다.
 
+입력에 두 가지 형식이 들어올 수 있음:
+- structured: channel_activity의 pool별 top_channel + 채널별 score + evidence
+- text: media_channel_status의 채널별 status 서술 (top_channel·score 메타 없음)
+
 규칙:
-1) 마케터 활용 채널(매핑 후)이 트렌드 활성 채널과 일치하면 → "이미 활용 중인 [채널]을 강화하는" 방향의 추천.
-   불일치하면 → "[채널]로 확장 고려" 방향의 추천.
-2) 채널 정보가 누락된 경우 "없다"·"활동 없음"으로 단정하지 말 것. (데이터 수집이 안 됐을 가능성)
-3) 채널 간 절대 점수 비교 금지 (예: "유튜브 80점 vs 인스타 60점" 같은 표현 X).
+1) 마케터 활용 채널(매핑 후)이 트렌드 활성 채널(structured면 top_channel, text면 evidence가 활발한 채널)과 일치 → "이미 활용 중인 [채널]을 강화" 방향. 불일치면 → "[채널]로 확장 고려" 방향.
+2) 채널 정보가 누락된 경우 "없다"·"활동 없음"으로 단정하지 말 것. (수집 누락 가능)
+   - score=0이어도 "없다"로 표현 금지.
+3) 채널 간 절대 점수 비교 금지 (예: "유튜브 80점 vs 인스타 60점" X).
+   - 점수는 LLM 자체 판단의 힌트로만 사용. 출력 문장에 점수 숫자 노출 금지.
 4) Instagram·메타는 절대 수치 사용 금지. "활발한 편", "콘텐츠 증가" 같은 경향 표현만 사용.
-5) 트렌드의 채널별 상태(evidence) 텍스트를 자연스럽게 인용. 거기 없는 새 사실·수치 추가 금지.
+5) evidence 텍스트를 자연스럽게 인용. 거기 없는 새 사실·수치 추가 금지.
 6) 한국어, 한 문장(또는 짧은 두 문장 이내), 구체적 행동 제안 형태.
 
 예시(좋음): "유튜브에서 매트 쿠션 튜토리얼 콘텐츠가 활발하니, 이미 활용 중인 유튜브 채널을 통해 30대 데일리 베이스 콘텐츠를 강화하세요."
 예시(좋음): "TikTok에서 데일리 룩 콘텐츠가 증가 중이라, 이 채널로 확장해 짧은 비포·애프터 영상으로 도달 확대를 고려하세요."`;
 
+// 트렌드의 채널 활성도 추출 — 두 형식 모두 수용 (트렌드 분석가 진화 단계 대응).
+//   1) structured: td.channel_activity[]가 채워져 있으면 (top_channel + score
+//      + evidence). 트렌드 분석가 합의 신 형식.
+//   2) text: media_channel_status[]만 있으면 (status 텍스트로 추론). 폴백.
+function extractChannelEvidence(td) {
+  const pools = Array.isArray(td?.channel_activity) ? td.channel_activity : [];
+  const populated = pools.filter((p) =>
+    p && p.scores && Object.values(p.scores).some(
+      (c) => (c?.score ?? 0) > 0 || (c?.evidence && c.evidence.length > 0),
+    ),
+  );
+  if (populated.length > 0) return { format: "structured", pools: populated };
+
+  const items = Array.isArray(td?.media_channel_status) ? td.media_channel_status : [];
+  if (items.length > 0) return { format: "text", items };
+  return null;
+}
+
 async function generateUsagePlan({ rawContent, td, brand, client }) {
   if (!client) return null;
-  const channels = td?.media_channel_status ?? [];
-  if (channels.length === 0) return null; // 채널 정보 없으면 LLM 건너뜀
+  const evidence = extractChannelEvidence(td);
+  if (!evidence) return null; // 채널 정보 0건 → LLM 건너뜀
 
   const marketerChannels = getEffectiveMarketerChannels(brand);
-  const channelEvidence = channels
-    .map((c) => `- ${c.media_channel ?? c.name ?? "?"}: ${c.status ?? "(상태 미상)"}`)
-    .join("\n");
+
+  // 구조화된 channel_activity / 옛 텍스트 둘 다 사람·LLM이 읽기 좋게 직렬화.
+  let channelBlock;
+  if (evidence.format === "structured") {
+    channelBlock = evidence.pools
+      .map((p, i) => {
+        const lines = [`[Pool ${i + 1}] search_keyword: "${p.search_keyword ?? "-"}"`];
+        if (p.top_channel) lines.push(`  top_channel: ${p.top_channel}`);
+        if (p.interpretation) lines.push(`  interpretation: ${p.interpretation}`);
+        for (const [ch, data] of Object.entries(p.scores ?? {})) {
+          const score = data?.score ?? 0;
+          const ev = data?.evidence ? ` — ${data.evidence}` : "";
+          lines.push(`  ${ch}: score=${score}${ev}`);
+        }
+        return lines.join("\n");
+      })
+      .join("\n\n");
+  } else {
+    channelBlock = evidence.items
+      .map((c) => `- ${c.media_channel ?? c.name ?? "?"}: ${c.status ?? "(상태 미상)"}`)
+      .join("\n");
+  }
 
   const userMessage = `## 마케터 활용 채널 (트렌드 채널 형식으로 매핑됨, 자사몰·오프라인 등은 제외됨)
 ${marketerChannels.length > 0 ? marketerChannels.join(", ") : "(매핑된 비교 가능 채널 없음)"}
 
-## 트렌드 채널별 상태 (evidence)
-${channelEvidence}
+## 트렌드 채널별 상태 (evidence, 형식: ${evidence.format})
+${channelBlock}
 
 ## 트렌드 정보
 - 이름: ${td?.trend_name ?? "-"}
