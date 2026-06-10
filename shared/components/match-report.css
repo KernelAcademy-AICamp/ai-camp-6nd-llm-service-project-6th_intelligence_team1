@@ -47,8 +47,39 @@
 /* 카드 그리드 — 고정폭 없이 부모 너비에 맞춰 유연하게 */
 .mr-trend-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: 1fr;   /* 카드 세로 스택(전체 폭) */
   gap: 16px;
+}
+
+/* 가로형 넓은 카드 — 본문 2열 (좌: 스토리 / 우: 매칭 설명) */
+.mr-card-cols {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  align-items: start;   /* 컬럼을 위 정렬 — 짧은 쪽 아래 늘어나는 빈 공간 통일 */
+  gap: 20px;
+  padding: 18px 20px;
+}
+.mr-card-col { display: flex; flex-direction: column; gap: 16px; }
+.mr-col-data {
+  border-left: 1px solid var(--mr-border);
+  padding-left: 20px;
+}
+.mr-stage-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--mr-warn-soft);
+  color: var(--mr-warn);
+}
+@media (max-width: 720px) {
+  .mr-card-cols { grid-template-columns: 1fr; }
+  .mr-col-data {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid var(--mr-border);
+    padding-top: 14px;
+  }
 }
 
 .mr-trend-card {
@@ -82,12 +113,8 @@
   color: #fff;
   letter-spacing: 0.04em;
 }
-.mr-rank-badge.mr-r2 { background: var(--mr-rank2); }
-.mr-rank-badge.mr-r3 {
-  background: #fff;
-  color: var(--mr-warn);
-  border: 1px solid var(--mr-warn);
-}
+.mr-rank-badge.mr-r2 { background: #a892d2; }              /* 라벤더 (흰 글자 대비 OK) */
+.mr-rank-badge.mr-r3 { background: #a98ba1; color: #fff; }  /* 진한 모브 + 흰 글자 */
 .mr-group-letter {
   width: 22px;
   height: 22px;
@@ -233,14 +260,22 @@ a.mr-src-chip[href]::after { content: '↗'; font-size: 10px; opacity: 0.85; mar
 /* warn variant (3순위 보완 카드) */
 .mr-trend-card.mr-warn .mr-card-top { background: linear-gradient(180deg, var(--mr-warn-soft) 0%, #ffffff 100%); }
 .mr-trend-card.mr-warn .mr-reason-list li::before { background: var(--mr-warn); }
+
+/* 순위별 카드 색 구분 — 파스텔 (1 소프트핑크 / 2 라벤더 / 3 모브-그레이) */
+.mr-trend-card.mr-c1 { border-top: 4px solid #f3a8ba; }   /* 소프트 핑크 */
+.mr-trend-card.mr-c2 { border-top: 4px solid #b6a2dd; }   /* 소프트 라벤더 */
+.mr-trend-card.mr-c3 { border-top: 4px solid #c4adbd; }   /* 소프트 모브-그레이 */
+.mr-trend-card.mr-c1 .mr-card-top { background: linear-gradient(180deg, #fce3eb 0%, #ffffff 100%); }
+.mr-trend-card.mr-c2 .mr-card-top { background: linear-gradient(180deg, #ece7f9 0%, #ffffff 100%); }
+.mr-trend-card.mr-c3 .mr-card-top { background: linear-gradient(180deg, #ece2ea 0%, #ffffff 100%); }
 .mr-warn-note {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 11.5px;
   font-weight: 700;
-  color: var(--mr-warn);
-  background: var(--mr-warn-soft);
+  color: #87738a;
+  background: #e3d6df;
   padding: 4px 10px;
   border-radius: 999px;
 }
@@ -325,6 +360,24 @@ a.mr-src-chip[href]::after { content: '↗'; font-size: 10px; opacity: 0.85; mar
   transition: transform 0.15s;
 }
 .mr-eval-details[open] summary::before { transform: rotate(90deg); }
+
+/* 수집 근거 토글 (카드 내 접기/펼치기) */
+.mr-evidence-details > summary {
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  margin-bottom: 0;
+}
+.mr-evidence-details > summary::-webkit-details-marker { display: none; }
+.mr-evidence-details > summary::after {
+  content: '▶';
+  font-size: 9px;
+  color: var(--mr-primary);
+  margin-left: 4px;
+  transition: transform 0.15s;
+}
+.mr-evidence-details[open] > summary { margin-bottom: 8px; }
+.mr-evidence-details[open] > summary::after { transform: rotate(90deg); }
 .mr-ed-body {
   padding: 4px 14px 14px;
   font-size: 11.5px;
@@ -581,3 +634,60 @@ a.mr-src-chip[href]::after { content: '↗'; font-size: 10px; opacity: 0.85; mar
 .mr-mini-bar-fill.mr-r1 { background: var(--mr-primary); }
 .mr-mini-bar-fill.mr-r2 { background: var(--mr-rank2); }
 .mr-mini-bar-fill.mr-r3 { background: var(--mr-primary-soft); }
+
+/* 정량분석 — 트렌드 지표 행 (검색량 지수 · 트렌드 단계) */
+.mr-metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--mr-border);
+  font-size: 13px;
+}
+.mr-metric-row:last-child { border-bottom: none; }
+.mr-mr-label { color: var(--mr-text-sub); font-weight: 600; }
+.mr-mr-value { font-weight: 800; color: var(--mr-text); text-align: right; }
+
+/* 정량분석 — 매칭 설명 (매칭가 4기준: 판정 + 이유) */
+.mr-fit-row {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--mr-border);
+}
+.mr-fit-row:last-child { border-bottom: none; }
+.mr-fit-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.mr-fit-name { font-size: 12.5px; font-weight: 700; color: var(--mr-text); }
+.mr-fit-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.mr-fit-ok { background: var(--mr-ok-soft, #ffe5ec); color: var(--mr-ok); }
+.mr-fit-mid { background: var(--mr-warn-soft); color: var(--mr-warn); }
+.mr-fit-no { background: var(--mr-danger-soft, #f5dde3); color: var(--mr-danger, #c98a96); }
+.mr-fit-desc { font-size: 11px; color: var(--mr-text-mute); margin-bottom: 4px; }
+.mr-fit-reason { font-size: 12.5px; line-height: 1.55; color: var(--mr-text-sub); }
+.mr-fit-placeholder {
+  color: var(--mr-text-mute);
+  font-style: italic;
+  background: var(--mr-card-top);
+  border: 1px dashed var(--mr-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+.mr-usage { font-size: 12.5px; line-height: 1.55; color: var(--mr-text-sub); }
+
+/* 활용 방안 — 카드 하단 전체 폭 */
+.mr-card-usage {
+  padding: 16px 20px 18px;
+  border-top: 1px solid var(--mr-border);
+}
+.mr-card-usage .mr-block-label { margin-bottom: 8px; }
