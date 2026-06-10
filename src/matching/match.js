@@ -5,7 +5,6 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { LlmMatchDataSchema, InputBrandSchema, InputTrendSchema, ConflictCheckSchema } from "./schemas.js";
-import { computeIngredFit } from "./embedIngredFit.js";
 import { wrap, wrapError } from "../../shared/envelope.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -49,16 +48,45 @@ function ageGroupToRange(group, currentYear) {
 }
 
 // ─── 3단계 허들 평가 ─────────────────────────────────────────────────
-// 0순위: ingred_fit ❌ → 탈락 (성분/텍스처 불일치)
-// 1순위: visual_fit ❌ → 탈락 (톤앤매너 충돌)
-// 2순위: life_fit 점수로 순위 결정 (✅=2, ⚠️=1, ❌=0)
+// 0순위: product_fit ❌ → 탈락 (성분/텍스처 불일치)
+// 1순위: tnm_fit ❌ → 탈락 (톤앤매너 충돌)
+// 2순위: target_fit 점수로 순위 결정 (✅=2, ⚠️=1, ❌=0)
 // safe_fit: 시급성 참고 정보 (순위에 미포함)
 const LIFE_SCORE = { "✅": 2, "⚠️": 1, "❌": 0 };
 
 function computeHurdle(fits) {
-  if (fits.ingred_fit?.result === "❌") return { eliminated_by: "ingred", life_score: 0 };
-  if (fits.visual_fit?.result === "❌") return { eliminated_by: "tone", life_score: 0 };
-  return { eliminated_by: null, life_score: LIFE_SCORE[fits.life_fit?.result] ?? 0 };
+  if (fits.product_fit?.result === "❌") return { eliminated_by: "product", target_score: 0 };
+  if (fits.tnm_fit?.result === "❌") return { eliminated_by: "tone", target_score: 0 };
+  return { eliminated_by: null, target_score: LIFE_SCORE[fits.target_fit?.result] ?? 0 };
+}
+
+// Product-Fit 코드 안전망: ingred 키워드에 부정 맥락 + 브랜드 제형 일치 → ❌ 강제.
+// LLM이 ⚠️로 판단해도 코드가 덮어씀.
+const NEGATION_TERMS = ["감소", "대체", "줄이는", "피하는", "기피", "감소세", "하락", "외면"];
+
+function checkNegationConflict(trendData) {
+  const ingredKws = getKeywords(trendData, "ingred");
+  // brandAnalysis는 모듈 스코프 — 이 함수는 brandAnalysis 초기화 이후에만 호출됨
+  const brandFeatures = (brandAnalysis.data.product_features ?? []).map((f) => f.toLowerCase());
+  const brandCategory = (brandAnalysis.data.category ?? "").toLowerCase();
+
+  for (const kw of ingredKws) {
+    const kwLower = kw.toLowerCase();
+    if (!NEGATION_TERMS.some((t) => kwLower.includes(t))) continue;
+
+    // 부정어 제거 후 핵심 제형 추출
+    let core = kwLower;
+    for (const t of NEGATION_TERMS) core = core.replace(t, "").trim();
+    if (core.length < 2) continue;
+
+    // 브랜드 features 또는 category에 핵심 제형이 포함되는지 확인
+    const hit = brandFeatures.some((f) => f.includes(core) || core.includes(f)) ||
+                brandCategory.includes(core);
+    if (hit) {
+      return { result: "❌", reason: `트렌드 ingred '${kw}' — 브랜드 제품 제형이 기피 대상 (코드 강제)` };
+    }
+  }
+  return null;
 }
 
 // LLM 정성 판정(1-A·1-B·2-B) + 코드 계산(2-A·passes·verdict)을 최종 구조로 조립.
@@ -89,17 +117,21 @@ const STATUS_SAFE_FIT = {
   declining: { result: "❌", reason: "트렌드 하락 중 (declining) — 이미 식는 트렌드" },
 };
 
-function assembleEvaluation(llmEval, trendData, ingredOverride) {
+function assembleEvaluation(llmEval, trendData) {
   const fits = {
-    ingred_fit: ingredOverride ?? llmEval.ingred_fit,
-    visual_fit: llmEval.visual_fit,
-    life_fit: llmEval.life_fit,
+    product_fit: llmEval.product_fit,
+    tnm_fit: llmEval.tnm_fit,
+    target_fit: llmEval.target_fit,
     safe_fit: llmEval.safe_fit,
   };
 
+  // Product-Fit 코드 안전망: 부정 맥락 ingred 키워드 감지 시 ❌ 강제
+  const negConflict = checkNegationConflict(trendData);
+  if (negConflict) fits.product_fit = negConflict;
+
   // Life-Fit 코드 보정: audience_signal 없으면 ⚠️ 강제
   if (!trendData?.audience_signal) {
-    fits.life_fit = { result: "⚠️", reason: "타겟 페르소나 정보 없음 — 비교 불가" };
+    fits.target_fit = { result: "⚠️", reason: "타겟 페르소나 정보 없음 — 비교 불가" };
   }
 
   // Safe-Fit 코드 보정: trend_stage 우선, 없으면 status fallback. 둘 다 없으면 ⚠️ 강제
@@ -111,11 +143,11 @@ function assembleEvaluation(llmEval, trendData, ingredOverride) {
     fits.safe_fit = { result: "⚠️", reason: "트렌드 수명 정보 없음 — 지속 가능성 불확실" };
   }
 
-  const { eliminated_by, life_score } = computeHurdle(fits);
+  const { eliminated_by, target_score } = computeHurdle(fits);
   return {
     trend_name: llmEval.trend_name,
     evaluation: fits,
-    life_score,
+    target_score,
     eliminated_by,
     summary_reasons: filterVagueReasons(llmEval.summary_reasons),
   };
@@ -225,12 +257,12 @@ function makeExcludedByCategory(trend, brandCategory) {
   return {
     trend_name: trend.trend_name,
     evaluation: {
-      ingred_fit: skip,
-      visual_fit: skip,
-      life_fit: skip,
+      product_fit: skip,
+      tnm_fit: skip,
+      target_fit: skip,
       safe_fit: skip,
     },
-    life_score: 0,
+    target_score: 0,
     eliminated_by: "category",
     summary_reasons: [
       {
@@ -282,7 +314,7 @@ const systemContent = [
     type: "text",
     text: `## 출력 리마인더
 
-각 트렌드마다 **4기준(ingred_fit·visual_fit·life_fit·safe_fit)의 result(✅/⚠️/❌)+reason**과 **summary_reasons**를 담아 \`evaluations[]\`로 출력하세요.
+각 트렌드마다 **4기준(product_fit·tnm_fit·target_fit·safe_fit)의 result(✅/⚠️/❌)+reason**과 **summary_reasons**를 담아 \`evaluations[]\`로 출력하세요.
 
 score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 **출력하지 마세요.** 코드 블록 표시나 부가 설명 없이 순수 JSON 하나만.`,
     cache_control: { type: "ephemeral" },
@@ -350,23 +382,11 @@ ${JSON.stringify(brandAnalysis, null, 2)}
 ${JSON.stringify(passedTrendInput, null, 2)}
 \`\`\`
 ${mediaOverlapBlock}${lifeFitBlock}
-위 모든 트렌드에 대해 **4기준(ingred_fit·visual_fit·life_fit·safe_fit)의 result+reason과 summary_reasons**를 \`evaluations[]\`에 담아 반환하세요.
+위 모든 트렌드에 대해 **4기준(product_fit·tnm_fit·target_fit·safe_fit)의 result+reason과 summary_reasons**를 \`evaluations[]\`에 담아 반환하세요.
 
 score·verdict·envelope·rank는 매칭가 코드가 계산·부여하므로 출력하지 마세요.`;
 
-// 5. Ingred-Fit 임베딩 사전 계산 — LLM 호출 전 features ↔ keywords 유사도 판정
-const brandFeatures = brandAnalysis.data.product_features ?? brandAnalysis.data.texture_keywords ?? [];
-const ingredOverrides = new Map();
-if (brandFeatures.length > 0 && passedTrends.length > 0) {
-  console.log("Ingred-Fit 임베딩 계산 중...");
-  for (const t of passedTrends) {
-    const keywords = getKeywords(t, "ingred");
-    const fit = await computeIngredFit(brandFeatures, keywords);
-    if (fit) ingredOverrides.set(t.trend_name, fit);
-  }
-}
-
-// 6. Claude API 호출 — 통과 트렌드가 있을 때만. LLM은 data 본체만 생성.
+// 5. Claude API 호출 — 통과 트렌드가 있을 때만. LLM은 data 본체만 생성.
 let llmEvaluations = [];
 let usage = null;
 let elapsed = "0.0";
@@ -436,7 +456,7 @@ if (passedTrends.length > 0) {
   // LLM 정성 판정(4기준) + 코드 계산(score·verdict)을 조립.
   const passedTrendByName = new Map(passedTrends.map((t) => [t.trend_name, t]));
   llmEvaluations = dedupedEvals.map((le) =>
-    assembleEvaluation(le, passedTrendByName.get(le.trend_name), ingredOverrides.get(le.trend_name))
+    assembleEvaluation(le, passedTrendByName.get(le.trend_name))
   );
   usage = response.usage;
   modelName = response.model;
@@ -451,10 +471,10 @@ const allTrendByName = new Map(
   trendAnalysis.data.trends.map((t) => [t.trend_name, t]),
 );
 
-// 정렬: 탈락 여부 → life_score 내림 → 트렌드 metrics.score 내림.
+// 정렬: 탈락 여부 → target_score 내림 → 트렌드 metrics.score 내림.
 function sortTuple(ev) {
   const eliminated = ev.eliminated_by !== null ? 1 : 0;
-  const lifeScore = ev.life_score ?? 0;
+  const lifeScore = ev.target_score ?? 0;
   const trendScore = allTrendByName.get(ev.trend_name)?.metrics?.score ?? 0;
   return [eliminated, -lifeScore, -trendScore];
 }
