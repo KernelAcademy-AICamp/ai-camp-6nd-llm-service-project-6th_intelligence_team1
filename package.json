@@ -6,7 +6,7 @@
     "hello": "node examples/hello.js",
     "chat": "node examples/chat.js",
     "match": "node src/matching/match.js",
-    "trend:collect": "node trend/youtube.js && node trend/tavily.js && node trend/naver.js && node trend/merge.js",
+    "trend:collect": "node trend/youtube.js && node trend/tavily.js && node trend/naver.js && node trend/naver-search.js && node trend/merge.js",
     "trend": "npm run trend:collect && node src/trend/analyze.js",
     "brand": "node src/brand/analyze.js",
     "design": "node src/designer/design.js",

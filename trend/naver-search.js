@@ -12,7 +12,7 @@ const CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET;
 // ===== 필터 설정 (여기 숫자/단어만 바꾸면 됨) =====
 const MONTHS_BACK = 18;   // 최근 N개월 안에 작성된 글만 남김
 const DISPLAY = 30;       // 필터 전에 넉넉히 가져올 개수 (최대 100)
-const MAX_RESULTS = 5;    // 필터 후 검색어·타입당 최종 개수
+const MAX_RESULTS = 10;    // 필터 후 검색어·타입당 최종 개수
 const DELAY_MS = 400;     // 요청 사이 간격 (속도 제한 방지)
 
 const BEAUTY_TERMS = [

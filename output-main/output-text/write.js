@@ -81,9 +81,21 @@ function sourceUrl(source = "") {
   return null;
 }
 
+// 트렌드 keywords 정규화. 매칭가가 형식 두 가지 중 하나로 줄 수 있음:
+//   - 옛 형식: Array<string>
+//   - 신 형식: { ingred?: string[], life?: string[], ... } 카테고리 객체
+// 둘 다 받아서 평면 배열로 통일. 객체일 땐 ingred + life만 사용.
+function normalizeKeywords(keywords) {
+  if (Array.isArray(keywords)) return keywords;
+  if (keywords && typeof keywords === "object") {
+    return [...(keywords.ingred ?? []), ...(keywords.life ?? [])];
+  }
+  return [];
+}
+
 // 키워드 배열 → `칩1` `칩2` (백틱 인라인 코드로 칩 표현, HTML keyword-tags 등가)
 function keywordChips(keywords = []) {
-  return keywords.filter(Boolean).map((k) => `\`${k}\``).join(" ");
+  return normalizeKeywords(keywords).filter(Boolean).map((k) => `\`${k}\``).join(" ");
 }
 
 // 정량 지표 한 줄 (headline_metric + 기간) — HTML metric-strip 등가
@@ -116,6 +128,19 @@ export function generateReport({ brand, trend, match } = {}) {
   lines.push(`**카테고리**: ${b.category}`);
   lines.push(`**타겟**: ${formatTarget(b)}`);
   lines.push("");
+
+  // 캠페인 정보 — brand-analysis.json의 campaign_kpi/period/budget 노출.
+  // 빈 값이거나 누락된 필드는 건너뜀(헤더 깨지지 않도록).
+  const campaignLines = [];
+  if (b.campaign_kpi) campaignLines.push(`- KPI: ${b.campaign_kpi}`);
+  if (b.campaign_period) campaignLines.push(`- 기간: ${b.campaign_period}`);
+  if (b.campaign_budget) campaignLines.push(`- 예산: ${b.campaign_budget}`);
+  if (campaignLines.length > 0) {
+    lines.push("**캠페인 정보**");
+    campaignLines.forEach((l) => lines.push(l));
+    lines.push("");
+  }
+
   lines.push("---");
   lines.push("");
 
@@ -361,7 +386,7 @@ export function generateWriterOutput({ brand, trend, match } = {}) {
       verdict: `${r.rank}순위`, // recommendations에 들어왔으면 N순위 (제외 트렌드는 애초에 없음)
       matching_grade: ev?.matching_grade ?? "중", // 매칭가 v0.3 절대 등급
       display_variant: deriveVariant(r.rank),
-      keywords: (td?.keywords ?? []).slice(0, 5),
+      keywords: normalizeKeywords(td?.keywords).slice(0, 5),
       headline_metric: td?.headline_metric ?? { metric: "", value: "", delta: "" },
       metrics: td?.metrics ?? { score: 0, growth_rate: 0, period: "" },
       summary_bullets: buildSummaryBullets(td),
@@ -393,6 +418,13 @@ export function generateWriterOutput({ brand, trend, match } = {}) {
         product_name: b.product_name ?? "",
         category: b.category ?? "",
         target_display: targetDisplay(b),
+        // 캠페인 정보 — brand-analysis.json의 campaign_* 필드를 그대로 노출.
+        // 매칭가는 무시하고 작성가/UI만 활용.
+        campaign: {
+          kpi: b.campaign_kpi ?? "",
+          period: b.campaign_period ?? "",
+          budget: b.campaign_budget ?? "",
+        },
       },
       contents,
     },
@@ -413,10 +445,11 @@ if (isDirectRun) {
   mkdirSync(dirname(mdPath), { recursive: true });
   writeFileSync(mdPath, md);
 
-  // 2) JSON 구조화 산출물 (UI용) — 컨벤션상 shared/data/에 저장 (시안가·mockup이 여기서 읽음)
+  // 2) JSON 구조화 산출물 (UI 서빙용) — 팀 합의로 output-main/output-text/에 저장하고
+  //    git 추적함. shared/data/는 gitignore라 UI 작업자(mockup HTML·web/) 디스크엔 안
+  //    생기는 문제 때문에 서빙용 파일은 추적되는 위치에 보관.
   const writerJson = generateWriterOutput({ brand, trend, match });
-  const jsonPath = resolve(PROJECT_ROOT, "shared/data/writer-output.json");
-  mkdirSync(dirname(jsonPath), { recursive: true });
+  const jsonPath = resolve(__dirname, "writer-output.json");
   writeFileSync(jsonPath, JSON.stringify(writerJson, null, 2));
 
   console.log(`✅ 작성가 산출물 생성 완료`);
