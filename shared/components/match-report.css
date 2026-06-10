@@ -112,12 +112,8 @@
   color: #fff;
   letter-spacing: 0.04em;
 }
-.mr-rank-badge.mr-r2 { background: var(--mr-rank2); }
-.mr-rank-badge.mr-r3 {
-  background: #fff;
-  color: var(--mr-warn);
-  border: 1px solid var(--mr-warn);
-}
+.mr-rank-badge.mr-r2 { background: #a892d2; }              /* 라벤더 (흰 글자 대비 OK) */
+.mr-rank-badge.mr-r3 { background: #a98ba1; color: #fff; }  /* 진한 모브 + 흰 글자 */
 .mr-group-letter {
   width: 22px;
   height: 22px;
@@ -263,14 +259,22 @@ a.mr-src-chip[href]::after { content: '↗'; font-size: 10px; opacity: 0.85; mar
 /* warn variant (3순위 보완 카드) */
 .mr-trend-card.mr-warn .mr-card-top { background: linear-gradient(180deg, var(--mr-warn-soft) 0%, #ffffff 100%); }
 .mr-trend-card.mr-warn .mr-reason-list li::before { background: var(--mr-warn); }
+
+/* 순위별 카드 색 구분 — 파스텔 (1 소프트핑크 / 2 라벤더 / 3 모브-그레이) */
+.mr-trend-card.mr-c1 { border-top: 4px solid #f3a8ba; }   /* 소프트 핑크 */
+.mr-trend-card.mr-c2 { border-top: 4px solid #b6a2dd; }   /* 소프트 라벤더 */
+.mr-trend-card.mr-c3 { border-top: 4px solid #c4adbd; }   /* 소프트 모브-그레이 */
+.mr-trend-card.mr-c1 .mr-card-top { background: linear-gradient(180deg, #fce3eb 0%, #ffffff 100%); }
+.mr-trend-card.mr-c2 .mr-card-top { background: linear-gradient(180deg, #ece7f9 0%, #ffffff 100%); }
+.mr-trend-card.mr-c3 .mr-card-top { background: linear-gradient(180deg, #ece2ea 0%, #ffffff 100%); }
 .mr-warn-note {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 11.5px;
   font-weight: 700;
-  color: var(--mr-warn);
-  background: var(--mr-warn-soft);
+  color: #87738a;
+  background: #e3d6df;
   padding: 4px 10px;
   border-radius: 999px;
 }
