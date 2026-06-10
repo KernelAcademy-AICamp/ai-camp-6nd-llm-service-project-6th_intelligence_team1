@@ -221,14 +221,13 @@
   }
 
   function card(c) {
-    var isWarn = c.rank === 3 || c.display_variant === "supplementary";
-    var warnCls = isWarn ? " mr-warn" : "";
+    var rankCls = " mr-c" + (c.rank || 1); // 순위별 카드 색 구분 (mr-c1/c2/c3)
     var warnNote = c.rank === 3 ? '<span class="mr-warn-note">⚠️ 보완 활용 권장</span>' : "";
     var stage = c.trend_stage && TREND_STAGE[c.trend_stage];
     var stageChip = stage ? '<span class="mr-stage-chip">' + stage + "</span>" : "";
 
     return (
-      '<div class="mr-trend-card mr-wide' + warnCls + '">' +
+      '<div class="mr-trend-card mr-wide' + rankCls + '">' +
         '<div class="mr-card-top">' +
           '<div class="mr-rank-row">' +
             '<span class="mr-rank-badge' + rankBadgeClass(c.rank) + '">' + esc(c.rank) + "순위</span>" +
