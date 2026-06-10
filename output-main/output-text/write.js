@@ -32,23 +32,63 @@ function unwrap(json) {
   return json?.data ?? json;
 }
 
+// 매칭가가 LLM 출력에 섞어 보내는 내부 필드명을 사람이 읽기 좋은 한글로
+// 치환. 매칭가 측 시스템 프롬프트가 자연어 강제를 안 해 영문 식별자가
+// 가끔 섞이는 문제의 작성가 측 후처리. (근본 해결은 매칭가 프롬프트 측에서)
+//
+// 매핑은 긴 매칭(여러 단어)부터 시도해야 부분 일치로 잘림이 안 일어남.
+// 예: "trend_stage" 먼저 → "stage" 그 다음.
+const TECHNICAL_TERM_MAP = [
+  ["audience_distribution", "타겟 분포"],
+  ["audience_signal", "타겟 라이프스타일"],
+  ["product_features", "제품 특성"],
+  ["media_channel_status", "채널별 활성도"],
+  ["channel_activity", "채널별 활성도"],
+  ["matching_grade", "매칭 등급"],
+  ["headline_metric", "대표 지표"],
+  ["growth_rate", "성장률"],
+  ["trend_stage", "트렌드 단계"],
+  ["product_fit", "제품 적합도"],
+  ["target_fit", "타겟 적합도"],
+  ["tnm_fit", "톤·매너 적합도"],
+  ["safe_fit", "안전성 적합도"],
+  ["ingred_fit", "성분 적합도"],
+  ["visual_fit", "비주얼 적합도"],
+  ["life_fit", "라이프스타일 적합도"],
+  ["stage peak", "정점 단계"],
+  ["stage emerging", "성장 단계"],
+  ["stage declining", "하락 단계"],
+  ["ingred", "성분·제형"],
+  ["features", "특성"],
+];
+function naturalizeMatcherText(text) {
+  if (!text) return text;
+  let result = text;
+  for (const [tech, natural] of TECHNICAL_TERM_MAP) {
+    // 단어 경계 신경 — 한글이 앞뒤에 붙어도 치환 (영문 식별자라 안전).
+    result = result.split(tech).join(natural);
+  }
+  return result;
+}
+
 // 매칭가 summary_reasons 호환 처리:
 //   - 신형(객체): { category, fact, source } → 두 가지 형식으로 변환
 //   - 구형(문자열): 그대로 사용 (하위 호환)
 //
 // formatReason: 마크다운 리포트 불릿용. "**카테고리** — fact" 형식.
 // reasonText:   UI JSON 카피용. 평문 fact만.
+// 둘 다 naturalizeMatcherText()로 영문 식별자 치환 후 반환.
 function formatReason(r) {
   if (r == null) return "";
-  if (typeof r === "string") return r;
+  if (typeof r === "string") return naturalizeMatcherText(r);
   const cat = r.category ? `**${r.category}** — ` : "";
-  return cat + (r.fact ?? "");
+  return cat + naturalizeMatcherText(r.fact ?? "");
 }
 
 function reasonText(r) {
   if (r == null) return "";
-  if (typeof r === "string") return r;
-  return r.fact ?? "";
+  if (typeof r === "string") return naturalizeMatcherText(r);
+  return naturalizeMatcherText(r.fact ?? "");
 }
 
 // 타겟 표시: "20대 여성 · Z세대·트렌디" 형식
@@ -590,11 +630,14 @@ function buildMetricPrefix(td) {
 }
 
 // 각 fit의 match_fits.reason을 합성. 코드 템플릿만 사용 (LLM 호출 X).
+// 매칭가가 영문 필드명(ingred·product_features 등)을 섞어 보내면
+// naturalizeMatcherText()가 자연 한글로 치환.
 function buildMatchReason(fitData, td) {
   const rawReason = fitData?.reason;
   if (!rawReason) return ""; // 매칭가 데이터 없으면 빈 문자열
+  const polished = naturalizeMatcherText(rawReason);
   const prefix = buildMetricPrefix(td);
-  return prefix ? `${prefix} ${rawReason}` : rawReason;
+  return prefix ? `${prefix} ${polished}` : polished;
 }
 
 async function generateUsagePlan({ rawContent, td, brand, client }) {

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>헤라 — 캠페인 트렌드 매칭 리포트</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "Noto Sans KR", "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+      background: #fff5f7;
+      color: #2a1a20;
+      line-height: 1.55;
+      padding: 32px 16px;
+    }
+    .wrap { max-width: 1180px; margin: 0 auto; }
+
+    /* 헤더 */
+    .report-header {
+      background: linear-gradient(135deg, #ffe0e9 0%, #fff0f5 100%);
+      border: 1px solid #f9c6d5;
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+    }
+    .report-title { font-size: 26px; font-weight: 800; color: #c2185b; margin-bottom: 8px; }
+    .report-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin-top: 16px; font-size: 14px; }
+    .meta-row { display: flex; gap: 8px; }
+    .meta-label { color: #8a5a6e; font-weight: 600; min-width: 80px; }
+    .meta-value { color: #2a1a20; }
+    .campaign-box {
+      grid-column: 1 / -1;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid #f9c6d5;
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-top: 8px;
+    }
+    .campaign-title { font-size: 13px; font-weight: 700; color: #c2185b; margin-bottom: 6px; }
+    .campaign-row { display: flex; gap: 20px; font-size: 13px; }
+    .campaign-key { color: #8a5a6e; font-weight: 600; }
+    .gen-info { text-align: right; font-size: 12px; color: #8a5a6e; margin-top: 12px; }
+
+    /* 카드 */
+    .card {
+      background: #ffffff;
+      border: 1px solid #f9c6d5;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(244, 143, 177, 0.12);
+    }
+    .card-head {
+      padding: 20px 28px 16px;
+      background: linear-gradient(135deg, #fce4ec 0%, #fff5f7 100%);
+      border-bottom: 1px solid #f9c6d5;
+    }
+    .rank-badge {
+      display: inline-block;
+      background: #e91e63;
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+    .trend-name { font-size: 22px; font-weight: 800; color: #2a1a20; margin-bottom: 12px; }
+    .kw-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .kw-badge {
+      background: #fce4ec;
+      border: 1px solid #f9c6d5;
+      color: #c2185b;
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    /* 본문 좌우 분할 */
+    .card-body { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; padding: 24px 28px; }
+    @media (max-width: 900px) { .card-body { grid-template-columns: 1fr; } }
+
+    .block { margin-bottom: 18px; }
+    .block-title {
+      font-size: 13px; font-weight: 700; color: #c2185b;
+      margin-bottom: 8px; letter-spacing: -0.2px;
+    }
+    .empty { color: #b88a98; font-size: 13px; font-style: italic; }
+
+    /* 좌측 */
+    .metric-strip {
+      display: flex; gap: 12px; align-items: baseline;
+      background: #fce4ec; padding: 14px 18px; border-radius: 12px;
+    }
+    .metric-value { font-size: 28px; font-weight: 800; color: #c2185b; }
+    .metric-delta { font-size: 16px; font-weight: 700; color: #e91e63; }
+    .period { font-size: 12px; color: #8a5a6e; margin-top: 6px; }
+
+    .reason-list { list-style: none; padding: 0; }
+    .reason-list li {
+      position: relative; padding-left: 20px; margin-bottom: 8px;
+      font-size: 14px; color: #3a2a30;
+    }
+    .reason-list li::before {
+      content: "●"; position: absolute; left: 0; top: 0;
+      color: #e91e63; font-size: 10px; line-height: 22px;
+    }
+
+    .summary-list { list-style: disc; padding-left: 20px; }
+    .summary-list li { font-size: 13.5px; color: #3a2a30; margin-bottom: 6px; }
+
+    .evidence-list { list-style: none; padding: 0; }
+    .evidence-list li {
+      font-size: 13px; color: #3a2a30; margin-bottom: 6px;
+      padding-left: 12px; border-left: 2px solid #f9c6d5;
+    }
+    .evidence-list a { color: #c2185b; text-decoration: none; font-weight: 600; }
+    .evidence-list a:hover { text-decoration: underline; }
+
+    /* 우측 — 4기준 그리드 */
+    .fit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .fit-grid { grid-template-columns: 1fr; } }
+    .fit-item {
+      background: #fff;
+      border: 1px solid #f9c6d5;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .fit-good { border-left: 4px solid #66bb6a; }
+    .fit-warn { border-left: 4px solid #ffa726; }
+    .fit-bad { border-left: 4px solid #ef5350; }
+    .fit-empty { border-left: 4px solid #bdbdbd; }
+    .fit-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .fit-title { font-size: 14px; font-weight: 800; color: #2a1a20; }
+    .fit-result { font-size: 12px; font-weight: 700; color: #6a3a4a; }
+    .fit-subtitle { font-size: 11.5px; color: #8a5a6e; margin-bottom: 8px; font-weight: 500; }
+    .fit-reason { font-size: 12.5px; color: #2a1a20; line-height: 1.5; }
+
+    /* 카드 하단 — 활용 방안 */
+    .card-foot {
+      background: linear-gradient(135deg, #fff0f5 0%, #ffe0e9 100%);
+      border-top: 1px solid #f9c6d5;
+      padding: 18px 28px;
+    }
+    .usage-title { font-size: 13px; font-weight: 700; color: #c2185b; margin-bottom: 6px; }
+    .usage-text { font-size: 14.5px; color: #2a1a20; line-height: 1.6; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- 헤더: 브랜드·캠페인 정보 -->
+    <header class="report-header">
+      <div class="report-title">헤라 — 캠페인 트렌드 매칭 리포트</div>
+      <div class="report-meta">
+        <div class="meta-row"><span class="meta-label">제품</span><span class="meta-value">실키 파운데이션</span></div>
+        <div class="meta-row"><span class="meta-label">카테고리</span><span class="meta-value">메이크업 &gt; 베이스 &gt; 파운데이션</span></div>
+        <div class="meta-row"><span class="meta-label">타겟</span><span class="meta-value">30대 여성 · 럭셔리·프리미엄</span></div>
+        <div class="meta-row"><span class="meta-label">트렌드</span><span class="meta-value">3개 추천</span></div>
+
+        <div class="campaign-box">
+                 <div class="campaign-title">📣 캠페인 정보</div>
+                 <div class="campaign-row">
+                   <div><span class="campaign-key">KPI:</span> 시즌 프로모션</div>
+                   <div><span class="campaign-key">기간:</span> 한달</div>
+                   <div><span class="campaign-key">예산:</span> 500~1000만원</div>
+                 </div>
+               </div>
+      </div>
+      <div class="gen-info">생성: 2026. 6. 10. PM 5:38:40</div>
+    </header>
+
+    <!-- 카드 목록 -->
+    
+    <article class="card">
+      <header class="card-head">
+        <div class="rank-badge">1순위</div>
+        <h2 class="trend-name">매트 텍스처 베이스 메이크업 선호</h2>
+        <div class="kw-row"><span class="kw-badge">#매트 쿠션</span> <span class="kw-badge">#세미매트</span> <span class="kw-badge">#자연스러운 매트피니시</span></div>
+      </header>
+
+      <div class="card-body">
+        <section class="left-col">
+          <div class="block">
+            <div class="block-title">📊 검색량 지수</div>
+            
+    <div class="metric-strip">
+      <div class="metric-value">47.4</div>
+      <div class="metric-delta">+22% vs 1월</div>
+    </div>
+  
+            <div class="period">기간: 2026-01 ~ 2026-05</div>
+          </div>
+
+          <div class="block">
+            <div class="block-title">🎯 매칭이유</div>
+            <ul class="reason-list"><li>브랜드 제품 특성 중 '매트'가 트렌드 성분·제형의 '매트 쿠션, 세미매트, 자연스러운 매트피니시'와 직접 일치</li><li>트렌드 타겟 라이프스타일 '데일리 메이크업 지속력 중시, 수정 화장 용이성 선호'가 브랜드 타겟의 '일상사용자' 관여도와 부분 일치</li><li>트렌드 정점 단계, 검색량 5월 47.4로 지속적 높은 수준 유지 중</li></ul>
+          </div>
+
+          <div class="block">
+            <div class="block-title">📈 유행 현황</div>
+            <ul class="summary-list"><li>20대를 중심으로 번들거림 없는 매트 마감이 대세예요. 꾸안꾸 자연스러움을 추구하며 데일리 지속력을 중시하는 가치관이 기반입니다.</li><li>글래스 스킨의 과도한 광택감에서 벗어나 자연스러운 매트로 회귀하는 중이에요. 완벽한 피부 강박을 거부하고 본연의 텍스처를 살리려는 세대 정서를 반영하고 있습니다.</li><li>매트 쿠션 검색량이 1월 38.9에서 3월 48.3, 5월 47.4로 높은 수준을 유지 중입니다. 라네즈·핀브 등 제품군이 활성화되며 커버력 있으면서도 가벼운 베이스 완성이 MZ세대 공통 니즈로 떠올랐어요.</li></ul>
+          </div>
+
+          <div class="block">
+            <div class="block-title">📚 수집 근거</div>
+            <ul class="evidence-list"><li><a href="https://datalab.naver.com/" target="_blank" rel="noopener">Naver Datalab</a> — 매트쿠션 검색량 지수 (2026-01 ~ 2026-05) 5월 47.4 (3월 48.3 대비 소폭 안정화)</li><li><a href="https://tavily.com/" target="_blank" rel="noopener">Tavily</a> — 매트 베이스 관련 블로그·SNS 콘텐츠 (최근 30일) 라네즈, 핀브, 바액 등 매트 쿠션 튜토리얼 및 리뷰 다수 관측</li><li><a href="https://tavily.com/" target="_blank" rel="noopener">Tavily</a> — 전문가·인플루언서 언급 (2026년) 2026 국내외 뷰티 트렌드에서 '매트-세미매트 쿠션이 안정적'이라는 전문 평가</li></ul>
+          </div>
+        </section>
+
+        <section class="right-col">
+          <div class="block-title">🧭 매칭 4기준</div>
+          <div class="fit-grid">
+    <div class="fit-item fit-good">
+      <div class="fit-head">
+        <span class="fit-title">Ingred-Fit</span>
+        <span class="fit-result">✅ 적합</span>
+      </div>
+      <div class="fit-subtitle">제품 성분·제형 ↔ 트렌드 핵심</div>
+      <div class="fit-reason">[검색량 47.4 +22%] 브랜드 제품 '실키 파운데이션'의 매트 텍스처가 트렌드의 핵심 성분·제형 키워드(매트 쿠션, 세미매트, 자연스러운 매트피니시)와 명확히 일치.</div>
+    </div>
+  
+    <div class="fit-item fit-good">
+      <div class="fit-head">
+        <span class="fit-title">Visual-Fit</span>
+        <span class="fit-result">✅ 적합</span>
+      </div>
+      <div class="fit-subtitle">브랜드 매체·톤 ↔ 트렌드 채널</div>
+      <div class="fit-reason">[검색량 47.4 +22%] 트렌드의 '꾸안꾸 자연스러움, 본연의 텍스처 살리기' 성격이 럭셔리·프리미엄 톤의 '고급스러운 정제감'과 친화적으로 매칭.</div>
+    </div>
+  
+    <div class="fit-item fit-warn">
+      <div class="fit-head">
+        <span class="fit-title">Life-Fit</span>
+        <span class="fit-result">⚠️ 부분 적합</span>
+      </div>
+      <div class="fit-subtitle">타겟 고객 ↔ 트렌드 라이프스타일</div>
+      <div class="fit-reason">[검색량 47.4 +22%] 브랜드 타겟(30대, 자기표현)과 트렌드 주 타겟(20대 중심)의 연령대 차이 있으나, 데일리 사용자·지속력 중시라는 관여도·라이프스타일은 부분 일치.</div>
+    </div>
+  
+    <div class="fit-item fit-warn">
+      <div class="fit-head">
+        <span class="fit-title">Safe-Fit</span>
+        <span class="fit-result">⚠️ 부분 적합</span>
+      </div>
+      <div class="fit-subtitle">트렌드 이미지·수명 ↔ 브랜드 안전성</div>
+      <div class="fit-reason">[검색량 47.4 +22%] 트렌드 정점 (peak) — 곧 하락 가능, 단기 캠페인 적합</div>
+    </div>
+  </div>
+        </section>
+      </div>
+
+      <footer class="card-foot">
+        <div class="usage-title">💡 활용 방안</div>
+        <div class="usage-text">YouTube의 베이스 메이크업 튜토리얼 콘텐츠가 활발하니 이미 활용 중인 유튜브 채널을 강화하되, Instagram에서 증가 중인 매트 쿠션 데일리 룩 콘텐츠 트렌드에 맞춰 자연스러운 매트 텍스처 베이스 완성 영상으로 확대하세요.</div>
+      </footer>
+    </article>
+  
+
+    <article class="card">
+      <header class="card-head">
+        <div class="rank-badge">2순위</div>
+        <h2 class="trend-name">자연스러운 커버력 &amp; 가벼운 베이스 동시 달성</h2>
+        <div class="kw-row"><span class="kw-badge">#자연스러운 커버</span> <span class="kw-badge">#가벼운 밀착감</span> <span class="kw-badge">#고커버 매트 쿠션</span> <span class="kw-badge">#밀착력</span></div>
+      </header>
+
+      <div class="card-body">
+        <section class="left-col">
+          <div class="block">
+            <div class="block-title">📊 검색량 지수</div>
+            
+    <div class="metric-strip">
+      <div class="metric-value">9.7</div>
+      <div class="metric-delta">+6% vs 1월</div>
+    </div>
+  
+            <div class="period">기간: 2026-01 ~ 2026-05</div>
+          </div>
+
+          <div class="block">
+            <div class="block-title">🎯 매칭이유</div>
+            <ul class="reason-list"><li>브랜드 제품 특성 '고급 텍스처, 장시간 지속'이 트렌드 성분·제형 '자연스러운 커버, 가벼운 밀착감, 고커버 매트 쿠션'과 직접 일치</li><li>트렌드 타겟 라이프스타일 '피부 잡티 있으나 여러 번 레이어링으로 피부감 살리기'가 브랜드 타겟의 '자기표현' 동기와 부분 일치</li><li>트렌드 정점 단계, 검색량 5월 9.7로 안정적 수준 유지, lifespan 6개월 이상</li></ul>
+          </div>
+
+          <div class="block">
+            <div class="block-title">📈 유행 현황</div>
+            <ul class="summary-list"><li>기미·붉은기를 자연스럽게 정돈하면서도 가볍고 답답하지 않은 베이스 수요가 늘고 있어요. '완벽한 가림'보다 '나다움 살린 피부'를 원하는 미감 변화가 주도하고 있습니다.</li><li>'풀 커버 vs 피부 표현' 이분법을 벗어나 둘 다 잡는 밸런스를 찾는 추세예요. 베이스 제품에 단순 가림이 아닌 '편집' 역할을 기대하는 소비자 니즈가 반영되고 있습니다.</li><li>라네즈 네오 쿠션 더 매트, 바액 에어리 커버 쿠션 등에서 '가볍게 펴지면서도 커버가 좋다'는 평가가 확산 중이에요. 데일리 메이크업과 수정 화장 모두에 활용 가능한 제품이 선호되고 있습니다.</li></ul>
+          </div>
+
+          <div class="block">
+            <div class="block-title">📚 수집 근거</div>
+            <ul class="evidence-list"><li><a href="https://datalab.naver.com/" target="_blank" rel="noopener">Naver Datalab</a> — 커버력쿠션 관련 검색량 (2026-01 ~ 2026-05) 5월 9.7 (1월 9.2 대비 소폭 상승, 3월 피크 12.6)</li><li><a href="https://tavily.com/" target="_blank" rel="noopener">Tavily</a> — 제품 리뷰 콘텐츠 (최근 30일) '바른 듯 안 바른 듯 엄청 가볍고 답답하지 않은데 피부 톤이 자연스럽게 정돈' (라네즈 네오 쿠션)</li><li><a href="https://tavily.com/" target="_blank" rel="noopener">Tavily</a> — 커버 쿠션 추천 글 (최근 2개월) 지성피부 대상 '커버력 좋으면서도 무너질 때 자연스러운' 쿠션 추천 증가</li></ul>
+          </div>
+        </section>
+
+        <section class="right-col">
+          <div class="block-title">🧭 매칭 4기준</div>
+          <div class="fit-grid">
+    <div class="fit-item fit-good">
+      <div class="fit-head">
+        <span class="fit-title">Ingred-Fit</span>
+        <span class="fit-result">✅ 적합</span>
+      </div>
+      <div class="fit-subtitle">제품 성분·제형 ↔ 트렌드 핵심</div>
+      <div class="fit-reason">[검색량 9.7 +6%] 브랜드 제품의 '고급 텍스처, 장시간 지속' 특성가 트렌드의 '자연스러운 커버, 가벼운 밀착감, 고커버 매트 쿠션' 성분·제형와 명확히 일치.</div>
+    </div>
+  
+    <div class="fit-item fit-good">
+      <div class="fit-head">
+        <span class="fit-title">Visual-Fit</span>
+        <span class="fit-result">✅ 적합</span>
+      </div>
+      <div class="fit-subtitle">브랜드 매체·톤 ↔ 트렌드 채널</div>
+      <div class="fit-reason">[검색량 9.7 +6%] 트렌드의 '완벽한 가림보다 나다움 살린 피부 정돈' 철학이 럭셔리·프리미엄의 '정제된 고급감, 본연의 품질' 성격과 친화적.</div>
+    </div>
+  
+    <div class="fit-item fit-warn">
+      <div class="fit-head">
+        <span class="fit-title">Life-Fit</span>
+        <span class="fit-result">⚠️ 부분 적합</span>
+      </div>
+      <div class="fit-subtitle">타겟 고객 ↔ 트렌드 라이프스타일</div>
+      <div class="fit-reason">[검색량 9.7 +6%] 브랜드 타겟(30대, 자기표현)과 트렌드 주 타겟(20-30대, 데일리 효율 중시)의 연령대 부분 겹침 있으나, 동기(자기표현 vs 효율성)에서 차이.</div>
+    </div>
+  
+    <div class="fit-item fit-warn">
+      <div class="fit-head">
+        <span class="fit-title">Safe-Fit</span>
+        <span class="fit-result">⚠️ 부분 적합</span>
+      </div>
+      <div class="fit-subtitle">트렌드 이미지·수명 ↔ 브랜드 안전성</div>
+      <div class="fit-reason">[검색량 9.7 +6%] 트렌드 정점 (peak) — 곧 하락 가능, 단기 캠페인 적합</div>
+    </div>
+  </div>
+        </section>
+      </div>
+
+      <footer class="card-foot">
+        <div class="usage-title">💡 활용 방안</div>
+        <div class="usage-text">Instagram에서 라네즈, 바액 등 제품의 사용 후기와 텍스처 설명 콘텐츠가 활발하니, 이미 활용 중인 Instagram을 통해 자연스러운 커버력과 가벼운 베이스의 밸런스를 강조하는 콘텐츠를 강화하세요.</div>
+      </footer>
+    </article>
+  
+
+    <article class="card">
+      <header class="card-head">
+        <div class="rank-badge">3순위</div>
+        <h2 class="trend-name">20대 여성 맞춤형 매트 베이스 수요</h2>
+        <div class="kw-row"><span class="kw-badge">#20대 데일리 쿠션</span> <span class="kw-badge">#20대 추천</span> <span class="kw-badge">#20대 여성 베이스</span></div>
+      </header>
+
+      <div class="card-body">
+        <section class="left-col">
+          <div class="block">
+            <div class="block-title">📊 검색량 지수</div>
+            
+    <div class="metric-strip">
+      <div class="metric-value">높음</div>
+      <div class="metric-delta">연령별 맞춤 검색 급증</div>
+    </div>
+  
+            <div class="period">기간: 2026-01 ~ 2026-05</div>
+          </div>
+
+          <div class="block">
+            <div class="block-title">🎯 매칭이유</div>
+            <ul class="reason-list"><li>브랜드 제품 특성 '매트'가 트렌드 성분·제형 '20대 데일리 쿠션, 매트 베이스'와 직접 일치</li><li>트렌드 정점 단계, 검색어 '20대 여성 매트 베이스', '20대 쿠션 추천' 활발히 검색 중, lifespan 6개월 이상</li></ul>
+          </div>
+
+          <div class="block">
+            <div class="block-title">📈 유행 현황</div>
+            <ul class="summary-list"><li>20대 여성들이 업무·야외활동에 견디는 매트 베이스를 찾고 있어요. 자신의 라이프스타일에 맞는 제품을 고르는 핀포인트 소비가 대세입니다.</li><li>'20대 여성 매트 베이스', '데일리 쿠션 20대' 같은 세분화된 검색이 늘고 있고, SNS에서 피지성 제어·지속력·톤업 효과를 다룬 20대 특화 리뷰가 활발해요.</li><li>라네즈, 핀브, 헤라 같은 중가 프리미엄급 쿠션이 20대의 주요 구매 대상으로 자리 잡고 있습니다.</li></ul>
+          </div>
+
+          <div class="block">
+            <div class="block-title">📚 수집 근거</div>
+            <ul class="evidence-list"><li><a href="https://tavily.com/" target="_blank" rel="noopener">Tavily</a> — 20대 메이크업 트렌드 콘텐츠 (최근 30일) '달미들이 요청한 연령대별 선호 메이크업' 영상 내 20대 섹션 (2byeolmii_ 등)</li><li><a href="https://tavily.com/" target="_blank" rel="noopener">Tavily</a> — 20대 여성 베이스 커뮤니티 질문 (최근 2개월) '20대 여자 피부 베이스 메이크업' 관련 스레드 다수</li><li><a href="https://tavily.com/" target="_blank" rel="noopener">Tavily</a> — 20대 맞춤 쿠션 추천 글 (2026년) 매트 메이크업베이스 BEST 추천 글에서 세대별 구분 강화</li></ul>
+          </div>
+        </section>
+
+        <section class="right-col">
+          <div class="block-title">🧭 매칭 4기준</div>
+          <div class="fit-grid">
+    <div class="fit-item fit-good">
+      <div class="fit-head">
+        <span class="fit-title">Ingred-Fit</span>
+        <span class="fit-result">✅ 적합</span>
+      </div>
+      <div class="fit-subtitle">제품 성분·제형 ↔ 트렌드 핵심</div>
+      <div class="fit-reason">[검색량 높음 +25%] 브랜드 제품의 '매트' 텍스처가 트렌드의 '20대 데일리 쿠션, 매트 베이스' 성분·제형와 명확히 일치.</div>
+    </div>
+  
+    <div class="fit-item fit-good">
+      <div class="fit-head">
+        <span class="fit-title">Visual-Fit</span>
+        <span class="fit-result">✅ 적합</span>
+      </div>
+      <div class="fit-subtitle">브랜드 매체·톤 ↔ 트렌드 채널</div>
+      <div class="fit-reason">[검색량 높음 +25%] 트렌드의 '데일리 효율 중시, 트렌드 정보 탐색 활발' 성격이 럭셔리·프리미엄의 '고급스러운 정제감, 신뢰성' 성격과 친화적.</div>
+    </div>
+  
+    <div class="fit-item fit-bad">
+      <div class="fit-head">
+        <span class="fit-title">Life-Fit</span>
+        <span class="fit-result">❌ 부적합</span>
+      </div>
+      <div class="fit-subtitle">타겟 고객 ↔ 트렌드 라이프스타일</div>
+      <div class="fit-reason">[검색량 높음 +25%] 브랜드 타겟(30대, 일상사용자)과 트렌드 주 타겟(20대 여성, 직장인·학생)의 연령대·라이프스타일 명확한 불일치. 트렌드는 20대 특화 수요로 30대 타겟과 겹침 없음.</div>
+    </div>
+  
+    <div class="fit-item fit-warn">
+      <div class="fit-head">
+        <span class="fit-title">Safe-Fit</span>
+        <span class="fit-result">⚠️ 부분 적합</span>
+      </div>
+      <div class="fit-subtitle">트렌드 이미지·수명 ↔ 브랜드 안전성</div>
+      <div class="fit-reason">[검색량 높음 +25%] 트렌드 정점 (peak) — 곧 하락 가능, 단기 캠페인 적합</div>
+    </div>
+  </div>
+        </section>
+      </div>
+
+      <footer class="card-foot">
+        <div class="usage-title">💡 활용 방안</div>
+        <div class="usage-text">이미 활용 중인 Instagram과 YouTube에서 20대 여성의 데일리 메이크업과 빠른 베이스 완성 콘텐츠를 강화하되, Blog에서 증가 중인 맞춤 호수·제형 추천 정보를 함께 연계하여 라이프스타일 맞춤형 매트 베이스 솔루션으로 포지셔닝하세요.</div>
+      </footer>
+    </article>
+  
+
+  </div>
+</body>
+</html>
