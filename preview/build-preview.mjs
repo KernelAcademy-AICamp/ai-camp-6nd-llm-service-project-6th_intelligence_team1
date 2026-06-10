@@ -55,12 +55,12 @@ const FIT_META = {
     ],
   },
   safe: {
-    title: "안전성·지속성",
-    subtitle: "트렌드가 브랜드 이미지에 안전한지",
+    title: "수요 시급성",
+    subtitle: "지금 캠페인을 띄울 만한 시점인지",
     checks: [
       "트렌드 단계 (성장기·정점·하락기)",
-      "트렌드 수명 (단기 유행 vs 장기 자리잡기)",
-      "브랜드 이미지에 충돌·리스크 없는지",
+      "검색 수요 규모 (월 검색량)",
+      "캠페인 시점·기간과의 정합성",
     ],
   },
 };
@@ -166,20 +166,19 @@ function buildVerdictBullets(fitKey, result, brand, td) {
     }
     case "safe": {
       const stage = esc(fallback(trim(td?.trend_stage), "미정"));
-      const lifespan = esc(fallback(trim(td?.lifespan_estimate), "미정"));
       const growth = esc(
         td?.metrics?.growth_rate != null
           ? `${td.metrics.growth_rate >= 0 ? "+" : ""}${Math.round(td.metrics.growth_rate * 100)}%`
           : "데이터 없음",
       );
       const resultLine = {
-        "✅": `안정적이라 브랜드 이미지에 안전하여 <b>적합</b>으로 판정.`,
-        "⚠️": `곧 하락 가능. 단기 캠페인에 한정해 <b>부분 적합</b>으로 판정.`,
-        "❌": `브랜드 이미지에 리스크가 있어 <b>부적합</b>으로 판정.`,
+        "✅": `트렌드 단계와 수요 규모가 캠페인 시기와 잘 맞아 <b>적합</b>으로 판정.`,
+        "⚠️": `단계·수요는 무난하나 시점 선택은 신중해야 하므로 <b>부분 적합</b>으로 판정.`,
+        "❌": `단계나 수요 규모가 캠페인과 어긋나 <b>부적합</b>으로 판정.`,
       }[result] ?? "(판정 데이터 없음)";
       return [
         `트렌드 단계 <b>"${stage}"</b>`,
-        `수명 <b>"${lifespan}"</b>, 성장률 <b>${growth}</b>`,
+        `검색 성장률 <b>${growth}</b>`,
         resultLine,
       ];
     }
