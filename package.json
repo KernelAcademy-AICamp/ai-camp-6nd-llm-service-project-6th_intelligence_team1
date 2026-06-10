@@ -8,6 +8,7 @@
     "match": "node src/matching/match.js",
     "trend:collect": "node trend/youtube.js && node trend/tavily.js && node trend/naver.js && node trend/naver-search.js && node trend/merge.js",
     "trend": "npm run trend:collect && node src/trend/analyze.js",
+    "trend:merge-activity": "node src/trend/merge-channel-activity.js",
     "brand": "node src/brand/analyze.js",
     "design": "node src/designer/design.js",
     "design-v2": "node src/designer-v2/design.js",
