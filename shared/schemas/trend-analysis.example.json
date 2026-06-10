@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.4",
-  "generated_at": "2026-06-10T10:05:00+09:00",
+  "schema_version": "0.5",
+  "generated_at": "2026-06-10T15:00:00+09:00",
   "status": "success",
   "data": {
     "analyzed_at": "",
@@ -67,12 +67,43 @@
             "media_channel": "",
             "status": ""
           }
+        ],
+        "source_search_keywords": [],
+        "channel_activity": [
+          {
+            "search_keyword": "",
+            "scores": {
+              "youtube": {
+                "score": 0,
+                "evidence": "",
+                "source": ""
+              },
+              "instagram": {
+                "score": 0,
+                "evidence": "",
+                "source": ""
+              },
+              "tiktok": {
+                "score": 0,
+                "evidence": "",
+                "source": ""
+              }
+            },
+            "top_channel": "",
+            "interpretation": "relative_to_pool"
+          }
         ]
       }
     ]
   },
   "_field_guide": {
-    "_comment": "이 _field_guide 블록은 example 파일에만 있는 작성 가이드입니다. 실제 trend-analysis.json에는 포함하지 않습니다. 매칭가 요청에 따른 v0.4 변경 사항(target 추가 + keywords.life 제거)을 정리합니다.",
+    "_comment": "이 _field_guide 블록은 example 파일에만 있는 작성 가이드입니다. 실제 trend-analysis.json에는 포함하지 않습니다. v0.4·v0.5 변경 사항을 정리합니다.",
+    "v0.5_changelog": [
+      "추가: trends[].source_search_keywords (배열) — 이 트렌드가 어떤 brand-analysis.data.search_keywords에서 도출됐는지 명시. 분석가가 직접 매핑 (구조 C 방식: 트렌드는 의미 단위, 검색어는 별도 매핑 테이블)",
+      "추가: trends[].channel_activity (배열) — 트렌드 1이 만든 channel-activity.json에서 source_search_keywords로 조인해 붙이는 채널별 활성도 데이터. 한 트렌드가 여러 검색어와 연관되므로 배열 구조",
+      "병합 방식: src/trend/merge-channel-activity.js 스크립트가 trend-analysis.json + channel-activity.json 읽어서 channel_activity 배열을 채움 (npm run trend:merge-activity)",
+      "주의: 각 element의 scores.{youtube,instagram,tiktok}.{score,evidence,source} + top_channel은 변형 없이 보존. 점수 평균·합산 ❌ (후보군 내 상대 순위라 깨짐)"
+    ],
     "v0.4_changelog": [
       "추가: trends[].target 필드 — 브랜드 target과 구조적으로 비교하기 위한 정형 데이터",
       "제거: trends[].keywords.life — target 필드와 중복이므로 제거. 라이프스타일·동기 정보는 target.involvement / target.motivation으로 이동"
@@ -156,6 +187,24 @@
     },
     "safe": {
       "_note": "safe(시급성) 판정은 trend_stage(emerging/peak/declining)·lifespan_estimate 필드를 그대로 사용합니다. 별도 변경 없음."
+    },
+    "source_search_keywords": {
+      "purpose": "이 트렌드가 어떤 brand-analysis.data.search_keywords에서 도출됐는지 명시하는 조인 키 배열. channel-activity.json과의 join에 사용.",
+      "how_to_fill": "분석가가 trend-analysis를 만들 때, 각 트렌드를 구성한 raw 데이터의 검색어를 brand-analysis.data.search_keywords와 매칭해서 1~N개 적습니다.",
+      "good_example": ["실키 파운데이션 리뷰", "30대 데일리 파운데이션 트렌드"],
+      "bad_example": ["실키파운데이션", "메이크업"],
+      "note": "정확히 brand-analysis.data.search_keywords의 문자열과 일치해야 join이 됩니다. 다르면 channel_activity가 비어집니다."
+    },
+    "channel_activity": {
+      "purpose": "트렌드 1(가지수님)이 만든 channel-activity.json을 source_search_keywords로 조인해 붙이는 채널별 활성도 데이터. 매칭가에게 전달돼 활성 채널 판정에 사용됨.",
+      "how_filled": "src/trend/merge-channel-activity.js 스크립트가 자동으로 채움. 분석가가 직접 작성 ❌",
+      "structure": "각 element가 한 search_keyword의 활성도. scores.{youtube,instagram,tiktok} + top_channel + interpretation",
+      "score_warning": [
+        "점수는 후보군 내 상대 순위(반 등수 개념). 채널 간 절대 비교 ❌",
+        "score: 0 = '활동 없음'이 아님. 후보 중 최저라는 뜻 (예: 유튜브 0점인데 실제 영상 25개·4.4만 뷰)",
+        "인스타는 무료 표본이라 작음 → '경향'으로만 표현, 단정 ❌",
+        "여러 검색어의 점수 평균·합산 ❌ (재정규화 깨짐)"
+      ]
     }
   }
 }
