@@ -241,11 +241,29 @@ const DatalabGroupSchema = z.object({
     .max(5, "그룹당 키워드 최대 5개"),
 });
 
+// search_keywords와 hashtag_keywords의 짝짓기를 코드 레벨에서 강제하기 위한
+// 묶음 스키마. LLM이 i번째 쌍이 같은 트렌드를 가리키도록 한 객체에 묶어 출력.
+// 트렌드 분석가 합의 — 짝 어긋남 문제 방지(예: search="실키 파운데이션 리뷰"인데
+// hashtag="#30대메이크업"으로 잘못 매칭되던 케이스).
+const SearchHashtagPairSchema = z.object({
+  search: z
+    .string()
+    .min(2, "검색 쿼리는 2글자 이상")
+    .max(50, "검색 쿼리는 50글자 이하"),
+  hashtag: z
+    .string()
+    .min(2, "해시태그는 2글자 이상")
+    .max(15, "해시태그는 15글자 이하")
+    .refine((s) => !/\s/.test(s), "해시태그는 공백 없는 한 덩어리여야 함"),
+});
+
 export const BrandKeywordsLlmSchema = z.object({
-  search_keywords: z
-    .array(z.string().min(2, "검색 쿼리는 2글자 이상").max(50, "검색 쿼리는 50글자 이하"))
-    .min(5, "최소 5개")
-    .max(6, "최대 6개"),
+  // Tavily(자연 문장)·Instagram·TikTok(해시태그) 짝 5~6쌍.
+  // analyze.js가 search_keywords/hashtag_keywords 두 배열로 분리해 envelope에 노출.
+  keyword_pairs: z
+    .array(SearchHashtagPairSchema)
+    .min(5, "최소 5쌍")
+    .max(6, "최대 6쌍"),
   short_keywords: z
     .array(z.string().min(2, "키워드 2글자 이상").max(15, "키워드 15글자 이하"))
     .min(4, "YouTube용 최소 4개")
@@ -254,18 +272,6 @@ export const BrandKeywordsLlmSchema = z.object({
     .array(DatalabGroupSchema)
     .min(2, "Naver DataLab 그룹 최소 2개")
     .max(3, "Naver DataLab 그룹 최대 3개"),
-  // Instagram·TikTok 해시태그 수집용 — 띄어쓰기 없는 짧은 한글 명사형.
-  // search_keywords와 짝지어 같은 의미의 해시태그 버전.
-  hashtag_keywords: z
-    .array(
-      z
-        .string()
-        .min(2, "해시태그는 2글자 이상")
-        .max(15, "해시태그는 15글자 이하")
-        .refine((s) => !/\s/.test(s), "해시태그는 공백 없는 한 덩어리여야 함"),
-    )
-    .min(5, "해시태그 최소 5개")
-    .max(7, "해시태그 최대 7개"),
 });
 
 // 하위 호환 alias (이름만 바꾼 거)
