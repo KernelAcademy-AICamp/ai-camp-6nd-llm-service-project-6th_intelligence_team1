@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { envelopeSchema } from "../../shared/envelope.js";
 
-// 매칭가 출력 스키마 v0.5 (3단계 허들: 성분→톤→라이프스타일).
-// 0순위(ingred)·1순위(tone) ❌ 시 eliminated_by 설정. 통과 시 life_score로 순위 결정.
-// safe_fit은 시급성 참고 정보. envelope은 shared/envelope.js가 자동 부여.
+// 매칭가 출력 스키마 v0.6 (3단계 허들: Product-Fit→TnM-Fit→Target-Fit).
+// 0순위(product)·1순위(tone) ❌ 시 eliminated_by 설정. 통과 시 target_score로 순위 결정.
+// market_fit은 시급성 참고 정보. envelope은 shared/envelope.js가 자동 부여.
 
 // ─── 입력 스키마 (분석가 산출 검증) ─────────────────────────────────
 
@@ -32,14 +32,14 @@ const BrandTargetSchema = z
     involvement: z.string().optional(),
     motivation: z.array(z.string()).optional(),
   })
-  // Life-Fit이 LLM 정성 평가라 필수 필드가 줄어듬. 다만 라이프스타일 비교에 쓸 정보 최소 1개는 있어야.
+  // Target-Fit LLM 정성 평가 — 라이프스타일 비교에 쓸 정보 최소 1개는 있어야.
   .refine(
     (t) =>
       (Array.isArray(t.age_groups) && t.age_groups.length > 0) ||
       (typeof t.age_range === "string" && t.age_range.trim().length > 0) ||
       (Array.isArray(t.motivation) && t.motivation.length > 0) ||
       (typeof t.involvement === "string" && t.involvement.trim().length > 0),
-    { message: "target에 age·motivation·involvement 중 최소 1개는 있어야 Life-Fit 평가 가능" },
+    { message: "target에 age·motivation·involvement 중 최소 1개는 있어야 Target-Fit 평가 가능" },
   );
 
 export const InputBrandSchema = z
@@ -54,11 +54,11 @@ export const InputBrandSchema = z
               message: `tone_and_manner는 ${TONE_KEYWORDS.join("·")} 중 하나여야 합니다`,
             }),
           )
-          .min(1, "tone_and_manner는 최소 1개 (Visual·Safe-Fit 평가에 필요)"),
+          .min(1, "tone_and_manner는 최소 1개 (TnM-Fit 평가에 필요)"),
         target: BrandTargetSchema,
-        // 선택: 있으면 Ingred-Fit이 강한 근거. 없으면 LLM이 정성 판단.
+        // 선택: 있으면 Product-Fit이 강한 근거. 없으면 LLM이 정성 판단.
         product_features: z.array(z.string().min(1)).min(1).optional(),
-        // 선택: 있으면 Visual-Fit이 매체 매칭 강도 ↑.
+        // 선택: 참고용 (평가 기준에서 제외).
         media_channels: z.array(z.string().min(1)).min(1).optional(),
         // 캠페인 정보 (선택) — 작성가가 카피 생성에 활용. 매칭가는 사용하지 않음.
         campaign_kpi: z.enum(["신제품 런칭", "시즌 프로모션", "재구매 유도"]).optional(),
@@ -70,22 +70,31 @@ export const InputBrandSchema = z
   })
   .passthrough();
 
-// 트렌드 audience_distribution: Life-Fit이 LLM 정성 평가로 바뀌어 필수 X (코드 계산 폐지).
-// 다만 LLM이 인구통계 참고는 가능하므로 선택 필드로 유지 (스키마 검증 없이 통과).
+// 트렌드 audience_distribution: Target-Fit은 LLM 정성 평가. 선택 필드로 유지 (스키마 검증 없이 통과).
 const TrendItemSchema = z
   .object({
     trend_name: z.string().min(1, "trend_name 비어있음"),
     category: z.string().min(1, "category 비어있음"),
     summary: z.string().min(1, "summary 비어있음 (모든 4기준 평가에 필요)"),
-    keywords: z.array(z.string().min(1)).optional(),
+    keywords: z.union([
+      z.array(z.string().min(1)),
+      z.object({
+        ingred: z.array(z.string().min(1)).optional(),
+        life: z.array(z.string().min(1)).optional(),
+      }),
+    ]).optional(),
     core_keywords: z.array(z.string().min(1)).optional(),
   })
   .passthrough()
   .refine(
-    (t) =>
-      (Array.isArray(t.keywords) && t.keywords.length > 0) ||
-      (Array.isArray(t.core_keywords) && t.core_keywords.length > 0),
-    { message: "keywords 또는 core_keywords 중 하나는 비어있지 않아야 함 (Ingred-Fit 평가에 필요)" },
+    (t) => {
+      const kw = t.keywords;
+      if (Array.isArray(kw) && kw.length > 0) return true;
+      if (kw != null && typeof kw === "object" && (kw.ingred?.length > 0 || kw.life?.length > 0)) return true;
+      if (Array.isArray(t.core_keywords) && t.core_keywords.length > 0) return true;
+      return false;
+    },
+    { message: "keywords 또는 core_keywords 중 하나는 비어있지 않아야 함 (Product-Fit 평가에 필요)" },
   );
 
 export const InputTrendSchema = z
@@ -105,6 +114,32 @@ const FitResultSchema = z.object({
   reason: z.string(),
 });
 
+const ChannelScoreSchema = z.object({
+  score: z.number(),
+  evidence: z.string(),
+  source: z.string(),
+});
+const ChannelActivitySchema = z.object({
+  scores: z.object({
+    youtube: ChannelScoreSchema.optional(),
+    instagram: ChannelScoreSchema.optional(),
+    tiktok: ChannelScoreSchema.optional(),
+  }),
+  top_channel: z.string(),
+}).optional();
+
+const DemandFitSchema = z.object({
+  monthly_searches: z.number(),
+  score: z.number(),
+  evidence: z.string(),
+}).optional();
+
+const CompetitionFitSchema = z.object({
+  level: z.enum(["높음", "중간", "낮음"]),
+  score: z.number(),
+  evidence: z.string(),
+}).optional();
+
 // 데이터 근거 — 입력에서 직접 확인 가능한 사실 + 출처만. 정성 판단은 제외.
 const EvidenceReasonSchema = z.object({
   category: z.string(), // 예: "성분 적합성", "매체 매칭", "라이프스타일 매칭", "트렌드 수명"
@@ -115,14 +150,17 @@ const EvidenceReasonSchema = z.object({
 const EvaluationItemSchema = z.object({
   trend_name: z.string(),
   evaluation: z.object({
-    ingred_fit: FitResultSchema, // 0순위 허들 — 성분·텍스처
-    visual_fit: FitResultSchema, // 1순위 허들 — 톤앤매너
-    life_fit: FitResultSchema,   // 2순위 순위 결정 — 라이프스타일
-    safe_fit: FitResultSchema,   // 서브 참고 — 트렌드 시급성
+    product_fit: FitResultSchema, // 0순위 허들 — 성분·텍스처
+    tnm_fit: FitResultSchema, // 1순위 허들 — 톤앤매너
+    target_fit: FitResultSchema,   // 2순위 순위 결정 — 라이프스타일
+    market_fit: FitResultSchema,   // 서브 참고 — 트렌드 시급성
   }),
-  life_score: z.number().int().min(0).max(2), // life_fit: ✅=2, ⚠️=1, ❌=0
-  eliminated_by: z.enum(["ingred", "tone", "category"]).nullable(),
-  summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
+  target_score: z.number().int().min(0).max(2), // target_fit: ✅=2, ⚠️=1, ❌=0
+  eliminated_by: z.enum(["product", "tone", "category"]).nullable(),
+  summary_reasons: z.array(EvidenceReasonSchema).min(1),
+  channel_activity: ChannelActivitySchema,
+  demand_fit: DemandFitSchema,
+  competition_fit: CompetitionFitSchema,
 });
 
 const RecommendationSchema = z.object({
@@ -130,6 +168,11 @@ const RecommendationSchema = z.object({
   trend_id: z.string().nullable(),
   trend_name: z.string(),
   summary_reasons: z.array(EvidenceReasonSchema),
+  market_context: z.string(),               // 2차: 트렌드 단계·수요 레이블
+  competition_context: z.string().optional(), // 3차: 경쟁 강도 레이블 (데이터 있을 때만)
+  channel_activity: ChannelActivitySchema,
+  demand_fit: DemandFitSchema,
+  competition_fit: CompetitionFitSchema,
 });
 
 export const MatchDataSchema = z.object({
@@ -148,14 +191,14 @@ export const ConflictCheckSchema = z.object({
 export const MatchResultSchema = envelopeSchema(MatchDataSchema);
 
 // ─── LLM 전용 출력 스키마 ───────────────────────────────────────────
-// LLM은 4기준 정성 판정 + summary_reasons만 생성. score·verdict는 코드가 계산.
+// LLM은 3기준(product·tnm·target) 정성 판정 + summary_reasons만 생성.
+// market_fit·score·verdict는 코드가 계산.
 const LlmEvaluationItemSchema = z.object({
   trend_name: z.string(),
-  ingred_fit: FitResultSchema,
-  visual_fit: FitResultSchema,
-  life_fit: FitResultSchema,
-  safe_fit: FitResultSchema,
-  summary_reasons: z.array(EvidenceReasonSchema).min(1).max(3),
+  product_fit: FitResultSchema,
+  tnm_fit: FitResultSchema,
+  target_fit: FitResultSchema,
+  summary_reasons: z.array(EvidenceReasonSchema).min(1),
 });
 
 export const LlmMatchDataSchema = z.object({

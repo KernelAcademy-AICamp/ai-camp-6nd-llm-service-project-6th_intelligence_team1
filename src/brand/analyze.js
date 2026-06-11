@@ -5,6 +5,7 @@ import { wrap } from "../../shared/envelope.js";
 import {
   BrandInputSchema,
   BrandKeywordsLlmSchema,
+  buildProductFeatures,
   expandAgeGroupForMatching,
 } from "./schemas.js";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
@@ -29,6 +30,84 @@ const searchKeywordsPrompt = readFileSync(
   resolve(__dirname, "prompts/search-keywords.md"),
   "utf-8",
 );
+
+// ─── search_keywords 후처리 (프롬프트 규칙 이중 안전망) ─────────────
+// LLM이 프롬프트 규칙(2~3 어절, 마케터 속성 표면 박기 금지)을 어기면 매칭가의
+// demand_fit이 네이버 월 검색량 0~20만 보고 와서 신호 무의미해짐. 코드에서
+// 결정적으로 한 번 더 필터링.
+
+// 어절(공백 단위) 4개 이상이면 긴 조합어로 간주.
+function isLongCompound(keyword) {
+  const tokens = String(keyword).trim().split(/\s+/).filter(Boolean);
+  return tokens.length >= 4;
+}
+
+// 키워드 표면에 들어가면 안 되는 마케터 입력 속성 단어 집합 구성.
+// 텍스처(매트 등)는 *트렌드 자체의 핵심 키워드*일 수도 있어 제외 — 코드로
+// 트렌드 컨텍스트 판별 어려우니 과잉 필터링 회피.
+function buildForbiddenAttributeWords(input) {
+  const forbidden = new Set();
+  // 1) 타겟 연령 (30대·Z세대 등)
+  for (const a of input.target?.age_groups ?? []) {
+    if (a) forbidden.add(a);
+  }
+  // 2) 톤·무드 키워드 — "·"·공백 단위로 쪼개 개별 단어로 (예: "럭셔리·프리미엄"
+  //    → "럭셔리", "프리미엄").
+  for (const tone of input.tone_and_manner ?? []) {
+    for (const w of String(tone).split(/[·\s]+/)) {
+      if (w && w.length >= 2) forbidden.add(w);
+    }
+  }
+  // 3) 자사 브랜드명·제품명. 한국어 제품명은 보통 "형용사·고유표현 + 카테고리
+  //    명사" 패턴(예: "실키 파운데이션", "글로우 쿠션")이라 마지막 어절은 카테
+  //    고리 명사일 가능성이 높음 — 그게 검색 키워드의 중심이라 forbidden에 넣
+  //    으면 정상 키워드까지 다 막혀버림. 그래서 마지막 어절은 forbidden 제외.
+  //    어절이 1개뿐인 제품명은 그대로 forbidden 추가 (보통 자사 고유 표현).
+  if (input.brand_name) forbidden.add(input.brand_name);
+  if (input.product_name) {
+    const tokens = String(input.product_name).split(/\s+/).filter(Boolean);
+    if (tokens.length === 1) {
+      if (tokens[0].length >= 2) forbidden.add(tokens[0]);
+    } else {
+      for (let i = 0; i < tokens.length - 1; i++) {
+        if (tokens[i].length >= 2) forbidden.add(tokens[i]);
+      }
+    }
+  }
+  return forbidden;
+}
+
+// 키워드 안에 금지 단어가 표면 노출됐는지 검사. 매칭되면 그 단어 반환.
+function findAttributeViolation(keyword, forbidden) {
+  for (const word of forbidden) {
+    if (keyword.includes(word)) return word;
+  }
+  return null;
+}
+
+// 길이·속성 표면 위반 키워드를 걸러내고 사유와 함께 로그. 통과한 키워드만 반환.
+function sanitizeSearchKeywords(keywords, input) {
+  const forbidden = buildForbiddenAttributeWords(input);
+  const kept = [];
+  const dropped = [];
+  for (const kw of keywords ?? []) {
+    if (typeof kw !== "string" || !kw.trim()) continue;
+    if (isLongCompound(kw)) {
+      dropped.push({ keyword: kw, reason: "4+ 어절 — 너무 긴 조합 (월 검색량 0~20)" });
+      continue;
+    }
+    const violation = findAttributeViolation(kw, forbidden);
+    if (violation) {
+      dropped.push({
+        keyword: kw,
+        reason: `마케터 속성 "${violation}" 표면 노출 (월 검색량 0~20)`,
+      });
+      continue;
+    }
+    kept.push(kw);
+  }
+  return { kept, dropped };
+}
 
 // match_keywords는 입력 필드에서 자동 유도 — 마케터가 별도로 채울 필요 없음.
 function buildMatchKeywords(input) {
@@ -81,7 +160,7 @@ async function generateTrendKeywords(input) {
 - 뷰티관여도: ${input.target.involvement}
 - 소비동기: ${input.target.motivation.join(", ")}
 
-\`search_keywords\`(Tavily용 자연 문장형 5~6개), \`short_keywords\`(YouTube용 짧은 평면 배열 4~6개), \`datalab_keywords\`(Naver용 짧은 단어 그룹 2~3개) 모두 채워서 JSON으로만 반환.`;
+\`keyword_pairs\`(Tavily 자연 문장 + Instagram·TikTok 해시태그 짝 5~6쌍, i번째 쌍의 search·hashtag가 같은 트렌드를 가리켜야 함), \`short_keywords\`(YouTube용 짧은 평면 배열 4~6개), \`datalab_keywords\`(Naver용 짧은 단어 그룹 2~3개) 모두 채워서 JSON으로만 반환.`;
 
   const response = await client.messages.parse({
     model: "claude-haiku-4-5",
@@ -100,10 +179,17 @@ async function generateTrendKeywords(input) {
     throw new Error("키워드 생성 실패");
   }
 
+  // keyword_pairs(쌍 묶음) → search_keywords / hashtag_keywords 두 배열로 분리.
+  // 코드 레벨 짝짓기 보장: 두 배열의 i번째는 항상 같은 트렌드를 가리킨다.
+  const pairs = parsed.keyword_pairs ?? [];
+  const search_keywords = pairs.map((p) => p.search);
+  const hashtag_keywords = pairs.map((p) => p.hashtag);
+
   return {
-    search_keywords: parsed.search_keywords,
+    search_keywords,
     short_keywords: parsed.short_keywords,
     datalab_keywords: parsed.datalab_keywords,
+    hashtag_keywords,
     usage: response.usage,
   };
 }
@@ -115,26 +201,47 @@ export async function analyzeBrand(userInput) {
   // 2) match_keywords 자동 생성 (LLM 호출 없음)
   const match_keywords = buildMatchKeywords(validated);
 
-  // 3) LLM으로 트렌드 수집용 키워드 세 종류 생성
-  const { search_keywords, short_keywords, datalab_keywords, usage } =
+  // 3) product_features 룰베이스 합성 (LLM 호출 없음, 매칭가 Ingred-Fit 핵심 입력)
+  //    texture_keywords·category 소분류·tone별 안전 표현으로 조립. 카테고리
+  //    위반·환각 위험 0이며 마케터 입력에서 결정적으로 생성됨.
+  const product_features = buildProductFeatures(validated);
+
+  // 4) LLM으로 트렌드 수집용 키워드 네 종류 생성
+  const { search_keywords: rawSearchKeywords, short_keywords, datalab_keywords, hashtag_keywords, usage } =
     await generateTrendKeywords(validated);
 
-  // 4) "40대 이상" 같은 폼-전용 값은 매칭가가 모르는 포맷이므로 풀어줌
+  // 4-1) search_keywords 결정적 후처리 — 프롬프트 규칙 이중 안전망.
+  //      LLM이 프롬프트 규칙을 어기고 4+ 어절 스택이나 마케터 속성 표면 박기로
+  //      반환해도 코드에서 한 번 더 거른다 (매칭가 demand_fit 신호 보존).
+  const { kept: search_keywords, dropped: searchDropped } = sanitizeSearchKeywords(
+    rawSearchKeywords,
+    validated,
+  );
+  if (searchDropped.length > 0) {
+    console.warn(`⚠️ search_keywords ${searchDropped.length}개 제외됨 (네이버 검색량 보장):`);
+    for (const { keyword, reason } of searchDropped) {
+      console.warn(`   - "${keyword}" — ${reason}`);
+    }
+  }
+
+  // 5) "40대 이상" 같은 폼-전용 값은 매칭가가 모르는 포맷이므로 풀어줌
   //    (예: "40대 이상" → "40대"·"50대"·"60대"). 폼에 표시할 원본 값은
   //    target_display.age_groups_display로 별도 보존.
   const expandedAges = validated.target.age_groups.flatMap(expandAgeGroupForMatching);
   const targetForMatching = { ...validated.target, age_groups: expandedAges };
 
-  // 5) envelope으로 감싸 반환
+  // 6) envelope으로 감싸 반환
   const output = wrap({
     source: "브랜드 분석",
     ...validated,
     target: targetForMatching,
     target_display: { age_groups: validated.target.age_groups }, // UI 복원용
     match_keywords,
+    product_features,
     search_keywords,
     short_keywords,
     datalab_keywords,
+    hashtag_keywords,
   });
 
   return { output, usage };
@@ -165,6 +272,8 @@ if (isDirectRun) {
   output.data.datalab_keywords.forEach((g) =>
     console.log(`     [${g.groupName}] ${g.keywords.join(", ")}`),
   );
+  console.log(`   hashtag_keywords (Instagram·TikTok용): ${output.data.hashtag_keywords.length}개`);
+  output.data.hashtag_keywords.forEach((k, i) => console.log(`     ${i + 1}. #${k}`));
   console.log(`   소요 시간: ${elapsed}s`);
   if (usage) {
     const cacheRead = usage.cache_read_input_tokens ?? 0;

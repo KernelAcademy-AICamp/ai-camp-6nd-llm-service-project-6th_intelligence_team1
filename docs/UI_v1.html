@@ -1210,18 +1210,13 @@
     }
 
     function buildReport(d) {
-        const age = d.target.age_groups[0] || '';
-        const motiv = d.target.motivation[0] || '';
-        const tone = d.tone_and_manner[0] || '';
-        const tex = d.texture_keywords[0] || '';
-
-        document.getElementById('report_meta').innerHTML =
-            '<b>' + d.brand_name + '</b> · ' + d.product_name + '<br>'
-            + '카테고리 ' + d.category + ' | 톤 ' + tone + ' | 특징 ' + tex + ' | 타겟 ' + age + ' ' + d.target.gender + ', ' + motiv + '<br>'
-            + '<span style="opacity:0.7">트렌드 매칭 결과 — 추천 3선</span>';
+        // 브랜드 헤더는 이제 match-report 컴포넌트가 자체 렌더(mr-report-header)하므로
+        // UI의 report_meta는 비활성화 (헤더 중복 방지).
+        const meta = document.getElementById('report_meta');
+        if (meta) { meta.innerHTML = ''; meta.style.display = 'none'; }
 
         // ── 실제 매칭 리포트: writer-output.json을 받아 공유 컴포넌트로 렌더 ──
-        // (기존 하드코딩 3순위 제거. 데이터 주입은 UI가 소유, 카드 렌더는 match-report 컴포넌트 담당)
+        // (데이터 주입은 UI가 소유, 카드 렌더는 match-report 컴포넌트 담당)
         renderMatchReportFromData();
     }
 
@@ -1230,6 +1225,8 @@
     async function renderMatchReportFromData() {
         const mount = document.getElementById('report_ranks');
         if (!mount || typeof renderMatchReport !== 'function') return;
+        // 옛 UI의 .trend-cards(3열 그리드)가 컴포넌트를 1/3폭으로 가두므로 제거 — 컴포넌트가 자체 그리드 소유
+        mount.classList.remove('trend-cards');
         try {
             const res = await fetch('/output-main/output-text/writer-output.json', { cache: 'no-store' });
             if (!res.ok) throw new Error('writer-output 응답 ' + res.status);

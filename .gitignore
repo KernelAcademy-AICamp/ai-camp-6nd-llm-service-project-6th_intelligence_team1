@@ -8,6 +8,7 @@
 shared/data/*
 !shared/data/trend-analysis.json
 !shared/data/match-result.json
+!shared/data/brand-analysis.json
 
 # Python
 __pycache__/

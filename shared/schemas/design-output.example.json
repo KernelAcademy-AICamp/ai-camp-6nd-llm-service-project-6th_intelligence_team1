@@ -3,47 +3,98 @@
   "generated_at": "2026-06-01T08:40:57.774Z",
   "status": "success",
   "data": {
-    "brand_name": "식물나라",
+    "brand_name": "헤라",
     "visuals": [
       {
         "content_id": "C001",
-        "trend_name": "수분 선케어",
-        "shot_type": "person",
-        "concept": "자작나무 수분의 촉촉함이 살아나는 맑고 건강한 피부",
-        "visual_direction": "한여름 햇빛 아래에서도 생기 있는 피부결을 표현. 자연스러운 광채와 수분감이 도드라지는 클로즈업 포트레이트로, 순수하고 투명한 뷰티 감성을 전달합니다.",
-        "generation_prompt": "1girl, korean beauty influencer, 20-year-old korean beauty model, long straight natural black hair cascading softly down her shoulders with gentle flyaways, minimalist clean beauty makeup, ultra-transparent and hydrated glass skin, bare shoulders, shading her eyes with one hand and holding the product softly in the other, soft white seamless backdrop with subtle cool undertone, minimalist clean aesthetic, high-fashion cosmetic advertising composition, directional beauty lighting, skin sheen, soft catchlights in the eyes, sharp focus, shallow depth of field, creamy bokeh, cinematic lighting, photorealistic, hyper-detailed, masterpiece, best quality, 8k wallpaper, vertical 3:4 portrait composition. Avoid: distorted lips, asymmetric face, extra fingers, text, watermark, low quality, blurry, matte finish, dry skin appearance, cakey makeup, oversaturated colors, duplicate hands, duplicated hands, two left hands, two right hands, mirrored hands, extra hands, extra arms, missing hands, fused hands, deformed hands, more than two hands, multiple hands, asymmetrical hands.",
+        "trend_name": "세미매트 스킨핏 베이스",
+        "search_queries": [
+          "luxury semi matte foundation skincare ad",
+          "premium silky base everyday makeup campaign",
+          "refined skin fit foundation korean beauty"
+        ],
+        "instagram_hashtags": [
+          "luxuryfoundation",
+          "semimatte",
+          "kbeautybase"
+        ],
+        "references_by_source": {
+          "pinterest": [
+            {
+              "url": "https://www.pinterest.com/pin/example/",
+              "image_url": "https://i.pinimg.com/originals/example.jpg",
+              "title": "Flawless Semi-Matte Foundation",
+              "source": "pinterest"
+            }
+          ],
+          "instagram": [
+            {
+              "url": "https://www.instagram.com/p/example/",
+              "image_url": "https://scontent.cdninstagram.com/example.jpg",
+              "title": "#semimatte #luxurybeauty",
+              "source": "instagram"
+            }
+          ],
+          "mintoiro": [
+            {
+              "url": "https://lookaside.instagram.com/seo/google_widget/crawler/?media_id=example",
+              "image_url": "https://lookaside.instagram.com/seo/google_widget/crawler/?media_id=example",
+              "title": "luxury semi matte foundation skincare ad",
+              "source": "mintoiro"
+            }
+          ]
+        },
+        "analyses_by_source": [
+          {
+            "source": "pinterest",
+            "best_reference": {
+              "url": "https://www.pinterest.com/pin/example/",
+              "image_url": "https://i.pinimg.com/originals/example.jpg",
+              "title": "Flawless Semi-Matte Foundation",
+              "source": "pinterest"
+            },
+            "shot_type": "인물 클로즈업 광고 컷 - 제품 핸드헬드",
+            "mood": "세련되고 자신감 있는 프리미엄 데일리 뷰티",
+            "composition": "정면 3/4 각도 클로즈업, 모델이 제품을 얼굴 옆에서 들고 있는 구도",
+            "color_palette": ["#E8D4C4", "#D4A574", "#F5F5F5"],
+            "key_objects": ["foundation bottle", "model face", "hand"],
+            "source_specific": "Pinterest 레퍼런스에서 인물 클로즈업 정면 구도가 반복되며, 제품을 손에 들고 얼굴 근처에서 보여주는 연출이 지배적."
+          },
+          {
+            "source": "instagram",
+            "best_reference": {
+              "url": "https://www.instagram.com/p/example/",
+              "image_url": "https://scontent.cdninstagram.com/example.jpg",
+              "title": "#semimatte #luxurybeauty",
+              "source": "instagram"
+            },
+            "shot_type": "인물 뷰티 광고 컷 - 얼굴 클로즈업 + 제품 핸드헬드",
+            "mood": "따뜻하고 세련된 럭셔리 감성",
+            "composition": "정면 3/4 각도 얼굴 클로즈업, 제품을 손에 들고 얼굴 옆에 배치",
+            "color_palette": ["#D4A574", "#8B6F47", "#F5E6D3"],
+            "key_objects": ["cushion foundation", "model face", "hand holding product"],
+            "source_specific": "인물의 정면 클로즈업과 제품 핸드헬드 구도가 반복되며, 따뜻한 톤의 백라이트 연출로 럭셔리한 프리미엄 감성을 강조."
+          },
+          {
+            "source": "mintoiro",
+            "best_reference": {
+              "url": "https://lookaside.instagram.com/seo/google_widget/crawler/?media_id=example",
+              "image_url": "https://lookaside.instagram.com/seo/google_widget/crawler/?media_id=example",
+              "title": "luxury semi matte foundation skincare ad",
+              "source": "mintoiro"
+            },
+            "shot_type": "패키지 그리드 디스플레이 + 제품 상세 컷",
+            "mood": "럭셔리하면서도 접근 가능한 프리미엄 감성",
+            "composition": "패키지 정렬 구성, 제품 클로즈업으로 텍스처·마무리감 강조",
+            "color_palette": ["#F5E6D3", "#D4A574", "#FFFFFF"],
+            "key_objects": ["foundation bottle", "skin texture", "nude tone swatches"],
+            "source_specific": "미니멀한 패키지와 피부 결 클로즈업을 통해 세미매트 스킨핏의 프리미엄 품질 강조."
+          }
+        ],
+        "generation_prompt": "A sophisticated 30s career woman with refined makeup, poreless semi-matte skin with natural luminosity, shot in 3/4 angle close-up, holding a luxury foundation bottle beside her cheek, warm backlighting, neutral warm beige background, photorealistic, hyper-detailed, masterpiece, best quality, 8k wallpaper, vertical 3:4 portrait composition. Avoid: duplicate hands, extra fingers, text, watermark, low quality, blurry.",
         "aspect_ratio": "3:4",
-        "reference_image_path": "inputs/product-images/식물나라.png"
-      },
-      {
-        "content_id": "C001",
-        "trend_name": "수분 선케어",
-        "shot_type": "product",
-        "concept": "자작나무 수분 선케어의 산뜻한 보호 기능을 강조",
-        "visual_direction": "제품을 중심으로 물방울이나 수분감을 암시하는 환경 요소를 배치. 클린하고 미니멀한 구성으로 제품의 순수성과 수분 보습 기능을 직관적으로 표현합니다.",
-        "generation_prompt": "product still life photography, no human, no model, the product as the focal point, clean front-facing composition, subtle dewy water droplets scattered around for a hydrated mood, calm bright studio environment, pale blue-white gradient background, fresh and hydrating mood, light diffusion effect, premium cosmetic advertising composition, commercial product shot, sharp focus, hyper-detailed product texture, soft reflections, photorealistic, masterpiece, best quality, 8k wallpaper, vertical 3:4 portrait composition. Avoid: text, watermark, low quality, blurry, oversaturated, deformed packaging, matte appearance, dry aesthetic, cluttered composition.",
-        "aspect_ratio": "3:4",
-        "reference_image_path": "inputs/product-images/식물나라.png"
-      },
-      {
-        "content_id": "C002",
-        "trend_name": "클린 자연 유래 선케어",
-        "shot_type": "person",
-        "concept": "식물 유래 성분의 순한 보호로 민감한 피부까지 안심하는 클린 뷰티",
-        "visual_direction": "자연 친화적이고 부드러운 톤의 배경에서 피부의 건강함과 안정감을 표현. 민감성 피부도 편안하게 받아들일 수 있는 순수하고 신뢰감 있는 뷰티 이미지를 연출합니다.",
-        "generation_prompt": "1girl, korean beauty influencer, 20-year-old korean beauty model, long straight natural black hair cascading softly down her shoulders with gentle flyaways, minimalist clean beauty makeup, ultra-transparent and hydrated glass skin, bare shoulders, shading her eyes with one hand and holding the product softly in the other, warm cream beige background with natural earthy undertone, organic and gentle aesthetic, high-fashion cosmetic advertising composition, directional beauty lighting, skin sheen, soft catchlights in the eyes, sharp focus, shallow depth of field, creamy bokeh, cinematic lighting, photorealistic, hyper-detailed, masterpiece, best quality, 8k wallpaper, vertical 3:4 portrait composition. Avoid: distorted lips, asymmetric face, extra fingers, text, watermark, low quality, blurry, harsh lighting, irritated skin appearance, chemical-looking finish, oversaturated tones, duplicate hands, duplicated hands, two left hands, two right hands, mirrored hands, extra hands, extra arms, missing hands, fused hands, deformed hands, more than two hands, multiple hands, asymmetrical hands.",
-        "aspect_ratio": "3:4",
-        "reference_image_path": "inputs/product-images/식물나라.png"
-      },
-      {
-        "content_id": "C002",
-        "trend_name": "클린 자연 유래 선케어",
-        "shot_type": "product",
-        "concept": "식물 유래 성분 중심의 클린 선케어 제품의 자연스러운 신뢰감",
-        "visual_direction": "제품을 식물 요소나 자연 재료와 함께 배치하여 클린하고 자연 유래 성분임을 시각적으로 강조. 미니멀하면서도 따뜻한 톤으로 민감한 피부를 위한 안심감을 전달합니다.",
-        "generation_prompt": "product still life photography, no human, no model, the product as the focal point, clean front-facing composition, subtle dewy water droplets scattered around for a hydrated mood, calm bright studio environment, soft sage green and cream layered background, natural botanical aesthetic, warm ambient lighting suggestion, premium cosmetic advertising composition, commercial product shot, sharp focus, hyper-detailed product texture, soft reflections, photorealistic, masterpiece, best quality, 8k wallpaper, vertical 3:4 portrait composition. Avoid: text, watermark, low quality, blurry, oversaturated, deformed packaging, synthetic appearance, harsh shadows, chemical-looking elements, cluttered background.",
-        "aspect_ratio": "3:4",
-        "reference_image_path": "inputs/product-images/식물나라.png"
+        "reference_image_path": "inputs/product-images/헤라.png",
+        "generated_image_url": "shared/data/images/헤라/C001.png"
       }
     ]
   }
