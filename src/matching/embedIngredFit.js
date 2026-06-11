@@ -31,6 +31,9 @@ const MATCH_THRESHOLD = 0.7;
 // 2개↑ → ✅, 1개 → ⚠️, 0개 → ❌
 export async function computeIngredFit(features, keywords) {
   if (!features?.length || !keywords?.length) return null;
+  // GOOGLE_API_KEY 없으면 임베딩 보정 생략 (선택 키 — 가이드상 필수 4종만으로 동작).
+  // null 반환 시 match.js는 LLM의 ingred_fit 판정을 그대로 사용.
+  if (!process.env.GOOGLE_API_KEY) return null;
 
   const [featureVecs, keywordVecs] = await Promise.all([
     embedTexts(features),

@@ -6,6 +6,9 @@
     <title>TrendFit | 트렌드, 감으로 찍지 마세요</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- 매칭 리포트 공유 컴포넌트 (shared/components) — 리포트 화면을 이 컴포넌트로 렌더 -->
+    <link rel="stylesheet" href="/shared/components/match-report.css">
+    <script src="/shared/components/match-report.js"></script>
     <style>
         :root {
             --bg: #fffbf9;
@@ -1224,35 +1227,20 @@
 
     /* ===== 실데이터 렌더 (writer-output.json) ===== */
     function buildReportReal(data, d) {
-        const b = (data && data.brand) || {};
-        const contents = ((data && data.contents) || []).slice().sort((a, c) => (a.rank || 9) - (c.rank || 9));
+        // 리포트 화면 = shared/components 의 match-report 컴포넌트로 렌더 (renderMatchReport).
+        // 컴포넌트가 자체 헤더(브랜드)·PART I/II·카드를 통째로 그리므로,
+        // 위저드 기본 타이틀(step-header)과 메타 박스(report_meta)는 중복이라 정리한다.
+        const mount = document.getElementById('report_ranks');
+        document.getElementById('report_meta').innerHTML = '';
+        const sh = mount.parentElement.querySelector('.step-header');
+        if (sh) sh.style.display = 'none';
+        mount.className = '';   // .trend-cards 그리드 해제 — 컴포넌트가 자체 레이아웃 소유
 
-        document.getElementById('report_meta').innerHTML =
-            '<b>' + (b.name || d.brand_name) + '</b> · ' + (b.product_name || d.product_name) + '<br>'
-            + '카테고리 ' + (b.category || d.category) + (b.target_display ? ' | 타겟 ' + b.target_display : '') + '<br>'
-            + '<span style="opacity:0.7">트렌드 매칭 결과 — 추천 ' + contents.length + '선</span>';
-
-        const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
-        document.getElementById('report_ranks').innerHTML = contents.map(c => {
-            const medal = medals[c.rank] || ('#' + (c.rank ?? ''));
-            const grade = c.matching_grade ? ('적합도 ' + c.matching_grade) : (c.verdict || '');
-            const kws = (c.keywords || []).length ? '<div style="margin:6px 0;color:#9b7fb0;font-size:0.85rem">' + c.keywords.map(k => '#' + k).join(' ') + '</div>' : '';
-            const why = (c.summary_bullets || []).length ? '<p>• ' + c.summary_bullets.join('<br>• ') + '</p>'
-                : (c.headline_metric && c.headline_metric.value ? '<p>' + c.headline_metric.metric + ': ' + c.headline_metric.value + ' ' + (c.headline_metric.delta || '') + '</p>'
-                : '<p style="opacity:.55">트렌드 분석 데이터 준비 중</p>');
-            const reason = (c.reason_bullets || []).length ? '<p>• ' + c.reason_bullets.join('<br>• ') + '</p>' : '<p style="opacity:.55">매칭 근거 준비 중</p>';
-            const ev = (c.evidence || []).filter(e => e && e.url);
-            const evHtml = ev.length ? '<div class="trend-section"><div class="trend-section-title">🔗 수집 근거</div><p>'
-                + ev.map(e => '<a href="' + e.url + '" target="_blank" rel="noopener">' + (e.title || e.source || e.url) + '</a>').join('<br>') + '</p></div>' : '';
-            return '<div class="trend-card rank-' + (c.rank || 1) + '">'
-                + '<div class="rank-badge">' + medal + '</div>'
-                + '<div class="trend-header"><div class="trend-title">' + (c.trend_name || c.content_id || '') + '</div><div class="trend-score">' + grade + '</div></div>'
-                + kws
-                + '<div class="trend-section"><div class="trend-section-title">🔍 트렌드 분석 (왜 뜨는지)</div>' + why + '</div>'
-                + '<div class="trend-section"><div class="trend-section-title">🎯 매칭 이유 (어떻게 써먹을지)</div>' + reason + '</div>'
-                + evHtml
-                + '</div>';
-        }).join('');
+        if (typeof window.renderMatchReport !== 'function') {
+            mount.innerHTML = '<p style="color:#ef4444">리포트 컴포넌트(match-report.js)를 불러오지 못했습니다.</p>';
+            return;
+        }
+        window.renderMatchReport(mount, data);
     }
 
     function buildMockupsReal(data, d) {

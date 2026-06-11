@@ -6,12 +6,13 @@
     "hello": "node examples/hello.js",
     "chat": "node examples/chat.js",
     "match": "node src/matching/match.js",
+    "write": "node output-main/output-text/write.js",
     "trend:collect": "node trend/youtube.js && node trend/tavily.js && node trend/naver.js && node trend/merge.js",
     "trend": "npm run trend:collect && node src/trend/analyze.js",
     "brand": "node src/brand/analyze.js",
     "design": "node src/designer/design.js",
     "design-v2": "node src/designer-v2/design.js",
-    "pipeline": "npm run brand && npm run trend && npm run match"
+    "pipeline": "npm run brand && npm run trend && npm run match && npm run write"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.1",
