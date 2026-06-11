@@ -85,7 +85,7 @@
     if (period) {
       cells.push(
         '<div class="mr-metric"><div class="mr-m-label">기간</div>' +
-        '<div class="mr-m-value" style="font-size:14px;">' + esc(period) + "</div></div>"
+        '<div class="mr-m-value">' + esc(period) + "</div></div>"
       );
     }
     return cells.length ? '<div class="mr-metric-strip">' + cells.join("") + "</div>" : "";
@@ -98,6 +98,21 @@
       .map(function (t) { return "<li>" + esc(t) + "</li>"; })
       .join("");
     return '<ul class="mr-reason-list">' + lis + "</ul>";
+  }
+
+  // 번호 박스 리스트 (매칭이유 등) — 연핑크 배경 + 핑크 stroke + 번호 배지
+  function numberedList(items) {
+    var arr = (items || []).filter(Boolean);
+    if (!arr.length) return '<div class="mr-empty">—</div>';
+    var lis = arr
+      .map(function (t, i) {
+        return (
+          '<div class="mr-num-item"><span class="mr-num">' + (i + 1) + "</span>" +
+            "<span>" + esc(t) + "</span></div>"
+        );
+      })
+      .join("");
+    return '<div class="mr-num-list">' + lis + "</div>";
   }
 
   // 링크 가능 판정 — 실제 출처 페이지(경로·쿼리 있음)만 링크.
@@ -126,7 +141,11 @@
           ? '<a class="' + clsAttr + '" href="' + esc(e.url) +
             '" target="_blank" rel="noopener noreferrer">' + esc(chip.label) + "</a>"
           : '<span class="' + clsAttr + '">' + esc(chip.label) + "</span>";
-        return '<div class="mr-src-item">' + inner + "<span>" + esc(e.description) + "</span></div>";
+        // 박스 없이 선(밑줄) 구분 — 출처 칩(제목) + 설명
+        return (
+          '<div class="mr-src-item">' + inner +
+            '<span class="mr-src-desc">' + esc(e.description) + "</span></div>"
+        );
       })
       .join("");
     return '<div class="mr-src-list">' + items + "</div>";
@@ -220,46 +239,59 @@
     );
   }
 
+  // 신뢰도 — c.confidence(높음/중간/낮음 또는 high/mid/low) 우선, 없으면 evidence 개수로 추정
+  function confidenceOf(c) {
+    var MAP = { "높음": "high", high: "high", "중간": "mid", mid: "mid", "낮음": "low", low: "low" };
+    var lvl = c.confidence ? (MAP[c.confidence] || "mid") : null;
+    if (!lvl) {
+      var n = (c.evidence || []).length;
+      lvl = n >= 3 ? "high" : n === 2 ? "mid" : "low";
+    }
+    return { lvl: lvl, label: { high: "높음", mid: "중간", low: "낮음" }[lvl] };
+  }
+
   function card(c) {
     var rankCls = " mr-c" + (c.rank || 1); // 순위별 카드 색 구분 (mr-c1/c2/c3)
     var warnNote = c.rank === 3 ? '<span class="mr-warn-note">⚠️ 보완 활용 권장</span>' : "";
     var stage = c.trend_stage && TREND_STAGE[c.trend_stage];
     var stageChip = stage ? '<span class="mr-stage-chip">' + stage + "</span>" : "";
+    var conf = confidenceOf(c);
+    var confChip = '<span class="mr-conf mr-conf-' + conf.lvl + '">신뢰도 ' + conf.label + "</span>";
 
+    // 카드 전체를 <details>로 — 헤더(summary) 클릭 시 본문 접기/펼치기 (네이티브, JS 불필요)
+    // 디폴트: 1위만 펼침(open), 2·3위는 접힘
+    var openAttr = c.rank === 1 ? " open" : "";
     return (
-      '<div class="mr-trend-card mr-wide' + rankCls + '">' +
-        '<div class="mr-card-top">' +
+      '<details class="mr-trend-card mr-wide' + rankCls + '"' + openAttr + ">" +
+        '<summary class="mr-card-top">' +
           '<div class="mr-rank-row">' +
             '<span class="mr-rank-badge' + rankBadgeClass(c.rank) + '">' + esc(c.rank) + "순위</span>" +
             stageChip +
             warnNote +
+            confChip +
+            '<span class="mr-card-toggle" aria-hidden="true">▾</span>' +
           "</div>" +
           '<h3 class="mr-h3">' + esc(c.trend_name) + "</h3>" +
           keywordTags(c.keywords) +
-        "</div>" +
-        '<div class="mr-card-cols">' +
-          // 좌: 트렌드 스토리 (지표·매칭이유·유행현황·수집근거)
-          '<div class="mr-card-col mr-col-main">' +
-            metricStrip(c) +
-            '<div class="mr-block">' +
-              '<div class="mr-block-label"><span class="mr-ico">🎯</span> 매칭이유</div>' +
-              bulletList(c.reason_bullets) +
-            "</div>" +
-            '<div class="mr-block">' +
-              '<div class="mr-block-label"><span class="mr-ico">📊</span> 유행현황 (Status)</div>' +
-              bulletList(c.summary_bullets) +
-            "</div>" +
-            '<details class="mr-block mr-evidence-details">' +
-              '<summary class="mr-block-label"><span class="mr-ico">📚</span> 수집 근거</summary>' +
-              evidenceList(c.evidence) +
-            "</details>" +
+          metricStrip(c) +   // 지표(검색량 지수·기간) — 핑크 헤더 박스 안. 접으면 CSS로 숨김
+        "</summary>" +
+        // 단일 컬럼 — 이미지 순서: (헤더 안 지표) → 유행현황 → 수집근거 → 매칭이유 → 매칭 설명
+        '<div class="mr-card-body">' +
+          '<div class="mr-block">' +
+            '<div class="mr-block-label"><span class="mr-ico">📊</span> 유행현황 (Status)</div>' +
+            bulletList(c.summary_bullets) +
           "</div>" +
-          // 우: 정량 분석 (매칭 설명 4기준 + 활용 방안)
-          '<div class="mr-card-col mr-col-data">' +
-            '<div class="mr-block">' +
-              '<div class="mr-block-label"><span class="mr-ico">🧮</span> 매칭 설명</div>' +
-              matchExplain(c.match_fits) +
-            "</div>" +
+          '<details class="mr-block mr-evidence-details">' +
+            '<summary class="mr-block-label"><span class="mr-ico">📚</span> 수집 근거</summary>' +
+            evidenceList(c.evidence) +
+          "</details>" +
+          '<div class="mr-block">' +
+            '<div class="mr-block-label"><span class="mr-ico">🎯</span> 매칭이유</div>' +
+            numberedList(c.reason_bullets) +
+          "</div>" +
+          '<div class="mr-block">' +
+            '<div class="mr-block-label"><span class="mr-ico">🧮</span> 매칭 설명</div>' +
+            matchExplain(c.match_fits) +
           "</div>" +
         "</div>" +
         // 활용 방안 — 카드 하단 전체 폭
@@ -269,7 +301,7 @@
             ? '<div class="mr-usage">' + esc(c.usage_plan) + "</div>"
             : '<div class="mr-usage mr-fit-placeholder">활용방안 작성</div>') +
         "</div>" +
-      "</div>"
+      "</details>"
     );
   }
 
@@ -435,11 +467,17 @@
       el.innerHTML = '<div class="mr-report">' + headerSection(brand) + '<div class="mr-empty">—</div></div>';
       return el;
     }
+    // funnel(전체) — 분석한 트렌드 총 수(d.trends_total) → 리포트 선별 수(contents 길이)
+    var used = contents.length;
+    var funnel = d.trends_total
+      ? '<div class="mr-funnel">분석한 트렌드 <b>' + esc(d.trends_total) + "</b>개 → 리포트에 <b>" + used + "</b>개 선별</div>"
+      : '<div class="mr-funnel">리포트에 트렌드 <b>' + used + "</b>개 선별</div>";
     el.innerHTML =
       '<div class="mr-report">' +
         headerSection(brand) +
+        funnel +
         summarySection(contents) +
-        sectionHead("PART II", "트렌드 카드", "매칭이유 · 유행현황 · 수집 근거 · 매칭 설명") +
+        sectionHead("PART II", "트렌드 카드", "유행현황 · 수집 근거 · 매칭이유 · 매칭 설명") +
         '<div class="mr-trend-grid">' + contents.map(card).join("") + "</div>" +
       "</div>";
     return el;
