@@ -110,7 +110,7 @@ export const CAMPAIGN_BUDGET = [
   "1000만원 초과",
 ];
 
-export const CAMPAIGN_CHANNELS = ["유튜브", "메타", "카카오"];
+export const CAMPAIGN_CHANNELS = ["인스타그램", "유튜브", "틱톡", "자사몰", "네이버 스토어", "오프라인 스토어"];
 
 // 브랜드가 평소 운영 중인 매체 (현재 활용 채널) — 이번 캠페인 주력 채널과는 별개.
 // UI는 이 enum 6개를 체크박스로 노출하고, 마케터가 자유 입력하지 않도록 제한.
