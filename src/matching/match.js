@@ -546,20 +546,6 @@ allEvaluations.sort((a, b) => {
 // 1차 매칭 완료 — product/tnm/target 허들 통과분
 const nonExcluded = allEvaluations.filter((ev) => ev.eliminated_by === null);
 
-// 2차 Market 허들: declining 트렌드 순위권에서 제거 (evaluations엔 그대로 유지)
-const marketFiltered = nonExcluded.filter((ev) => {
-  const t = allTrendByName.get(ev.trend_name);
-  return (t?.trend_stage ?? t?.status) !== "declining";
-});
-if (nonExcluded.length !== marketFiltered.length) {
-  const removed = nonExcluded
-    .filter((ev) => !marketFiltered.includes(ev))
-    .map((ev) => ev.trend_name);
-  console.log(`2차 Market 허들: declining ${removed.length}개 순위권 제거 — ${removed.join(", ")}`);
-}
-
-let topEvals = [...marketFiltered];
-
 // 뷰티 카테고리 정반대 개념 쌍 — 코드 1차 감지용
 const KEYWORD_CONFLICT_PAIRS = [
   ["글로우", "매트"],
@@ -594,7 +580,9 @@ function detectKeywordConflict(evs) {
   return null;
 }
 
-// 충돌 체크 — 코드 감지 우선, 못 잡으면 LLM. 충돌 없을 때까지 반복 (최대 5회).
+// 충돌 감지 — negation 보정 직후, Market 허들 이전.
+// 코드 1차 → LLM 2차. 충돌 없을 때까지 반복 (최대 5회).
+let topEvals = [...nonExcluded];
 const MAX_CONFLICT_ROUNDS = 5;
 const conflictClient = new Anthropic();
 for (let round = 0; round < MAX_CONFLICT_ROUNDS && topEvals.length >= 2; round++) {
@@ -641,8 +629,20 @@ ${JSON.stringify(topCtx, null, 2)}
   }
 }
 
+// 2차 Market 허들: declining 트렌드 순위권에서 제거 (evaluations엔 그대로 유지)
+const marketFiltered = topEvals.filter((ev) => {
+  const t = allTrendByName.get(ev.trend_name);
+  return (t?.trend_stage ?? t?.status) !== "declining";
+});
+if (topEvals.length !== marketFiltered.length) {
+  const removed = topEvals
+    .filter((ev) => !marketFiltered.includes(ev))
+    .map((ev) => ev.trend_name);
+  console.log(`2차 Market 허들: declining ${removed.length}개 순위권 제거 — ${removed.join(", ")}`);
+}
+
 // 3차: market_context(2차 레이블) + competition_context(3차 레이블) 첨부
-const recommendations = topEvals.slice(0, 3).map((ev, i) => {
+const recommendations = marketFiltered.slice(0, 3).map((ev, i) => {
   const trendRaw = allTrendByName.get(ev.trend_name);
   const compLevel = trendRaw?.competition_fit?.level;
   return {
