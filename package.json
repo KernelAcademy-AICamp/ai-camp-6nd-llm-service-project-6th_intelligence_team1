@@ -11,6 +11,7 @@
     "brand": "node src/brand/analyze.js",
     "design": "node src/designer/design.js",
     "design-v2": "node src/designer-v2/design.js",
+    "write": "node output-main/output-text/write.js",
     "pipeline": "npm run brand && npm run trend && npm run match"
   },
   "dependencies": {
