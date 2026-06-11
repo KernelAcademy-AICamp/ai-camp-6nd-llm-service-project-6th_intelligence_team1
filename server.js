@@ -88,9 +88,15 @@ function buildBrandInput(f) {
 }
 
 // 명령 실행 (시간이 오래 걸리므로 timeout 넉넉히)
-function runCmd(cmd) {
+// [변경] extraEnv 인자 추가 → 자식 프로세스(npm run trend → node youtube.js)에 환경변수 전달
+function runCmd(cmd, extraEnv = {}) {
   return new Promise((res) => {
-    exec(cmd, { cwd: ROOT, maxBuffer: 1024 * 1024 * 50, timeout: 15 * 60 * 1000 },
+    exec(cmd, {
+      cwd: ROOT,
+      maxBuffer: 1024 * 1024 * 50,
+      timeout: 15 * 60 * 1000,
+      env: { ...process.env, ...extraEnv } // 기존 환경변수 + 이번에 추가할 것(YOUTUBE_FRESH 등)
+    },
       (err, stdout, stderr) => {
         res({ ok: !err, code: err?.code ?? 0, stdout, stderr: stderr || (err?.message ?? "") });
       });
@@ -108,7 +114,10 @@ async function serveStatic(req, res, urlPath) {
   }
   try {
     const buf = await readFile(filePath);
-    res.writeHead(200, { "Content-Type": MIME[extname(filePath)] || "application/octet-stream" });
+    res.writeHead(200, {
+      "Content-Type": MIME[extname(filePath)] || "application/octet-stream",
+      "Cache-Control": "no-store"  // 로컬 데모 — 항상 최신 파일/데이터 제공 (캐시로 옛 리포트 뜨는 것 방지)
+    });
     res.end(buf);
   } catch {
     res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
@@ -139,9 +148,13 @@ const server = http.createServer(async (req, res) => {
 
       // 단계별 명령 선택 (stage 없으면 전체 파이프라인)
       const cmd = STAGE_OVERRIDE || STAGE_CMDS[stage] || RUN_CMD;
-      console.log(`[run] stage=${stage || "(full)"} → ${cmd}`);
 
-      const result = await runCmd(cmd);
+      // [변경] fresh가 켜져 있으면 YouTube 수집이 캐시를 무시하도록 환경변수로 전달
+      // (form.fresh 는 UI가 fetch body에 실어 보냄. true일 때만 YOUTUBE_FRESH=1)
+      const extraEnv = form.fresh ? { YOUTUBE_FRESH: "1" } : {};
+      console.log(`[run] stage=${stage || "(full)"} → ${cmd}${form.fresh ? "  ⚡FRESH" : ""}`);
+
+      const result = await runCmd(cmd, extraEnv);
       console.log(`[run] stage=${stage || "(full)"} 완료 (ok=${result.ok})`);
 
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
