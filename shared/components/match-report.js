@@ -220,11 +220,24 @@
     );
   }
 
+  // 신뢰도 — c.confidence(높음/중간/낮음 또는 high/mid/low) 우선, 없으면 evidence 개수로 추정
+  function confidenceOf(c) {
+    var MAP = { "높음": "high", high: "high", "중간": "mid", mid: "mid", "낮음": "low", low: "low" };
+    var lvl = c.confidence ? (MAP[c.confidence] || "mid") : null;
+    if (!lvl) {
+      var n = (c.evidence || []).length;
+      lvl = n >= 3 ? "high" : n === 2 ? "mid" : "low";
+    }
+    return { lvl: lvl, label: { high: "높음", mid: "중간", low: "낮음" }[lvl] };
+  }
+
   function card(c) {
     var rankCls = " mr-c" + (c.rank || 1); // 순위별 카드 색 구분 (mr-c1/c2/c3)
     var warnNote = c.rank === 3 ? '<span class="mr-warn-note">⚠️ 보완 활용 권장</span>' : "";
     var stage = c.trend_stage && TREND_STAGE[c.trend_stage];
     var stageChip = stage ? '<span class="mr-stage-chip">' + stage + "</span>" : "";
+    var conf = confidenceOf(c);
+    var confChip = '<span class="mr-conf mr-conf-' + conf.lvl + '">신뢰도 ' + conf.label + "</span>";
 
     return (
       '<div class="mr-trend-card mr-wide' + rankCls + '">' +
@@ -233,6 +246,7 @@
             '<span class="mr-rank-badge' + rankBadgeClass(c.rank) + '">' + esc(c.rank) + "순위</span>" +
             stageChip +
             warnNote +
+            confChip +
           "</div>" +
           '<h3 class="mr-h3">' + esc(c.trend_name) + "</h3>" +
           keywordTags(c.keywords) +
@@ -435,9 +449,15 @@
       el.innerHTML = '<div class="mr-report">' + headerSection(brand) + '<div class="mr-empty">—</div></div>';
       return el;
     }
+    // funnel(전체) — 분석한 트렌드 총 수(d.trends_total) → 리포트 선별 수(contents 길이)
+    var used = contents.length;
+    var funnel = d.trends_total
+      ? '<div class="mr-funnel">분석한 트렌드 <b>' + esc(d.trends_total) + "</b>개 → 리포트에 <b>" + used + "</b>개 선별</div>"
+      : '<div class="mr-funnel">리포트에 트렌드 <b>' + used + "</b>개 선별</div>";
     el.innerHTML =
       '<div class="mr-report">' +
         headerSection(brand) +
+        funnel +
         summarySection(contents) +
         sectionHead("PART II", "트렌드 카드", "매칭이유 · 유행현황 · 수집 근거 · 매칭 설명") +
         '<div class="mr-trend-grid">' + contents.map(card).join("") + "</div>" +

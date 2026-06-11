@@ -72,6 +72,20 @@
   background: var(--mr-warn-soft);
   color: var(--mr-warn);
 }
+/* 신뢰도 칩 (카드별, 우측 정렬) */
+.mr-conf {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.mr-conf-high { background: #dcecd6; color: #5e7a54; }
+.mr-conf-mid { background: #faecd0; color: #9a7b3a; }
+.mr-conf-low { background: #ece8ec; color: #8a7e8a; }
+/* funnel (전체 — 분석한 트렌드 수 → 선별 수) */
+.mr-funnel { font-size: 12.5px; color: var(--mr-text-sub); margin: 0 0 14px; }
+.mr-funnel b { color: var(--mr-primary-deep); font-weight: 800; }
 @media (max-width: 720px) {
   .mr-card-cols { grid-template-columns: 1fr; }
   .mr-col-data {
