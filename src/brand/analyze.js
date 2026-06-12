@@ -67,12 +67,29 @@ function buildForbiddenAttributeWords(input) {
   //    명사" 패턴(예: "실키 파운데이션", "글로우 쿠션")이라 마지막 어절은 카테
   //    고리 명사일 가능성이 높음 — 그게 검색 키워드의 중심이라 forbidden에 넣
   //    으면 정상 키워드까지 다 막혀버림. 그래서 마지막 어절은 forbidden 제외.
-  //    어절이 1개뿐인 제품명은 그대로 forbidden 추가 (보통 자사 고유 표현).
+  //
+  //    제품명이 한 어절일 때:
+  //    - 그 어절이 input.category 안의 카테고리 명사면(예: 사용자가 "쿠션",
+  //      "아이섀도우" 같은 카테고리명을 그대로 제품명으로 적은 케이스) forbidden
+  //      에 추가하지 않음. 안 그러면 "쿠션 추천" 같은 정상 키워드도 다 차단됨.
+  //    - 카테고리에 없으면 자사 고유 표현이라 보고 forbidden 추가.
   if (input.brand_name) forbidden.add(input.brand_name);
   if (input.product_name) {
     const tokens = String(input.product_name).split(/\s+/).filter(Boolean);
+    const categoryNouns = new Set(
+      String(input.category ?? "")
+        .split(/[>·\s]+/)
+        .map((s) => s.trim())
+        .filter(Boolean),
+    );
     if (tokens.length === 1) {
-      if (tokens[0].length >= 2) forbidden.add(tokens[0]);
+      const w = tokens[0];
+      // 카테고리 명사와 부분 일치도 허용 — 사용자가 "아이섀도우" 적었는데
+      // 카테고리엔 "아이섀도"로 등록된 케이스 같은 미세 차이 흡수.
+      const isCategoryNoun = [...categoryNouns].some(
+        (n) => n.length >= 2 && (n.includes(w) || w.includes(n)),
+      );
+      if (w.length >= 2 && !isCategoryNoun) forbidden.add(w);
     } else {
       for (let i = 0; i < tokens.length - 1; i++) {
         if (tokens[i].length >= 2) forbidden.add(tokens[i]);
