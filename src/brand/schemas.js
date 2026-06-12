@@ -194,7 +194,12 @@ export const BrandInputSchema = z
   .object({
     brand_name: z.string().min(1),
     current_channels: z.array(z.enum(CURRENT_CHANNELS)).optional().default([]),
-    brand_channel_url: z.string().url().optional().or(z.literal("")).optional(),
+    // 브랜드가 운영하는 채널 URL을 여러 개 받음 — 인스타·유튜브·자사몰 등 동시 보유
+    // 가능. 빈 문자열은 제거 후 배열로 보관. 누락은 OK (default []).
+    brand_channel_url: z
+      .array(z.string().url())
+      .optional()
+      .default([]),
 
     product_name: z.string().min(1),
     category: z.enum(CATEGORIES, {
