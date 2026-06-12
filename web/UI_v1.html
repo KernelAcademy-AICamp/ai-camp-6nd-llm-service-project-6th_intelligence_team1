@@ -735,6 +735,11 @@
                     <label class="pill"><input type="radio" name="detail" value="foundation" data-label="파운데이션" onchange="selectDetail('foundation')"><span>파운데이션</span></label>
                     <label class="pill"><input type="radio" name="detail" value="cushion" data-label="쿠션" onchange="selectDetail('cushion')"><span>쿠션</span></label>
                     <label class="pill"><input type="radio" name="detail" value="concealer" data-label="컨실러" onchange="selectDetail('concealer')"><span>컨실러</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="primer" data-label="프라이머" onchange="selectDetail('primer')"><span>프라이머</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="powder" data-label="파우더" onchange="selectDetail('powder')"><span>파우더</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="highlighter" data-label="하이라이터" onchange="selectDetail('highlighter')"><span>하이라이터</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="shading" data-label="셰이딩" onchange="selectDetail('shading')"><span>셰이딩</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="blusher" data-label="블러셔" onchange="selectDetail('blusher')"><span>블러셔</span></label>
                 </div>
             </div>
             <div class="cascade-level hidden" id="level-detail-eye">
@@ -1027,8 +1032,13 @@
         lipliner: ['매트', '글로시', '누드', '글로우', '촉촉'],
         foundation: ['매트', '글로우', '촉촉', '지속력', '밀착'],
         cushion: ['매트', '커버력', '세미매트', '촉촉', '밀착'],
-        concealer: ['글로우', '촉촉', '톤업', '매트', '커버력'],
-        shadow: ['매트', '글로우', '누드', '글리터', '시어'],
+        concealer: [],
+        primer: ['매트', '지속력', '톤업', '밀착', '글로우'],
+        powder: ['매트', '촉촉', '지속력', '벨벳', '밀착'],
+        highlighter: ['프레스드', '젤리', '리퀴드', '베이크드', '스틱', '피그먼트'],
+        shading: ['프레스드', '스틱', '크림'],
+        blusher: ['프레스드', '베이크드', '크림', '스틱', '리퀴드', '쿠션', '밤'],
+        shadow: ['매트', '글로우', '누드', '글리터', '시어', '팔레트'],
         liner: ['글리터', '지속력', '매트', '펄', '촉촉'],
         mascara: ['볼륨', '매트'],
         brow: ['매트', '지속력', '픽싱']
@@ -1202,7 +1212,8 @@
         if (d.tone_and_manner.length === 0) e.push('톤앤매너');
         if (!d.product_name) e.push('제품명');
         if (!d.category) e.push('카테고리');
-        if (d.texture_keywords.length === 0) e.push('제품 특징');
+        const hasFeatureOptions = document.querySelectorAll('#feature-chips input[name="feature"]').length > 0;
+        if (hasFeatureOptions && d.texture_keywords.length === 0) e.push('제품 특징');
         if (!d.target.involvement) e.push('뷰티 관여도');
         if (d.target.motivation.length === 0) e.push('소비 동기');
         if (!d.campaign_kpi) e.push('캠페인 KPI');
