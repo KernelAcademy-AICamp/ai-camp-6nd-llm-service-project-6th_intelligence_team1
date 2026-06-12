@@ -256,7 +256,14 @@
     var stage = c.trend_stage && TREND_STAGE[c.trend_stage];
     var stageChip = stage ? '<span class="mr-stage-chip">' + stage + "</span>" : "";
     var conf = confidenceOf(c);
-    var confChip = '<span class="mr-conf mr-conf-' + conf.lvl + '">신뢰도 ' + conf.label + "</span>";
+    // 정도 미터 — 높음=3칸, 중간=2칸, 낮음=1칸
+    var filled = conf.lvl === "high" ? 3 : conf.lvl === "mid" ? 2 : 1;
+    var bars = "";
+    for (var bi = 0; bi < 3; bi++) bars += '<span class="mr-conf-bar' + (bi < filled ? " mr-on" : "") + '"></span>';
+    var confChip =
+      '<span class="mr-conf mr-conf-' + conf.lvl + '">신뢰도 ' + conf.label +
+        '<span class="mr-conf-meter">' + bars + "</span>" +
+      "</span>";
 
     // 카드 전체를 <details>로 — 헤더(summary) 클릭 시 본문 접기/펼치기 (네이티브, JS 불필요)
     // 디폴트: 1위만 펼침(open), 2·3위는 접힘
@@ -278,25 +285,25 @@
         // 단일 컬럼 — 이미지 순서: (헤더 안 지표) → 유행현황 → 수집근거 → 매칭이유 → 매칭 설명
         '<div class="mr-card-body">' +
           '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">📊</span> 유행현황 (Status)</div>' +
+            '<div class="mr-block-label"><span class="mr-ico">≡</span> 유행현황 (Status)</div>' +
             bulletList(c.summary_bullets) +
           "</div>" +
           '<details class="mr-block mr-evidence-details">' +
-            '<summary class="mr-block-label"><span class="mr-ico">📚</span> 수집 근거</summary>' +
+            '<summary class="mr-block-label"><span class="mr-ico">≡</span> 수집 근거</summary>' +
             evidenceList(c.evidence) +
           "</details>" +
           '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">🎯</span> 매칭이유</div>' +
+            '<div class="mr-block-label"><span class="mr-ico">≡</span> 매칭이유</div>' +
             numberedList(c.reason_bullets) +
           "</div>" +
           '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">🧮</span> 매칭 설명</div>' +
+            '<div class="mr-block-label"><span class="mr-ico">≡</span> 매칭 기준</div>' +
             matchExplain(c.match_fits) +
           "</div>" +
         "</div>" +
         // 활용 방안 — 카드 하단 전체 폭
         '<div class="mr-card-usage">' +
-          '<div class="mr-block-label"><span class="mr-ico">💡</span> 활용 방안</div>' +
+          '<div class="mr-block-label"><span class="mr-ico">≡</span> 활용 방안</div>' +
           (c.usage_plan
             ? '<div class="mr-usage">' + esc(c.usage_plan) + "</div>"
             : '<div class="mr-usage mr-fit-placeholder">활용방안 작성</div>') +
@@ -424,7 +431,7 @@
           trendMetrics(c) +
         "</div>" +
         '<div class="mr-data-block">' +
-          '<div class="mr-db-label">매칭 설명</div>' +
+          '<div class="mr-db-label">매칭 기준</div>' +
           matchExplain(c.match_fits) +
         "</div>" +
       "</div>"
@@ -467,17 +474,11 @@
       el.innerHTML = '<div class="mr-report">' + headerSection(brand) + '<div class="mr-empty">—</div></div>';
       return el;
     }
-    // funnel(전체) — 분석한 트렌드 총 수(d.trends_total) → 리포트 선별 수(contents 길이)
-    var used = contents.length;
-    var funnel = d.trends_total
-      ? '<div class="mr-funnel">분석한 트렌드 <b>' + esc(d.trends_total) + "</b>개 → 리포트에 <b>" + used + "</b>개 선별</div>"
-      : '<div class="mr-funnel">리포트에 트렌드 <b>' + used + "</b>개 선별</div>";
     el.innerHTML =
       '<div class="mr-report">' +
         headerSection(brand) +
-        funnel +
         summarySection(contents) +
-        sectionHead("PART II", "트렌드 카드", "유행현황 · 수집 근거 · 매칭이유 · 매칭 설명") +
+        sectionHead("PART II", "트렌드 카드", "유행현황 · 수집 근거 · 매칭이유 · 매칭 기준") +
         '<div class="mr-trend-grid">' + contents.map(card).join("") + "</div>" +
       "</div>";
     return el;
