@@ -48,7 +48,7 @@ export async function generateQueriesAndSearch({ brand, content }) {
 - trend_name: ${content.trend_name}
 - concept: ${content.concept ?? "(없음)"}${content.mood ? `\n- mood: ${content.mood}` : ""}${content.key_message ? `\n- key_message: ${content.key_message}` : ""}
 
-\`queries\` (Pinterest용) 3개, \`instagram_hashtags\` (Instagram용) 3개 반환.`;
+\`queries\` (Pinterest용) 3개 반환.`;
 
   const response = await anthropic.messages.parse({
     model: "claude-haiku-4-5",
@@ -64,24 +64,16 @@ export async function generateQueriesAndSearch({ brand, content }) {
   const data = response.parsed_output;
   if (!data) throw new Error("검색 쿼리 생성 실패 (LLM 응답 파싱 실패)");
 
-  // 1-2. 매체별 병렬 검색
-  const [pinterestRefs, instagramRefs] = await Promise.all([
-    searchPinterest(data.queries).catch((err) => {
-      console.warn(`  ⚠️ Pinterest 실패: ${err.message}`);
-      return [];
-    }),
-    searchInstagram(data.instagram_hashtags).catch((err) => {
-      console.warn(`  ⚠️ Instagram 실패: ${err.message}`);
-      return [];
-    }),
-  ]);
+  // 1-2. Pinterest 검색
+  const pinterestRefs = await searchPinterest(data.queries).catch((err) => {
+    console.warn(`  ⚠️ Pinterest 실패: ${err.message}`);
+    return [];
+  });
 
   return {
     queries: data.queries,
-    instagram_hashtags: data.instagram_hashtags,
     references_by_source: {
       pinterest: pinterestRefs.slice(0, MAX_PER_SOURCE),
-      instagram: instagramRefs.slice(0, MAX_PER_SOURCE),
     },
     usage: response.usage,
   };

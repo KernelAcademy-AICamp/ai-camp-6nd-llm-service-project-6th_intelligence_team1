@@ -32,12 +32,10 @@ export const InputMatchSchema = z
   })
   .passthrough();
 
-// ─── 1단계 LLM: 검색 쿼리·해시태그 생성 ─────────────────────────────
-//   queries: 영문 자연어 쿼리 — Pinterest·Mintoiro용.
-//   instagram_hashtags: 인스타 해시태그 (영문/한글 단어, # 없이) — Instagram용.
+// ─── 1단계 LLM: 검색 쿼리 생성 ──────────────────────────────────────
+//   queries: 영문 자연어 쿼리 — Pinterest용.
 export const LlmSearchQueriesSchema = z.object({
   queries: z.array(z.string().min(1)).min(1).max(5),
-  instagram_hashtags: z.array(z.string().min(1)).min(1).max(5),
 });
 
 // ─── 2단계 LLM: 매체별 선별 + 분석 ──────────────────────────────────
@@ -87,13 +85,10 @@ const SourceAnalysisSchema = z.object({
 const VisualSchema = z.object({
   content_id: z.string().optional(),
   trend_name: z.string(),
-  search_queries: z.array(z.string()), // Pinterest·Mintoiro 영문 쿼리
-  instagram_hashtags: z.array(z.string()).optional(),
+  search_queries: z.array(z.string()), // Pinterest 영문 쿼리
   references_by_source: z.object({
     pinterest: z.array(ReferenceSchema),
-    instagram: z.array(ReferenceSchema),
-    mintoiro: z.array(ReferenceSchema),
-  }), // 1단계 수집된 raw (매체별 10장 정도)
+  }), // 1단계 수집된 raw
   analyses_by_source: z.array(SourceAnalysisSchema), // 2단계 매체별 분석
   generation_prompt: z.string(), // 3단계 종합 영문 프롬프트
   aspect_ratio: z.literal("3:4"),
