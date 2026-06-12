@@ -65,8 +65,8 @@ function buildBrandInput(f) {
   return {
     brand_name: f.brand_name || "",
     current_channels: toArray(f.current_channels),
-    // collect()는 배열로 보냄 → 첫 URL만 사용 (스키마는 문자열)
-    brand_channel_url: Array.isArray(f.brand_channel_url) ? (f.brand_channel_url[0] || "") : (f.brand_channel_url || ""),
+    // collect()는 배열로 보냄 → 스키마도 배열(z.array)이므로 배열 그대로 보관 (빈 값 제거)
+    brand_channel_url: Array.isArray(f.brand_channel_url) ? f.brand_channel_url.filter(Boolean) : (f.brand_channel_url ? [f.brand_channel_url] : []),
     product_name: f.product_name || "",
     category: f.category || "",
     texture_keywords: toArray(f.texture_keywords),
