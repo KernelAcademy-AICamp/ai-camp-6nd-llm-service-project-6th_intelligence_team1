@@ -62,13 +62,63 @@ const TECHNICAL_TERM_MAP = [
   ["ingred", "성분·제형"],
   ["features", "특성"],
 ];
+// 배열 내부 문자열을 따옴표 제거 + 쉼표로 join.
+//   "'자기표현'"        → "자기표현"
+//   "'20대', '30대'"    → "20대, 30대"
+//   "'값1', \"값2\""     → "값1, 값2"
+function extractArrayValues(inner) {
+  if (!inner) return "";
+  const matches = [...inner.matchAll(/['"]([^'"]+)['"]/g)];
+  if (matches.length === 0) return inner.trim();
+  return matches.map((m) => m[1].trim()).join(", ");
+}
+
 function naturalizeMatcherText(text) {
   if (!text) return text;
   let result = text;
+
+  // 1) 단어 매핑 — 영문 식별자를 자연 한글로 (audience_signal → 타겟 라이프스타일 등)
   for (const [tech, natural] of TECHNICAL_TERM_MAP) {
-    // 단어 경계 신경 — 한글이 앞뒤에 붙어도 치환 (영문 식별자라 안전).
     result = result.split(tech).join(natural);
   }
+
+  // 2) 변수.속성=['값', '값'] 패턴 → 값들만 (쉼표로 연결).
+  //    매칭가 LLM이 가끔 raw 코드 액세서를 그대로 노출:
+  //    "target.motivation=['자기표현']" → "자기표현"
+  //    "target.age_groups=['20대','30대']" → "20대, 30대"
+  result = result.replace(
+    /[A-Za-z가-힣_]+(?:\.[A-Za-z가-힣_]+)+\s*=\s*\[([^\[\]]*)\]/g,
+    (_, inner) => extractArrayValues(inner),
+  );
+
+  // 3) 잔여 배열 표기 ['값'] 또는 ["값"] → 값만 (변수 없이 단독 배열도 정리)
+  result = result.replace(/\[\s*((?:['"][^'"\[\]]+['"])(?:\s*,\s*['"][^'"\[\]]+['"])*)\s*\]/g,
+    (_, inner) => extractArrayValues(inner),
+  );
+
+  // 4) 잔여 따옴표 둘러싼 텍스트 → 따옴표만 제거. 한글·영문·숫자·언더스코어
+  //    외에 자주 들어오는 문장부호(>, ·, ,, -, ., :, %, ~, /, ↔ 등)도 포함.
+  result = result.replace(
+    /['"]([가-힣A-Za-z0-9_·,\->.:%~/↔()\s]+)['"]/g,
+    "$1",
+  );
+
+  // 5) 영문 소문자 키:값 패턴 → 키 제거하고 값만 남김.
+  //    "age_groups: 20대" → "20대",  "involvement: 입문자" → "입문자"
+  //    5자 이상 길이 제한으로 영문 약어("URL:", "ID:", "AI:") 보호.
+  result = result.replace(/\b[a-z][a-z_]{4,}\s*:\s*/g, "");
+
+  // 6) 단어 단독 "target" → "타겟" (target.motivation 같은 패턴은 1·2단계에서
+  //    이미 처리됨, 단독 등장한 영문 단어만 한글화)
+  result = result.replace(/\btarget\b/g, "타겟");
+
+  // 7) 사람 친화 접속어 치환 — 자연스러운 한국어로
+  //    "A vs B" → "A 와 B" / "A + B" (양옆 공백 끼인 +만, +22% 같은 부호는 보존)
+  //    "A ↔ B" → "A 와 B" (매칭가가 비교 의미로 자주 사용)
+  result = result.replace(/\s+vs\s+/gi, " 와 ");
+  result = result.replace(/\s\+\s/g, " 와 ");
+  result = result.replace(/\s*↔\s*/g, " 와 ");
+
   return result;
 }
 
