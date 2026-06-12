@@ -78,11 +78,7 @@ export async function generatePromptFromSources({ brand, content, analyses }) {
 
 ## 트렌드 콘텐츠
 - trend_name: ${content.trend_name}
-- scene: ${content.concept?.scene ?? content.concept ?? "(없음)"}
-- visual_mood: ${content.concept?.visual_mood ?? "(없음)"}
-- product_moment: ${content.concept?.product_moment ?? "(없음)"}
-- color_tone: ${content.concept?.color_tone ?? "(없음)"}
-- one_line: ${content.concept?.one_line ?? "(없음)"}
+- concept: ${content.concept ?? "(없음)"}
 
 ## 매체별 분석
 

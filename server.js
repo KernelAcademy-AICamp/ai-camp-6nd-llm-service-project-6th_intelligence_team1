@@ -26,7 +26,8 @@ const STAGE_CMDS = {
   brand: "npm run brand",
   trend: "npm run trend",
   match: "npm run match",
-  write: "npm run write"
+  write: "npm run write",
+  design: "npm run design-v2"
 };
 // 테스트용: 설정하면 모든 단계를 이 명령으로 대체 (실제 API 호출 없이 배관만 점검)
 const STAGE_OVERRIDE = process.env.STAGE_CMD_OVERRIDE || "";
