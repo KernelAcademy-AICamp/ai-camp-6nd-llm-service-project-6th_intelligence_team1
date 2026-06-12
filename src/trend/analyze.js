@@ -203,6 +203,7 @@ for (const trend of parsed.trends) {
 const data = {
   source: "트렌드 분석",
   analyzed_at: new Date().toISOString(),
+  raw_count: rawData.length,
   trend_count: parsed.trends.length,
   trends: parsed.trends,
 };
