@@ -1,7 +1,7 @@
 {
   "brand_name": "예시 브랜드명 (예: 힌스, 헤라, 샤넬)",
   "current_channels": ["인스타그램", "유튜브"],
-  "brand_channel_url": "https://www.youtube.com/@example",
+  "brand_channel_url": ["https://www.youtube.com/@example"],
 
   "product_name": "예시 제품명",
   "category": "메이크업 > 베이스 > 쿠션",
