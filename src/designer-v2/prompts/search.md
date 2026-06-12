@@ -51,10 +51,12 @@
 인스타그램에서 검색할 해시태그 **3개**를 별도로 생성.
 
 - **단일 단어**, `#` 없이, 공백 없이 (인스타 해시태그 규칙).
-- 영문 권장 (검색 결과 풍부). 한글도 OK.
-- 트렌드 콘텐츠의 핵심 키워드 활용.
-- 좋음: `sunscreen`, `cleanbeauty`, `kbeauty`, `dewyskin`.
-- 나쁨: `clean beauty hydrating sunscreen ad` (문장 X — 해시태그 안 됨).
+- **3개 구성 규칙**:
+  1. **1개는 항상 라이프스타일·모델 태그 고정**: `뷰티화보`, `뷰티모델`, `beautyeditorial`, `beautyphotography` 중 하나 (모델이 등장하는 뷰티 화보 포스트 수집용)
+  2. **1개는 브랜드 톤앤매너 기반 무드 태그**: 제품명·성분 아닌 브랜드 감성·무드 (예: `minimalbeauty`, `naturalglow`, `cleanesthetic`, `luxurybeauty`)
+  3. **1개는 트렌드 콘텐츠 기반 태그**: 트렌드 키워드를 무드로 해석해 생성
+- 나쁨: `cleanbeauty`, `kbeauty`, `skincareroutine` (→ 제품 단독 포스트에 범용으로 사용)
+- 나쁨: `clean beauty lifestyle tag` (문장 X — 해시태그 안 됨).
 
 ## 출력 형식
 

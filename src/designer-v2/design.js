@@ -126,7 +126,7 @@ for (const c of contents) {
   // 1단계: 매체별 수집
   let queries = [];
   let instagram_hashtags = [];
-  let refsBySource = { pinterest: [], instagram: [], mintoiro: [] };
+  let refsBySource = { pinterest: [], instagram: [] };
   try {
     const r = await generateQueriesAndSearch({ brand: brandData, content: c });
     queries = r.queries;
@@ -137,7 +137,7 @@ for (const c of contents) {
       totalOutputTokens += r.usage.output_tokens ?? 0;
     }
     console.log(
-      `  [1단계] Pinterest ${refsBySource.pinterest.length} / Instagram ${refsBySource.instagram.length} / Mintoiro ${refsBySource.mintoiro.length}`,
+      `  [1단계] Pinterest ${refsBySource.pinterest.length} / Instagram ${refsBySource.instagram.length}`,
     );
   } catch (err) {
     console.error(`  ❌ [1단계] 실패: ${err.message}`);
@@ -150,7 +150,6 @@ for (const c of contents) {
     analyses = await Promise.all([
       analyzeOneSource({ brand: brandData, content: c, source: "pinterest", references: refsBySource.pinterest }),
       analyzeOneSource({ brand: brandData, content: c, source: "instagram", references: refsBySource.instagram }),
-      analyzeOneSource({ brand: brandData, content: c, source: "mintoiro", references: refsBySource.mintoiro }),
     ]);
     analyses.forEach((a) => {
       if (a.usage) {

@@ -2,13 +2,25 @@ import { GoogleGenAI, Modality } from "@google/genai";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import sharp from "sharp";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, "../..");
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-// 제품 사진 있으면 Gemini 멀티모달(이미지 입력→이미지 출력), 없으면 Imagen 텍스트→이미지 폴백
+// 제품 이미지를 3:4 비율로 리사이즈 (출력 비율 고정용)
+async function resizeTo3x4(absPath) {
+  const ext = absPath.split(".").pop().toLowerCase();
+  const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+
+  const buf = await sharp(absPath)
+    .resize(768, 1024, { fit: "contain", background: { r: 255, g: 255, b: 255, alpha: 1 } })
+    .toBuffer();
+
+  return { data: buf.toString("base64"), mimeType };
+}
+
 export async function generateImage({ prompt, outputPath, aspectRatio = "3:4", referenceImagePath }) {
   const absRef = referenceImagePath ? resolve(PROJECT_ROOT, referenceImagePath) : null;
   const hasRef = absRef && existsSync(absRef);
@@ -16,11 +28,8 @@ export async function generateImage({ prompt, outputPath, aspectRatio = "3:4", r
   let imageBytes;
 
   if (hasRef) {
-    // Gemini 멀티모달: 제품 사진 + 텍스트 프롬프트 → 이미지 생성
     try {
-      const ext = absRef.split(".").pop().toLowerCase();
-      const mimeType = ext === "png" ? "image/png" : "image/jpeg";
-      const imageData = readFileSync(absRef).toString("base64");
+      const { data, mimeType } = await resizeTo3x4(absRef);
 
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-image",
@@ -29,17 +38,13 @@ export async function generateImage({ prompt, outputPath, aspectRatio = "3:4", r
             role: "user",
             parts: [
               {
-                text: `You are a beauty advertising photographer. Using the product in the reference image, create a high-quality beauty advertisement photo based on this description:\n\n${prompt}\n\nThe product from the reference image must appear prominently in the generated image.`,
+                text: `You are a beauty advertising creative director. Create a high-quality beauty advertisement image based on this description:\n\n${prompt}\n\nThe reference image shows the product. Incorporate it naturally into the scene.`,
               },
-              {
-                inlineData: { mimeType, data: imageData },
-              },
+              { inlineData: { mimeType, data } },
             ],
           },
         ],
-        config: {
-          responseModalities: [Modality.IMAGE],
-        },
+        config: { responseModalities: [Modality.IMAGE] },
       });
 
       const parts = response.candidates?.[0]?.content?.parts ?? [];
@@ -51,7 +56,6 @@ export async function generateImage({ prompt, outputPath, aspectRatio = "3:4", r
   }
 
   if (!imageBytes) {
-    // 폴백: Imagen 4.0 텍스트→이미지
     const response = await ai.models.generateImages({
       model: "imagen-4.0-generate-001",
       prompt,

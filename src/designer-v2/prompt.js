@@ -55,7 +55,6 @@ export async function generatePromptFromSources({ brand, content, analyses }) {
   const byKey = (src) => analyses.find((a) => a.source === src) ?? null;
   const pin = byKey("pinterest");
   const ig = byKey("instagram");
-  const min = byKey("mintoiro");
 
   const block = (label, a) =>
     a
@@ -68,7 +67,7 @@ export async function generatePromptFromSources({ brand, content, analyses }) {
 - source_specific: ${a.source_specific}`
       : `### ${label}\n(분석 없음)`;
 
-  const userMessage = `다음 3매체 분석을 종합해 시안 1장의 영문 generation_prompt 한 줄을 작성하세요.
+  const userMessage = `다음 2매체 분석을 종합해 시안 1장의 영문 generation_prompt 한 줄을 작성하세요.
 
 ## 브랜드
 - brand_name: ${brand.brand_name ?? "(없음)"}
@@ -85,8 +84,6 @@ export async function generatePromptFromSources({ brand, content, analyses }) {
 ${block("Pinterest (트렌드 무드·인물·라이프스타일 우선)", pin)}
 
 ${block("Instagram (구도·앵글·연출 우선)", ig)}
-
-${block("Mintoiro (패키지·컬러·타이포 우선)", min)}
 
 \`8k wallpaper\`까지만 작성. 그 뒤(aspect ratio, Avoid)는 코드가 자동 추가.`;
 
