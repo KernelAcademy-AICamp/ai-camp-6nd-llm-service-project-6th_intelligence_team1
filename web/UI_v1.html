@@ -932,7 +932,34 @@
 
         <div class="submit-row">
             <button class="back-button" onclick="goToPage(3)">← 돌아가기</button>
-            <button class="cta-button" onclick="goToPage(5)">예상 시안 확인하기 →</button>
+            <button class="cta-button" onclick="showPageById('page-photo')">시안 생성하러 가기 →</button>
+        </div>
+    </div>
+</section>
+
+<!-- ============ 제품 사진 첨부 ============ -->
+<section class="step-section page hidden" id="page-photo">
+    <div class="form-card">
+        <div class="step-header">
+            <h2 class="step-title">제품 사진 첨부</h2>
+            <p class="step-desc">시안 생성에 참고할 제품 사진 1장을 올려주세요.</p>
+        </div>
+        <div class="form-group">
+            <label class="form-label">제품 사진 <span class="req">*</span></label>
+            <div id="photo-dropzone"
+                 onclick="document.getElementById('photo-input').click()"
+                 style="border:2px dashed #e3c6e3;border-radius:16px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s;background:#fdf7fd;">
+                <input type="file" id="photo-input" accept="image/*" hidden onchange="handlePhotoSelect(this.files)">
+                <div id="photo-placeholder" style="color:#9a7a9a;">
+                    <p style="margin:0 0 6px;font-weight:600;">여기로 사진을 끌어다 놓거나 클릭해서 업로드</p>
+                    <p style="margin:0;font-size:0.85rem;color:#bca0bc;">JPG·PNG · 1장</p>
+                </div>
+                <img id="photo-preview" style="display:none;max-width:100%;max-height:300px;border-radius:12px;" alt="제품 사진 미리보기">
+            </div>
+        </div>
+        <div class="submit-row">
+            <button class="back-button" onclick="goToPage(4)">← 돌아가기</button>
+            <button class="cta-button" id="to-mockup-btn" onclick="generateMockups()" disabled style="opacity:.5;">예상 시안 확인하기 →</button>
         </div>
     </div>
 </section>
@@ -963,7 +990,7 @@
         <p class="mockup-note">* 시안은 입력 정보를 바탕으로 한 예시 미리보기입니다.</p>
 
         <div class="submit-row">
-            <button class="back-button" onclick="goToPage(4)">← 돌아가기</button>
+            <button class="back-button" onclick="showPageById('page-photo')">← 돌아가기</button>
             <div class="share-area">
                 <button class="cta-button" id="share-report-btn" onclick="toggleShareOptions()">리포트 공유하기</button>
                 <div id="share-options-row" class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
@@ -1257,6 +1284,7 @@
         { key: 'trend', msg: '🏃‍♂️‍➡️ 발바닥에 땀나도록 트렌드 수집·분석 중...' },
         { key: 'match', msg: '💘 우리 브랜드와 딱 맞는 트렌드 매칭 중...' },
         { key: 'write', msg: '👩🏻‍💻 팀장님 설득할 리포트 작성 중...' }
+        // design(시안) 단계는 여기서 빼고, 제품 사진 첨부 후 generateMockups()에서 실행한다.
     ];
 
     async function startAnalysisWithLoading() {
@@ -1301,12 +1329,24 @@
             // 모든 단계 완료 → 실제 결과 렌더
             const wr = await fetch('/output-main/output-text/writer-output.json?ts=' + Date.now());
             const writer = await wr.json();
+            // 시안 단계(사진 첨부 후)에서 다시 쓰기 위해 writer 데이터와 입력값을 보관
+            window.__writerData = writer.data;
+            window.__lastInput = d;
+            // ④-b 시안가 v2 산출(design-output.json) — 있으면 실제 이미지, 없으면 placeholder 폴백
+            let design = null;
+            try {
+                const dr = await fetch('/shared/data/design-output.json?ts=' + Date.now());
+                if (dr.ok) {
+                    const dj = await dr.json();
+                    if (dj && dj.status === 'success' && dj.data) design = dj.data;
+                }
+            } catch (e) { /* 시안 없으면 placeholder 로 진행 */ }
             // ④ 매칭 리포트 = 팀 공용 컴포넌트(renderMatchReport)로 렌더
             //    → shared/components/match-report.js 의 최신 리포트 수정사항이 그대로 반영됨
             document.getElementById('report_meta').innerHTML = '';
             renderMatchReport(document.getElementById('report_body'), writer.data);
-            // ⑤ 예상 시안 = placeholder 카드
-            buildMockupsReal(writer.data, d);
+            // ⑤ 시안 = design-output.json 실제 이미지(없으면 placeholder)
+            buildMockupsReal(writer.data, d, design);
 
             setTimeout(() => switchPage(4), 450);
         } catch (err) {
@@ -1400,8 +1440,22 @@
           + `<div class="rp-section"><div class="rp-section-title">트렌드별 상세</div><div class="rp-cards">${cardsHtml}</div></div>`;
     }
 
-    function buildMockupsReal(data, d) {
+    function buildMockupsReal(data, d, design) {
         const contents = ((data && data.contents) || []).slice().sort((a, c) => (a.rank || 9) - (c.rank || 9));
+        // 시안가 v2 산출(design-output.json)의 실제 이미지 매핑 (trend_name·content_id 기준)
+        const dvisuals = (design && Array.isArray(design.visuals)) ? design.visuals : [];
+        const imgByKey = new Map();
+        for (const v of dvisuals) {
+            if (v && v.generated_image_url) {
+                if (v.trend_name) imgByKey.set(v.trend_name, v.generated_image_url);
+                if (v.content_id) imgByKey.set(v.content_id, v.generated_image_url);
+            }
+        }
+        // generated_image_url 은 'shared/data/images/...' (루트 상대) → 서버 정적경로(/...)로 변환 + 캐시버스트
+        const imgUrlOf = (c) => {
+            const raw = imgByKey.get(c.trend_name) || imgByKey.get('R' + (c.rank || ''));
+            return raw ? '/' + String(raw).replace(/^\/+/, '') + '?ts=' + Date.now() : null;
+        };
         const tags = ['Key Visual', 'SNS Card', 'Banner'];
         const palettes = [['#ff9ec4', '#c9b6f0'], ['#b9a6f0', '#ffe1c2'], ['#ffd8a8', '#ff9ec4']];
         const brand = d.brand_name || '';
@@ -1428,12 +1482,22 @@
         document.getElementById('mock_grid').innerHTML = contents.map((c, i) => {
             const kw = (c.keywords || [])[0] || (d.texture_keywords || [])[0] || '트렌드';
             const head = [`"${kw}", 지금`, `내 ${cat || '메이크업'}`, `${d.product_name || brand}`][i] || kw;
+            const imgUrl = imgUrlOf(c);
+            // placeholder SVG를 항상 깔고, 실제 시안 이미지가 있으면 그 위에 <img>를 얹음.
+            // 이미지 로드 실패(onerror) 시 img만 제거 → 뒤의 SVG placeholder가 그대로 노출.
+            const imgTag = imgUrl
+                ? `<img src="${esc(imgUrl)}" alt="${esc(c.trend_name || '')} 시안" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.remove()">`
+                : '';
+            const visualInner = creative(i, head) + imgTag;
+            const tagText = (imgUrl ? `${tags[i] || 'Visual'} · AI 시안` : `${tags[i] || 'Visual'} · 시안`);
+            const capBase = esc((c.keywords || []).slice(0, 3).join(' · ') || c.verdict || '');
+            const caption = imgUrl ? `${capBase} · AI 생성 시안` : `${capBase} · 예상 시안(placeholder)`;
             return `<div class="mockup-card">`
-                + `<div class="mockup-visual">${creative(i, head)}<div class="mockup-tag" style="position:relative;z-index:2">${tags[i] || 'Visual'} · 시안</div></div>`
+                + `<div class="mockup-visual">${visualInner}<div class="mockup-tag" style="position:relative;z-index:2">${tagText}</div></div>`
                 + `<div class="mockup-body">`
                 + `<div class="mockup-brand">${esc(brand)}</div>`
                 + `<h3 class="mockup-headline">${esc(c.trend_name || '')}</h3>`
-                + `<p class="mockup-caption">${esc((c.keywords || []).slice(0, 3).join(' · ') || c.verdict || '')} · 예상 시안(placeholder)</p>`
+                + `<p class="mockup-caption">${caption}</p>`
                 + `</div></div>`;
         }).join('');
     }
@@ -1575,6 +1639,93 @@
             }, 200 + (i * 150));
         });
     });
+
+    /* ===== 제품 사진 첨부 ===== */
+    function handlePhotoSelect(files) {
+        if (!files || !files.length) return;
+        const file = files[0];
+        if (!file.type.startsWith('image/')) { showToast('이미지 파일만 올릴 수 있어요'); return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = document.getElementById('photo-preview');
+            img.src = e.target.result;
+            img.style.display = 'block';
+            document.getElementById('photo-placeholder').style.display = 'none';
+            const btn = document.getElementById('to-mockup-btn');
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            window.productPhotoDataUrl = e.target.result; // 나중에 시안 생성에 쓸 사진 데이터
+        };
+        reader.readAsDataURL(file);
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        const dz = document.getElementById('photo-dropzone');
+        if (!dz) return;
+        ['dragover', 'dragenter'].forEach(ev => dz.addEventListener(ev, e => {
+            e.preventDefault(); dz.style.borderColor = '#d18ad1'; dz.style.background = '#faecfa';
+        }));
+        ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => {
+            e.preventDefault(); dz.style.borderColor = '#e3c6e3'; dz.style.background = '#fdf7fd';
+        }));
+        dz.addEventListener('drop', e => handlePhotoSelect(e.dataTransfer.files));
+    });
+
+    /* 사진 첨부 → 서버 저장 → 시안(design) 생성 → 시안 페이지로 이동 */
+    async function generateMockups() {
+        const dataUrl = window.productPhotoDataUrl;
+        if (!dataUrl) { showToast('제품 사진을 먼저 올려주세요'); return; }
+        const d = window.__lastInput || collect();
+        const brand = d.brand_name;
+        if (!brand) { showToast('브랜드명을 찾을 수 없어요. 1단계부터 다시 진행해 주세요'); return; }
+
+        // 로딩 화면 재사용
+        showPageById('page-loading');
+        const msgEl = document.getElementById('loading-message');
+        const barEl = document.getElementById('loading-progress-bar');
+        msgEl.textContent = '🎨 제품 사진으로 시안 생성 중...';
+        barEl.style.background = '';
+        barEl.style.width = '25%';
+
+        try {
+            // ① 사진을 서버에 저장 (inputs/product-images/<브랜드명>.<확장자>)
+            const up = await fetch('/upload-product-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ brand_name: brand, data_url: dataUrl })
+            });
+            const upj = await up.json();
+            if (!upj.ok) throw new Error(upj.error || '사진 저장 실패');
+            barEl.style.width = '50%';
+
+            // ② 시안(design) 단계 실행
+            const res = await fetch('/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stage: 'design' })
+            });
+            const out = await res.json();
+            if (!out.ok) throw new Error((out.log || out.error || '시안 생성 실패').toString().slice(0, 280));
+            barEl.style.width = '85%';
+
+            // ③ 시안 결과(design-output.json) 가져와 렌더 (없으면 placeholder 폴백)
+            let design = null;
+            try {
+                const dr = await fetch('/shared/data/design-output.json?ts=' + Date.now());
+                if (dr.ok) {
+                    const dj = await dr.json();
+                    if (dj && dj.status === 'success' && dj.data) design = dj.data;
+                }
+            } catch (e) { /* 없으면 placeholder */ }
+            buildMockupsReal(window.__writerData, d, design);
+            barEl.style.width = '100%';
+
+            // ④ 시안 페이지로 이동
+            setTimeout(() => goToPage(5), 350);
+        } catch (err) {
+            showToast('시안 생성 실패: ' + (err.message || err));
+            showPageById('page-photo');
+        }
+    }
 </script>
 </body>
 </html>

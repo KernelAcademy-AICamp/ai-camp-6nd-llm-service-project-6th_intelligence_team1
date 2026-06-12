@@ -11,7 +11,7 @@
 //   RUN_CMD   기본 "npm run pipeline" (테스트 시 가벼운 명령으로 바꿔치기 가능)
 
 import http from "node:http";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, mkdir, unlink } from "node:fs/promises";
 import { exec } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join, extname, normalize } from "node:path";
@@ -26,7 +26,8 @@ const STAGE_CMDS = {
   brand: "npm run brand",
   trend: "npm run trend",
   match: "npm run match",
-  write: "npm run write"
+  write: "npm run write",
+  design: "npm run design-v2"
 };
 // 테스트용: 설정하면 모든 단계를 이 명령으로 대체 (실제 API 호출 없이 배관만 점검)
 const STAGE_OVERRIDE = process.env.STAGE_CMD_OVERRIDE || "";
@@ -144,6 +145,40 @@ async function serveStatic(req, res, urlPath) {
 const server = http.createServer(async (req, res) => {
   // CORS (같은 출처라 사실 불필요하지만 안전하게)
   res.setHeader("Access-Control-Allow-Origin", "*");
+
+  // 제품 사진 업로드: UI가 보낸 base64 이미지를 inputs/product-images/<브랜드명>.<확장자> 로 저장
+  // → design(시안가) 단계가 이 파일을 찾아 시안을 생성한다.
+  if (req.method === "POST" && req.url === "/upload-product-image") {
+    try {
+      const body = await readBody(req);
+      const form = body ? JSON.parse(body) : {};
+      const brand = (form.brand_name || "").trim();
+      const dataUrl = form.data_url || "";
+      const m = /^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/i.exec(dataUrl);
+      if (!brand || !m) {
+        res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: false, error: "브랜드명 또는 이미지 형식 오류 (jpg/png/webp만)" }));
+        return;
+      }
+      let ext = m[1].toLowerCase();
+      if (ext === "jpeg") ext = "jpg";
+      const buf = Buffer.from(m[2], "base64");
+      const dir = resolve(ROOT, "inputs/product-images");
+      await mkdir(dir, { recursive: true });
+      // 같은 브랜드의 기존 사진(다른 확장자 포함) 제거 → 옛 사진이 남아 잘못 잡히는 것 방지
+      for (const e of ["jpg", "jpeg", "png", "webp"]) {
+        try { await unlink(resolve(dir, `${brand}.${e}`)); } catch { /* 없으면 무시 */ }
+      }
+      await writeFile(resolve(dir, `${brand}.${ext}`), buf);
+      console.log(`[upload] 제품 사진 저장: inputs/product-images/${brand}.${ext} (${buf.length} bytes)`);
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: true, path: `inputs/product-images/${brand}.${ext}` }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: false, error: String(e) }));
+    }
+    return;
+  }
 
   if (req.method === "POST" && req.url === "/run") {
     try {
