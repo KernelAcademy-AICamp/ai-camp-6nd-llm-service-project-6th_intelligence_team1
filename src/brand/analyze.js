@@ -32,14 +32,19 @@ const searchKeywordsPrompt = readFileSync(
 );
 
 // ─── search_keywords 후처리 (프롬프트 규칙 이중 안전망) ─────────────
-// LLM이 프롬프트 규칙(2~3 어절, 마케터 속성 표면 박기 금지)을 어기면 매칭가의
-// demand_fit이 네이버 월 검색량 0~20만 보고 와서 신호 무의미해짐. 코드에서
+// LLM이 프롬프트 규칙(1~2 어절, 마케터 속성 표면 박기 금지)을 어기면 매칭가의
+// demand_fit이 네이버 월 검색량 0~50만 보고 와서 신호 무의미해짐. 코드에서
 // 결정적으로 한 번 더 필터링.
+//
+// 임계값 변경 이력:
+//   - 초기: 4+ 어절 차단 (4단어 스택 방지 목적)
+//   - 현재: 3+ 어절 차단 — 트렌드 분석가 실측 결과 2어절 구도 INVALID_THRESHOLD(50)
+//     미만이라 1~2 어절 단일·핵심 명사 형태로 더 조임.
 
-// 어절(공백 단위) 4개 이상이면 긴 조합어로 간주.
+// 어절(공백 단위) 3개 이상이면 긴 조합어로 간주.
 function isLongCompound(keyword) {
   const tokens = String(keyword).trim().split(/\s+/).filter(Boolean);
-  return tokens.length >= 4;
+  return tokens.length >= 3;
 }
 
 // 키워드 표면에 들어가면 안 되는 마케터 입력 속성 단어 집합 구성.
@@ -93,7 +98,7 @@ function sanitizeSearchKeywords(keywords, input) {
   for (const kw of keywords ?? []) {
     if (typeof kw !== "string" || !kw.trim()) continue;
     if (isLongCompound(kw)) {
-      dropped.push({ keyword: kw, reason: "4+ 어절 — 너무 긴 조합 (월 검색량 0~20)" });
+      dropped.push({ keyword: kw, reason: "3+ 어절 — 1~2 어절 단일 명사로 축약 필요 (월 검색량 0~50)" });
       continue;
     }
     const violation = findAttributeViolation(kw, forbidden);
