@@ -32,14 +32,19 @@ const searchKeywordsPrompt = readFileSync(
 );
 
 // ─── search_keywords 후처리 (프롬프트 규칙 이중 안전망) ─────────────
-// LLM이 프롬프트 규칙(2~3 어절, 마케터 속성 표면 박기 금지)을 어기면 매칭가의
-// demand_fit이 네이버 월 검색량 0~20만 보고 와서 신호 무의미해짐. 코드에서
+// LLM이 프롬프트 규칙(1~2 어절, 마케터 속성 표면 박기 금지)을 어기면 매칭가의
+// demand_fit이 네이버 월 검색량 0~50만 보고 와서 신호 무의미해짐. 코드에서
 // 결정적으로 한 번 더 필터링.
+//
+// 임계값 변경 이력:
+//   - 초기: 4+ 어절 차단 (4단어 스택 방지 목적)
+//   - 현재: 3+ 어절 차단 — 트렌드 분석가 실측 결과 2어절 구도 INVALID_THRESHOLD(50)
+//     미만이라 1~2 어절 단일·핵심 명사 형태로 더 조임.
 
-// 어절(공백 단위) 4개 이상이면 긴 조합어로 간주.
+// 어절(공백 단위) 3개 이상이면 긴 조합어로 간주.
 function isLongCompound(keyword) {
   const tokens = String(keyword).trim().split(/\s+/).filter(Boolean);
-  return tokens.length >= 4;
+  return tokens.length >= 3;
 }
 
 // 키워드 표면에 들어가면 안 되는 마케터 입력 속성 단어 집합 구성.
@@ -62,12 +67,29 @@ function buildForbiddenAttributeWords(input) {
   //    명사" 패턴(예: "실키 파운데이션", "글로우 쿠션")이라 마지막 어절은 카테
   //    고리 명사일 가능성이 높음 — 그게 검색 키워드의 중심이라 forbidden에 넣
   //    으면 정상 키워드까지 다 막혀버림. 그래서 마지막 어절은 forbidden 제외.
-  //    어절이 1개뿐인 제품명은 그대로 forbidden 추가 (보통 자사 고유 표현).
+  //
+  //    제품명이 한 어절일 때:
+  //    - 그 어절이 input.category 안의 카테고리 명사면(예: 사용자가 "쿠션",
+  //      "아이섀도우" 같은 카테고리명을 그대로 제품명으로 적은 케이스) forbidden
+  //      에 추가하지 않음. 안 그러면 "쿠션 추천" 같은 정상 키워드도 다 차단됨.
+  //    - 카테고리에 없으면 자사 고유 표현이라 보고 forbidden 추가.
   if (input.brand_name) forbidden.add(input.brand_name);
   if (input.product_name) {
     const tokens = String(input.product_name).split(/\s+/).filter(Boolean);
+    const categoryNouns = new Set(
+      String(input.category ?? "")
+        .split(/[>·\s]+/)
+        .map((s) => s.trim())
+        .filter(Boolean),
+    );
     if (tokens.length === 1) {
-      if (tokens[0].length >= 2) forbidden.add(tokens[0]);
+      const w = tokens[0];
+      // 카테고리 명사와 부분 일치도 허용 — 사용자가 "아이섀도우" 적었는데
+      // 카테고리엔 "아이섀도"로 등록된 케이스 같은 미세 차이 흡수.
+      const isCategoryNoun = [...categoryNouns].some(
+        (n) => n.length >= 2 && (n.includes(w) || w.includes(n)),
+      );
+      if (w.length >= 2 && !isCategoryNoun) forbidden.add(w);
     } else {
       for (let i = 0; i < tokens.length - 1; i++) {
         if (tokens[i].length >= 2) forbidden.add(tokens[i]);
@@ -93,7 +115,7 @@ function sanitizeSearchKeywords(keywords, input) {
   for (const kw of keywords ?? []) {
     if (typeof kw !== "string" || !kw.trim()) continue;
     if (isLongCompound(kw)) {
-      dropped.push({ keyword: kw, reason: "4+ 어절 — 너무 긴 조합 (월 검색량 0~20)" });
+      dropped.push({ keyword: kw, reason: "3+ 어절 — 1~2 어절 단일 명사로 축약 필요 (월 검색량 0~50)" });
       continue;
     }
     const violation = findAttributeViolation(kw, forbidden);

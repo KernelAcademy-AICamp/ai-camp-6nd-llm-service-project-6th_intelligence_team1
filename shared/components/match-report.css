@@ -77,14 +77,32 @@
 /* 신뢰도 칩 (카드별, 우측 정렬) */
 .mr-conf {
   margin-left: auto;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
   font-size: 15px;
   font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 999px;
+  padding: 7px 14px;
+  border-radius: 12px;
 }
 .mr-conf-high { background: #dcecd6; color: #5e7a54; }
 .mr-conf-mid { background: #faecd0; color: #9a7b3a; }
 .mr-conf-low { background: #ece8ec; color: #8a7e8a; }
+/* 신뢰도 정도 미터 — 3칸 막대 (높음 3 / 중간 2 / 낮음 1 채움) */
+.mr-conf-meter {
+  display: inline-flex;
+  gap: 4px;
+}
+.mr-conf-bar {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.12);
+}
+.mr-conf-high .mr-conf-bar.mr-on { background: #5e7a54; }
+.mr-conf-mid .mr-conf-bar.mr-on { background: #9a7b3a; }
+.mr-conf-low .mr-conf-bar.mr-on { background: #8a7e8a; }
 /* funnel (전체 — 분석한 트렌드 수 → 선별 수) */
 .mr-funnel { font-size: 12.5px; color: var(--mr-text-sub); margin: 0 0 14px; }
 .mr-funnel b { color: var(--mr-primary-deep); font-weight: 800; }
@@ -169,7 +187,7 @@ details.mr-trend-card:not([open]) > summary .mr-metric-strip { display: none; }
   font-size: 12px;
 }
 .mr-h3 {
-  font-size: 28px;
+  font-size: 25px;
   font-weight: 700;
   line-height: 1.3;
   margin: 0;
@@ -188,8 +206,8 @@ details.mr-trend-card:not([open]) > summary .mr-metric-strip { display: none; }
   align-items: center;
   padding: 4px 12px;
   background: var(--mr-primary-soft);
-  color: var(--mr-primary-deep);
-  font-size: 13.5px;
+  color: #b34d6b;
+  font-size: 12.5px;
   font-weight: 600;
   border-radius: 999px;
   line-height: 1.4;
@@ -241,8 +259,8 @@ details.mr-trend-card:not([open]) > summary .mr-metric-strip { display: none; }
   border-radius: 10px;
   padding: 10px 12px;
 }
-.mr-m-label { font-size: 11px; color: var(--mr-text-mute); font-weight: 600; margin-bottom: 2px; }
-.mr-m-value { font-size: 26px; font-weight: 800; line-height: 1.1; letter-spacing: -0.01em; color: var(--mr-text); }
+.mr-m-label { font-size: 11px; color: var(--mr-text-mute); font-weight: 600; margin-bottom: 6px; }
+.mr-m-value { font-size: 25px; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; color: var(--mr-text); }
 .mr-m-delta { font-size: 11px; font-weight: 700; color: var(--mr-ok); margin-left: 4px; }
 
 /* 번호 박스 (매칭이유 — 이미지 톤: 연핑크 배경 + 핑크 stroke + 번호 배지) */

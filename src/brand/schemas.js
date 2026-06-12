@@ -24,8 +24,7 @@ export const CATEGORY_TREE = {
     "파운데이션", "쿠션", "컨실러", "프라이머",
     "파우더", "하이라이터", "셰이딩", "블러셔",
   ],
-  "메이크업 > 아이": ["아이섀도", "아이라이너", "마스카라", "아이브로우"],
-  기타: ["기타"],
+  "메이크업 > 아이": ["아이섀도", "아이라이너", "마스카라", "아이브로우", "팔레트"],
 };
 
 // 전체 카테고리 키 ("대분류 > 중분류[ > 소분류]") — Zod enum 생성용
@@ -62,21 +61,18 @@ export const TEXTURE_BY_CATEGORY = {
   // 메이크업 > 베이스
   "메이크업 > 베이스 > 파운데이션": ["매트", "글로우", "촉촉", "지속력", "밀착"],
   "메이크업 > 베이스 > 쿠션": ["매트", "커버력", "세미매트", "촉촉", "밀착"],
-  "메이크업 > 베이스 > 컨실러": ["글로우", "촉촉", "톤업", "매트", "커버력"],
+  "메이크업 > 베이스 > 컨실러": [],
   "메이크업 > 베이스 > 프라이머": ["매트", "지속력", "톤업", "밀착", "글로우"],
   "메이크업 > 베이스 > 파우더": ["매트", "촉촉", "지속력", "벨벳", "밀착"],
-  "메이크업 > 베이스 > 하이라이터": ["글로우", "광채", "촉촉", "벨벳", "누드"],
-  "메이크업 > 베이스 > 셰이딩": ["매트", "촉촉", "글로우", "지속력", "벨벳"],
-  "메이크업 > 베이스 > 블러셔": ["글로우", "매트", "지속력", "톤업", "촉촉"],
+  "메이크업 > 베이스 > 하이라이터": ["프레스드", "젤리", "리퀴드", "베이크드", "스틱", "피그먼트"],
+  "메이크업 > 베이스 > 셰이딩": ["프레스드", "스틱", "크림"],
+  "메이크업 > 베이스 > 블러셔": ["프레스드", "베이크드", "크림", "스틱", "리퀴드", "쿠션", "밤"],
 
   // 메이크업 > 아이
   "메이크업 > 아이 > 아이섀도": ["매트", "글로우", "누드", "글리터", "시어"],
   "메이크업 > 아이 > 아이라이너": ["글리터", "지속력", "매트", "펄", "촉촉"],
   "메이크업 > 아이 > 마스카라": ["볼륨", "매트"],
   "메이크업 > 아이 > 아이브로우": ["매트", "지속력", "픽싱"],
-
-  // 기타 — 자유 입력 (검증 면제)
-  "기타 > 기타": [],
 };
 
 // 전체 텍스처 집합 (UI에서 카테고리 안 정해진 상태 등에 대비)
@@ -84,7 +80,7 @@ export const ALL_TEXTURES = [
   ...new Set(Object.values(TEXTURE_BY_CATEGORY).flat()),
 ];
 
-// 카테고리로 허용 텍스처 조회. "기타"는 빈 배열 → 모든 값 허용.
+// 카테고리로 허용 텍스처 조회. 빈 배열로 등록된 카테고리(컨실러)는 검증 면제.
 export function getTexturesForCategory(category) {
   return TEXTURE_BY_CATEGORY[category] ?? [];
 }
@@ -184,7 +180,7 @@ export function expandAgeGroupForMatching(group) {
 // ─── 스키마 ───────────────────────────────────────────────────────
 
 const TargetSchema = z.object({
-  gender: z.enum(["여성", "남성", "공용"]),
+  gender: z.enum(["여성", "남성"]),
   age_groups: z.array(z.enum(AGE_GROUPS)).min(1),
   involvement: z.enum(INVOLVEMENT),
   motivation: z.array(z.enum(MOTIVATION)).min(1),
@@ -205,7 +201,9 @@ export const BrandInputSchema = z
     category: z.enum(CATEGORIES, {
       message: `category는 ${CATEGORIES.length}개 중 하나여야 합니다`,
     }),
-    texture_keywords: z.array(z.string()).min(1, "texture_keywords 최소 1개"),
+    // texture_keywords 최소 1개 강제는 .refine()에서 카테고리별 조건부로 처리
+    // (컨실러처럼 제품 특징을 요구하지 않는 카테고리는 빈 배열 허용)
+    texture_keywords: z.array(z.string()).optional().default([]),
     tone_and_manner: z.array(z.enum(TONE_AND_MANNER)).min(1),
 
     target: TargetSchema,
@@ -219,11 +217,24 @@ export const BrandInputSchema = z
     reference_campaign_url: z.string().url().optional().or(z.literal("")).optional(),
     competitors: z.array(z.string()).max(2).optional().default([]),
   })
-  // 카테고리별로 허용된 텍스처인지 검증 — 트렌드 검색어 품질 보장
+  // 카테고리별 texture_keywords 검증 두 단계
+  //   1) 개수 — TEXTURE_BY_CATEGORY가 비어 있지 *않은* 카테고리는 최소 1개 필요
+  //      (컨실러처럼 빈 배열로 등록된 카테고리는 0개도 OK — 자유 입력 또는 미사용)
   .refine(
     (data) => {
       const allowed = getTexturesForCategory(data.category);
-      // "기타 > 기타"는 빈 배열로 → 모든 텍스처 허용
+      if (allowed.length === 0) return true; // 검증 면제 카테고리
+      return data.texture_keywords.length >= 1;
+    },
+    (data) => ({
+      message: `카테고리 '${data.category}'는 texture_keywords 최소 1개 필요`,
+      path: ["texture_keywords"],
+    }),
+  )
+  //   2) 값 — 허용된 텍스처 목록 안의 값만 사용 (검증 면제 카테고리는 어떤 값도 OK)
+  .refine(
+    (data) => {
+      const allowed = getTexturesForCategory(data.category);
       if (allowed.length === 0) return true;
       return data.texture_keywords.every((t) => allowed.includes(t));
     },

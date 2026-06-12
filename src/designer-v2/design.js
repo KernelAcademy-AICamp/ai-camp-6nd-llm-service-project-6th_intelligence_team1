@@ -116,7 +116,7 @@ for (const c of contents) {
       c.concept = r.concept;
       totalInputTokens += r.usage?.input_tokens ?? 0;
       totalOutputTokens += r.usage?.output_tokens ?? 0;
-      console.log(`  [0단계] concept 자동 생성: ${c.concept.one_line?.slice(0, 60) ?? ""}...`);
+      console.log(`  [0단계] concept 자동 생성: ${c.concept.slice(0, 60)}...`);
     } catch (err) {
       console.error(`  ❌ [0단계] concept 생성 실패: ${err.message}`);
       continue;
