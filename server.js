@@ -95,12 +95,28 @@ function runCmd(cmd, extraEnv = {}) {
       cwd: ROOT,
       maxBuffer: 1024 * 1024 * 50,
       timeout: 15 * 60 * 1000,
-      env: { ...process.env, ...extraEnv } // 기존 환경변수 + 이번에 추가할 것(YOUTUBE_FRESH 등)
+      // npm 업데이트 안내문(npm notice)·fund 광고를 끔 → 에러 로그가 안내문에 묻히지 않게
+      env: { ...process.env, NO_UPDATE_NOTIFIER: "1", NPM_CONFIG_UPDATE_NOTIFIER: "false", NPM_CONFIG_FUND: "false", ...extraEnv } // + 이번에 추가할 것(YOUTUBE_FRESH 등)
     },
       (err, stdout, stderr) => {
         res({ ok: !err, code: err?.code ?? 0, stdout, stderr: stderr || (err?.message ?? "") });
       });
   });
+}
+
+// 실행 로그에서 '진짜 에러'를 앞으로 뽑아냄.
+// npm 안내문(notice/warn/fund) 같은 잡음을 걷어내고, 'Error'·'Cannot find' 등
+// 실제 오류 줄부터 보여준다. (로그를 끝에서 자르면 npm notice만 보이던 문제 해결)
+function focusError(stdout, stderr) {
+  const clean = ((stdout || "") + "\n" + (stderr || ""))
+    .split("\n")
+    .filter((l) => !/^\s*npm (notice|warn|fund|WARN)/i.test(l))
+    .join("\n")
+    .trim();
+  const lines = clean.split("\n");
+  const idx = lines.findIndex((l) => /(Error|Cannot find|ERR_[A-Z_]+|throw |✖|❌)/.test(l));
+  const focused = idx >= 0 ? lines.slice(idx).join("\n") : clean;
+  return focused.slice(0, 1500); // 앞부분(=진짜 에러)부터
 }
 
 // 정적 파일 서빙 (repo 밖 접근 차단)
@@ -161,7 +177,9 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({
         ok: result.ok,
         stage,
-        log: (result.stdout + "\n" + result.stderr).slice(-4000)
+        log: result.ok
+          ? (result.stdout + "\n" + result.stderr).slice(-4000) // 성공 로그는 기존대로(꼬리)
+          : focusError(result.stdout, result.stderr)             // 실패 로그는 진짜 에러를 앞으로
       }));
     } catch (e) {
       res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });

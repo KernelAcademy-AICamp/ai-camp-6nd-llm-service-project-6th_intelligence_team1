@@ -1292,7 +1292,7 @@
                     body: JSON.stringify(payload)
                 });
                 const out = await res.json();
-                if (!out.ok) throw new Error('[' + st.key + '] ' + (out.log || out.error || '실패').toString().slice(-280));
+                if (!out.ok) throw new Error('[' + st.key + '] ' + (out.log || out.error || '실패').toString().slice(0, 280));
 
                 // 단계 완료 → 막대 전진
                 barEl.style.width = ((i + 1) / n * 100) + '%';
