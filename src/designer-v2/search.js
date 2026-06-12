@@ -46,10 +46,7 @@ export async function generateQueriesAndSearch({ brand, content }) {
 
 ## 트렌드 콘텐츠
 - trend_name: ${content.trend_name}
-- scene: ${content.concept?.scene ?? content.concept ?? "(없음)"}
-- visual_mood: ${content.concept?.visual_mood ?? "(없음)"}
-- color_tone: ${content.concept?.color_tone ?? "(없음)"}
-- one_line: ${content.concept?.one_line ?? "(없음)"}${content.mood ? `\n- mood: ${content.mood}` : ""}${content.key_message ? `\n- key_message: ${content.key_message}` : ""}
+- concept: ${content.concept ?? "(없음)"}${content.mood ? `\n- mood: ${content.mood}` : ""}${content.key_message ? `\n- key_message: ${content.key_message}` : ""}
 
 \`queries\` (Pinterest·Mintoiro용) 3개, \`instagram_hashtags\` (Instagram용) 3개 반환.`;
 
