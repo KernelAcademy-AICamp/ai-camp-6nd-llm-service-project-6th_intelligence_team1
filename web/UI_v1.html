@@ -1256,7 +1256,8 @@
         { key: 'brand', msg: '🔎 브랜드 정보 분석 중...' },
         { key: 'trend', msg: '🏃‍♂️‍➡️ 발바닥에 땀나도록 트렌드 수집·분석 중...' },
         { key: 'match', msg: '💘 우리 브랜드와 딱 맞는 트렌드 매칭 중...' },
-        { key: 'write', msg: '👩🏻‍💻 팀장님 설득할 리포트 작성 중...' }
+        { key: 'write', msg: '👩🏻‍💻 팀장님 설득할 리포트 작성 중...' },
+        { key: 'design', msg: '🎨 트렌드별 AI 시안 생성 중...' }
     ];
 
     async function startAnalysisWithLoading() {
@@ -1301,12 +1302,20 @@
             // 모든 단계 완료 → 실제 결과 렌더
             const wr = await fetch('/output-main/output-text/writer-output.json?ts=' + Date.now());
             const writer = await wr.json();
+
+            // design-output.json (없으면 null — 시안가 미실행 시 fallback)
+            let designData = null;
+            try {
+                const dr = await fetch('/shared/data/design-output.json?ts=' + Date.now());
+                if (dr.ok) designData = await dr.json();
+            } catch (e) { /* 무시 */ }
+
             // ④ 매칭 리포트 = 팀 공용 컴포넌트(renderMatchReport)로 렌더
             //    → shared/components/match-report.js 의 최신 리포트 수정사항이 그대로 반영됨
             document.getElementById('report_meta').innerHTML = '';
             renderMatchReport(document.getElementById('report_body'), writer.data);
-            // ⑤ 예상 시안 = placeholder 카드
-            buildMockupsReal(writer.data, d);
+            // ⑤ 예상 시안 — 실제 생성 이미지 우선, 없으면 placeholder
+            buildMockupsReal(writer.data, d, designData);
 
             setTimeout(() => switchPage(4), 450);
         } catch (err) {
@@ -1400,7 +1409,7 @@
           + `<div class="rp-section"><div class="rp-section-title">트렌드별 상세</div><div class="rp-cards">${cardsHtml}</div></div>`;
     }
 
-    function buildMockupsReal(data, d) {
+    function buildMockupsReal(data, d, designData) {
         const contents = ((data && data.contents) || []).slice().sort((a, c) => (a.rank || 9) - (c.rank || 9));
         const tags = ['Key Visual', 'SNS Card', 'Banner'];
         const palettes = [['#ff9ec4', '#c9b6f0'], ['#b9a6f0', '#ffe1c2'], ['#ffd8a8', '#ff9ec4']];
@@ -1408,7 +1417,13 @@
         const cat = (d.category || '').split('>').pop().trim();
         const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-        // 외부 이미지 없이 SVG로 광고 시안 느낌의 가상 이미지 생성
+        // design-output.json의 visuals를 content_id(R1/R2/R3)로 인덱싱
+        const visualMap = {};
+        ((designData && designData.data && designData.data.visuals) || []).forEach(v => {
+            if (v.content_id && v.generated_image_url) visualMap[v.content_id] = v;
+        });
+
+        // SVG fallback
         function creative(i, head) {
             const [c1, c2] = palettes[i % palettes.length];
             const gid = 'mg' + i;
@@ -1426,14 +1441,24 @@
         }
 
         document.getElementById('mock_grid').innerHTML = contents.map((c, i) => {
+            const contentId = `R${c.rank || (i + 1)}`;
+            const visual = visualMap[contentId];
             const kw = (c.keywords || [])[0] || (d.texture_keywords || [])[0] || '트렌드';
             const head = [`"${kw}", 지금`, `내 ${cat || '메이크업'}`, `${d.product_name || brand}`][i] || kw;
+
+            const imgHtml = (visual && visual.generated_image_url)
+                ? `<img src="/${visual.generated_image_url}" alt="${esc(c.trend_name)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">`
+                : creative(i, head);
+            const caption = (visual && visual.generated_image_url)
+                ? esc((c.keywords || []).slice(0, 3).join(' · ') || c.trend_name || '')
+                : esc((c.keywords || []).slice(0, 3).join(' · ') || c.verdict || '') + ' · 예상 시안(placeholder)';
+
             return `<div class="mockup-card">`
-                + `<div class="mockup-visual">${creative(i, head)}<div class="mockup-tag" style="position:relative;z-index:2">${tags[i] || 'Visual'} · 시안</div></div>`
+                + `<div class="mockup-visual">${imgHtml}<div class="mockup-tag" style="position:relative;z-index:2">${tags[i] || 'Visual'} · 시안</div></div>`
                 + `<div class="mockup-body">`
                 + `<div class="mockup-brand">${esc(brand)}</div>`
                 + `<h3 class="mockup-headline">${esc(c.trend_name || '')}</h3>`
-                + `<p class="mockup-caption">${esc((c.keywords || []).slice(0, 3).join(' · ') || c.verdict || '')} · 예상 시안(placeholder)</p>`
+                + `<p class="mockup-caption">${caption}</p>`
                 + `</div></div>`;
         }).join('');
     }
