@@ -10,8 +10,15 @@ const BASE_URL = "https://www.googleapis.com/youtube/v3";
 // 수집 결과 캐시 경로 + 새로고침 플래그
 // 평소엔 기존 youtube_raw.json을 재사용해 YouTube 일일 할당량을 아낀다.
 // 서버가 ?fresh=1 요청 시 YOUTUBE_FRESH=1을 넘겨주며, 그때만 새로 수집한다.
-const CACHE_PATH = "trend/data/youtube_raw.json";
+const CACHE_PATH = "trend/data/youtube_cache.json"; // 키워드별 캐시 (출력 파일과 분리)
+const OUT_PATH = "trend/data/youtube_raw.json";     // merge.js가 읽는 출력 (브랜드별로 매번 재조립)
 const FRESH = process.env.YOUTUBE_FRESH === "1";
+
+// apify와 동일한 7일 버킷
+function weekBucket() { return Math.floor(Date.now() / (7 * 864e5)); }
+function cacheKey(keyword) { return `${keyword}__${weekBucket()}`; }
+function loadCache() { try { return JSON.parse(fs.readFileSync(CACHE_PATH, "utf-8")); } catch { return {}; } }
+function saveCache(c) { fs.writeFileSync(CACHE_PATH, JSON.stringify(c, null, 2), "utf-8"); }
 
 // ── 품질 튜닝 다이얼 ──────────────────────────────
 const RECENT_DAYS = 180;   // 최근 N일 (30 → 180: 표본 확보. 더 최신만 원하면 90)
@@ -77,53 +84,59 @@ async function fetchTrendingVideos(query) {
 }
 
 async function main() {
-  // ① 캐시 재사용: FRESH가 아니고 기존 수집 파일이 있으면 API 호출 없이 그대로 사용.
-  //    (YouTube Data API 일일 할당량 절약 — 새로 받고 싶으면 ?fresh=1 로 실행)
-  if (!FRESH && fs.existsSync(CACHE_PATH)) {
-    console.log("YouTube: 기존 youtube_raw.json 재사용 (새로 받으려면 ?fresh=1 / YOUTUBE_FRESH=1).");
-    return;
-  }
-
   console.log("YouTube 트렌드 수집 시작...\n");
   console.log(`검색어 ${QUERIES.length}개를 brand-analysis.json에서 읽어왔어!\n`);
 
-  // ② 수집 시도. 할당량 초과(429) 등으로 실패하면 부분 결과로 덮어쓰지 않고
-  //    기존 캐시를 유지한 채 정상 종료(exit 0) → 파이프라인이 멈추지 않는다.
+  const cache = loadCache();
   const results = [];
   try {
     for (const query of QUERIES) {
+      const key = cacheKey(query);
+      // 이번 주 같은 키워드면 API 호출 없이 캐시 재사용
+      if (!FRESH && cache[key]) {
+        console.log(`"${query}" → (이번 주 캐시 사용)`);
+        results.push(...cache[key]);
+        continue;
+      }
       console.log(`"${query}" 검색 중...`);
       const videos = await fetchTrendingVideos(query);
       console.log(`  → ${videos.length}개 수집`);
+      cache[key] = videos;
+      saveCache(cache); // 키워드마다 저장 → 중간에 할당량 끊겨도 받은 만큼 보존
       results.push(...videos);
     }
   } catch (err) {
     const status = err?.response?.status;
     const msg = err?.response?.data?.error?.message || err.message;
     console.warn(`\n⚠️ YouTube 수집 실패${status ? ` (${status})` : ""}: ${msg}`);
-    if (fs.existsSync(CACHE_PATH)) {
-      console.warn("→ 기존 youtube_raw.json을 유지하고 계속 진행합니다.");
+    console.warn("→ 이번 주 캐시에 있던 키워드만으로 계속 진행합니다.");
+  }
+
+  // 이번 실행에서 모은 게 하나도 없으면 기존 출력을 덮어쓰지 않고 그대로 둠
+  if (results.length === 0) {
+    if (fs.existsSync(OUT_PATH)) {
+      console.warn("⚠️ 새로 모은 데이터 없음 — 기존 youtube_raw.json 유지.");
       return;
     }
-    console.error("→ 캐시도 없어 진행 불가. 할당량 리셋 후 재시도하거나 새 YOUTUBE_API_KEY를 사용하세요.");
+    console.error("❌ 데이터·기존 출력 모두 없어 진행 불가. 할당량 리셋 후 재시도하세요.");
     process.exitCode = 1;
     return;
   }
 
+  // 출력은 매번 "현재 브랜드의 키워드 + 현재 brand_context"로 재조립 → 브랜드 섞임 방지
   const output = {
     collected_at: new Date().toISOString(),
     brand_context: brandContext,
     raw_data: results
   };
-
-  fs.writeFileSync("trend/data/youtube_raw.json", JSON.stringify(output, null, 2), "utf-8");
+  fs.writeFileSync(OUT_PATH, JSON.stringify(output, null, 2), "utf-8");
 
   console.log("\n=== 수집 완료 ===");
   console.log(`총 ${results.length}개 영상 수집됨`);
   results.slice(0, 3).forEach(v => {
     console.log(`"${v.title.slice(0, 30)}..." 조회수: ${v.view_count.toLocaleString()}회`);
   });
-  console.log("trend/data/youtube_raw.json 파일로 저장됐어!");
+  console.log(`${OUT_PATH} 파일로 저장됐어!`);
 }
 
 main();
