@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.2",
-  "generated_at": "2026-05-26T10:05:00+09:00",
+  "schema_version": "0.5",
+  "generated_at": "2026-06-10T15:00:00+09:00",
   "status": "success",
   "data": {
     "analyzed_at": "",
@@ -10,7 +10,9 @@
         "trend_id": "",
         "trend_name": "",
         "category": "",
-        "keywords": [],
+        "keywords": {
+          "ingred": []
+        },
         "summary": "",
         "headline_metric": {
           "metric": "",
@@ -19,6 +21,8 @@
         },
         "meaning": "",
         "status": "",
+        "trend_stage": "",
+        "lifespan_estimate": "",
         "metrics": {
           "score": 0,
           "growth_rate": 0,
@@ -31,7 +35,8 @@
             "metric": "",
             "value": "",
             "raw_value": 0,
-            "period": ""
+            "period": "",
+            "url": ""
           }
         ],
         "audience_distribution": {
@@ -50,13 +55,156 @@
           },
           "source": ""
         },
+        "audience_signal": "",
+        "target": {
+          "gender": "",
+          "age_groups": [],
+          "involvement": "",
+          "motivation": []
+        },
         "media_channel_status": [
           {
             "media_channel": "",
             "status": ""
           }
+        ],
+        "source_search_keywords": [],
+        "channel_activity": [
+          {
+            "search_keyword": "",
+            "scores": {
+              "youtube": {
+                "score": 0,
+                "evidence": "",
+                "source": ""
+              },
+              "instagram": {
+                "score": 0,
+                "evidence": "",
+                "source": ""
+              },
+              "tiktok": {
+                "score": 0,
+                "evidence": "",
+                "source": ""
+              }
+            },
+            "top_channel": "",
+            "interpretation": "relative_to_pool"
+          }
         ]
       }
     ]
+  },
+  "_field_guide": {
+    "_comment": "이 _field_guide 블록은 example 파일에만 있는 작성 가이드입니다. 실제 trend-analysis.json에는 포함하지 않습니다. v0.4·v0.5 변경 사항을 정리합니다.",
+    "v0.5_changelog": [
+      "추가: trends[].source_search_keywords (배열) — 이 트렌드가 어떤 brand-analysis.data.search_keywords에서 도출됐는지 명시. 분석가가 직접 매핑 (구조 C 방식: 트렌드는 의미 단위, 검색어는 별도 매핑 테이블)",
+      "추가: trends[].channel_activity (배열) — 트렌드 1이 만든 channel-activity.json에서 source_search_keywords로 조인해 붙이는 채널별 활성도 데이터. 한 트렌드가 여러 검색어와 연관되므로 배열 구조",
+      "병합 방식: src/trend/merge-channel-activity.js 스크립트가 trend-analysis.json + channel-activity.json 읽어서 channel_activity 배열을 채움 (npm run trend:merge-activity)",
+      "주의: 각 element의 scores.{youtube,instagram,tiktok}.{score,evidence,source} + top_channel은 변형 없이 보존. 점수 평균·합산 ❌ (후보군 내 상대 순위라 깨짐)"
+    ],
+    "v0.4_changelog": [
+      "추가: trends[].target 필드 — 브랜드 target과 구조적으로 비교하기 위한 정형 데이터",
+      "제거: trends[].keywords.life — target 필드와 중복이므로 제거. 라이프스타일·동기 정보는 target.involvement / target.motivation으로 이동"
+    ],
+    "keywords": {
+      "ingred": {
+        "purpose": "제형·텍스처·성분 키워드. 매칭가가 브랜드 product_features와 임베딩 유사도(>=0.7)로 비교해 Ingred-Fit을 판정합니다.",
+        "count": "3~5개 권장",
+        "include": [
+          "제형·텍스처 마감: 매트, 글로우, 세미매트, 벨벳, 촉촉한 밀착",
+          "커버·마감 특성: 고커버, 쉬어, 자연스러운 마감, 밀착 지속",
+          "핵심 성분(트렌드에서 강조될 때): 세라마이드, 레티놀, 약산성"
+        ],
+        "exclude": [
+          "베이스/메이크업/뷰티 (너무 광범위 → 모든 브랜드 통과)",
+          "20대/직장인/데일리 (소비자 특성 → target.age_groups / target.involvement로)",
+          "수정 화장/편리함 (사용 행태 → target.involvement / target.motivation으로)",
+          "인스타그램/유튜브 (매체 정보 → summary 또는 제거)"
+        ],
+        "good_example": ["매트 쿠션", "세미매트 마감", "고커버 밀착", "자연스러운 매트피니시"],
+        "bad_example": ["베이스 메이크업", "데일리 쿠션", "20대 추천"]
+      },
+      "_note": "v0.3에서 있던 keywords.life는 v0.4에서 제거됨. 라이프스타일·동기는 target 필드로 이동."
+    },
+    "target": {
+      "purpose": "트렌드 소비자의 타겟 프로파일. 매칭가가 브랜드 target과 구조적으로 비교해 Life-Fit / Target-Fit을 판정합니다. brand-analysis.data.target과 동일 형식이라 직접 비교 가능.",
+      "fields": {
+        "gender": {
+          "type": "enum",
+          "values": ["여성", "남성", "공용"],
+          "example": "여성"
+        },
+        "age_groups": {
+          "type": "array<enum> (복수 선택 가능)",
+          "values": ["10대", "20대", "30대", "Z세대", "MZ세대", "밀레니얼"],
+          "example": ["20대", "30대"]
+        },
+        "involvement": {
+          "type": "string",
+          "purpose": "이 트렌드 소비자의 사용 패턴·관여 방식을 한 줄로",
+          "good_example": "데일리 메이크업 지속력 중시 사용자",
+          "bad_example": "여성 (광범위), 20대 (연령만)"
+        },
+        "motivation": {
+          "type": "array<string>",
+          "count": "2~4개",
+          "purpose": "이 트렌드를 따르는 핵심 동기",
+          "good_example": ["번들거림 방지", "꾸안꾸 연출", "지속력 중시"],
+          "bad_example": ["메이크업", "관심"]
+        }
+      },
+      "good_example": {
+        "gender": "여성",
+        "age_groups": ["20대", "30대"],
+        "involvement": "데일리 메이크업 지속력 중시 사용자",
+        "motivation": ["번들거림 방지", "꾸안꾸 자연스러움", "지속력 중시"]
+      }
+    },
+    "summary": {
+      "purpose": "트렌드 본질을 서술. 매칭가가 브랜드와 비교할 때 쓰는 핵심 데이터.",
+      "must_include": [
+        "소비자가 원하는 것: 예) '번들거림 없는 깔끔한 마감을 원함'",
+        "트렌드 성격·분위기: 예) '임상적·과학적 성격', '꾸안꾸 자연스러운 무드'",
+        "소비자 가치관·라이프스타일: 예) '효율 중시, 데일리 루틴에 통합하려는 경향'",
+        "수치 (있으면): 예) '검색량 3월 대비 5월 47% 유지'"
+      ],
+      "exclude": [
+        "콘텐츠 포맷 ('튜토리얼 중심', '리뷰 영상 활발') — media_channel_status 담당",
+        "매체 채널 ('YouTube에서', 'TikTok 콘텐츠') — media_channel_status 담당",
+        "브랜드명 나열 ('라네즈·바액·핀브') — 트렌드 성격 서술에 불필요"
+      ],
+      "bad_example": "매트 쿠션 수요 증가. YouTube 튜토리얼·Instagram 리뷰 콘텐츠 중심으로 라네즈·핀브 제품 언급 활발. (← 포맷·매체·브랜드명)",
+      "good_example": "20대 여성을 중심으로 번들거림 없는 매트 마감 수요 증가. 꾸안꾸 자연스러움을 추구하며 데일리 지속력을 중시하는 가치관이 기반."
+    },
+    "meaning": {
+      "purpose": "이 트렌드가 사회적·문화적으로 무엇을 의미하는지. 톤 충돌 판단을 더 정확하게 합니다.",
+      "must_include": [
+        "문화적 맥락 키워드: 탈코르셋, 갓생, 도파민 소비 등",
+        "세대·라이프스타일 변화의 의미"
+      ]
+    },
+    "safe": {
+      "_note": "safe(시급성) 판정은 trend_stage(emerging/peak/declining)·lifespan_estimate 필드를 그대로 사용합니다. 별도 변경 없음."
+    },
+    "source_search_keywords": {
+      "purpose": "이 트렌드가 어떤 brand-analysis.data.search_keywords에서 도출됐는지 명시하는 조인 키 배열. channel-activity.json과의 join에 사용.",
+      "how_to_fill": "분석가가 trend-analysis를 만들 때, 각 트렌드를 구성한 raw 데이터의 검색어를 brand-analysis.data.search_keywords와 매칭해서 1~N개 적습니다.",
+      "good_example": ["실키 파운데이션 리뷰", "30대 데일리 파운데이션 트렌드"],
+      "bad_example": ["실키파운데이션", "메이크업"],
+      "note": "정확히 brand-analysis.data.search_keywords의 문자열과 일치해야 join이 됩니다. 다르면 channel_activity가 비어집니다."
+    },
+    "channel_activity": {
+      "purpose": "트렌드 1(가지수님)이 만든 channel-activity.json을 source_search_keywords로 조인해 붙이는 채널별 활성도 데이터. 매칭가에게 전달돼 활성 채널 판정에 사용됨.",
+      "how_filled": "src/trend/merge-channel-activity.js 스크립트가 자동으로 채움. 분석가가 직접 작성 ❌",
+      "structure": "각 element가 한 search_keyword의 활성도. scores.{youtube,instagram,tiktok} + top_channel + interpretation",
+      "score_warning": [
+        "점수는 후보군 내 상대 순위(반 등수 개념). 채널 간 절대 비교 ❌",
+        "score: 0 = '활동 없음'이 아님. 후보 중 최저라는 뜻 (예: 유튜브 0점인데 실제 영상 25개·4.4만 뷰)",
+        "인스타는 무료 표본이라 작음 → '경향'으로만 표현, 단정 ❌",
+        "여러 검색어의 점수 평균·합산 ❌ (재정규화 깨짐)"
+      ]
+    }
   }
 }
