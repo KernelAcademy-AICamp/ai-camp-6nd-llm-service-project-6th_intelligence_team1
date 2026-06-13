@@ -5,11 +5,11 @@
 ## 쿼리 작성 규칙
 
 - **영문**. 핀터레스트는 영문 인덱스가 압도적으로 풍부.
-- **3-5단어 정도**. 너무 짧으면(`beauty`) 일반적, 너무 길면 결과 적음.
-- **시각 무드·스타일이 드러나는 표현** 우선.
-  - 좋음: `Y2K pink kitty beauty ad`, `minimalist clean korean skincare poster`, `summer dewy glow makeup campaign`
-  - 나쁨: `beauty product`, `cosmetic ad`, `Korean`
-- **트렌드 콘텐츠의 핵심 키워드를 1-2개 포함** (예: 트렌드 "수분 선케어"면 `hydrating sunscreen`).
+- **2-4단어**. 짧고 강렬하게.
+- **시각 무드·스타일 어휘만** — 기능·성분·루틴 단어는 제외.
+  - 좋음: `clean oil aesthetic`, `natural glow beauty campaign`, `dewy skin editorial`
+  - 나쁨: `skincare routine`, `gentle cleanser`, `oil for dry skin` (기능·성분·루틴)
+- **트렌드 콘텐츠의 핵심 키워드를 무드로 해석해 포함** (예: 트렌드 "수분 선케어"면 `dewy glow sunscreen`).
 - **3개를 서로 겹치지 않게** 다른 각도(무드/오브제/캠페인 스타일 등)로.
 
 ## ⚠️ 제품명 단어를 시각으로 **직역하지 말 것**
@@ -46,22 +46,11 @@
 - 위 표에 없는 단어는 **"마케팅 표현인지 시각 의미인지"** 스스로 판단. 의심스러우면 직역 X.
 - 의심스러우면 제품 카테고리에서 **실제 본질 무드**를 뽑아 쿼리에 (예: "블러 워터 틴트" → `blur lip matte velvet` / `lightweight lip tint`).
 
-## 추가로 — instagram_hashtags
-
-인스타그램에서 검색할 해시태그 **3개**를 별도로 생성.
-
-- **단일 단어**, `#` 없이, 공백 없이 (인스타 해시태그 규칙).
-- 영문 권장 (검색 결과 풍부). 한글도 OK.
-- 트렌드 콘텐츠의 핵심 키워드 활용.
-- 좋음: `sunscreen`, `cleanbeauty`, `kbeauty`, `dewyskin`.
-- 나쁨: `clean beauty hydrating sunscreen ad` (문장 X — 해시태그 안 됨).
-
 ## 출력 형식
 
 ```json
 {
-  "queries": ["...", "...", "..."],
-  "instagram_hashtags": ["...", "...", "..."]
+  "queries": ["...", "...", "..."]
 }
 ```
 
