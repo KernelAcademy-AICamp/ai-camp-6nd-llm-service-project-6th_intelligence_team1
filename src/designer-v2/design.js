@@ -60,6 +60,7 @@ const brandName = matchData.brand_name;
 const contents = matchData.recommendations
   .slice()
   .sort((a, b) => a.rank - b.rank)
+  .slice(0, process.env.MAX_CONTENTS ? Number(process.env.MAX_CONTENTS) : undefined)
   .map((rec) => {
     const trendData = trendByName.get(rec.trend_name);
     const summaryBullets = trendData?.summary
@@ -68,11 +69,13 @@ const contents = matchData.recommendations
     const reasonBullets = (rec.summary_reasons ?? []).map(
       (r) => `${r.category}: ${r.fact}${r.source ? ` (${r.source})` : ""}`
     );
+    const SHOT_DIRECTION = { 1: "model", 2: "product", 3: "lifestyle" };
     return {
       content_id: `R${rec.rank}`,
       trend_name: rec.trend_name,
       summary_bullets: summaryBullets,
       reason_bullets: reasonBullets,
+      shot_direction: SHOT_DIRECTION[rec.rank] ?? null,
     };
   });
 
@@ -104,6 +107,7 @@ const startTime = Date.now();
 const visuals = [];
 let totalInputTokens = 0;
 let totalOutputTokens = 0;
+const usedQueries = []; // R1 → R2 → R3 순으로 누적, 중복 방지
 
 for (const c of contents) {
   console.log(`▶ ${c.trend_name} (${c.content_id ?? "id 없음"})`);
@@ -127,8 +131,9 @@ for (const c of contents) {
   let queries = [];
   let refsBySource = { pinterest: [] };
   try {
-    const r = await generateQueriesAndSearch({ brand: brandData, content: c });
+    const r = await generateQueriesAndSearch({ brand: brandData, content: c, usedQueries, shot_direction: c.shot_direction });
     queries = r.queries;
+    usedQueries.push(...queries);
     refsBySource = r.references_by_source;
     if (r.usage) {
       totalInputTokens += r.usage.input_tokens ?? 0;

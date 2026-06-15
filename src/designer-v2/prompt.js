@@ -31,6 +31,8 @@ const FIXED_NEGATIVE = [
   "deformed hands",
   "more than two hands",
   "multiple hands",
+  "three hands",
+  "four hands",
   "asymmetrical hands",
   "extra fingers",
   "missing fingers",
@@ -62,8 +64,15 @@ export async function generatePromptFromSources({ brand, content, analyses }) {
 - shot_type: ${a.shot_type}
 - mood: ${a.mood}
 - composition: ${a.composition}
+- lighting: ${a.lighting || "(없음)"}
+- pose: ${a.pose || "(인물 없음)"}
+- texture: ${a.texture || "(없음)"}
+- hair: ${a.hair || "(인물 없음)"}
+- makeup: ${a.makeup || "(인물 없음)"}
+- styling: ${a.styling || "(인물 없음)"}
 - color_palette: ${JSON.stringify(a.color_palette ?? [])}
 - key_objects: ${JSON.stringify(a.key_objects ?? [])}
+- background: ${a.background || "(없음)"}
 - source_specific: ${a.source_specific}`
       : `### ${label}\n(분석 없음)`;
 

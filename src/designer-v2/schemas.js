@@ -49,6 +49,12 @@ export const LlmSourceAnalysisSchema = z.object({
   shot_type: z.string(), // 동적, 한국어
   mood: z.string(), // 한국어
   composition: z.string(), // 한국어
+  lighting: z.string().optional(), // 조명 방향·강도·유형 (한국어). 예: "부드러운 측면 자연광", "스튜디오 림 라이트"
+  pose: z.string().optional(), // 인물샷 전용: 자세·시선·손 위치 (한국어). 예: "3/4 각도, 눈 감음, 뺨에 손"
+  texture: z.string().optional(), // 피부 또는 제품 텍스처 묘사 (한국어). 예: "글래스 스킨", "매트 포어리스"
+  hair: z.string().optional(), // 인물샷 전용: 헤어 스타일·컬러 (한국어). 예: "다크 브라운 웨이브 롱헤어"
+  makeup: z.string().optional(), // 인물샷 전용: 메이크업 룩 (한국어). 예: "누드 립 클린 메이크업"
+  styling: z.string().optional(), // 인물샷 전용: 의상·네크라인 (한국어). 예: "화이트 오프숄더 미니멀"
   color_palette: z.array(z.string()).optional(),
   key_objects: z.array(z.string()).optional(),
   background: z.string().optional(), // 배경·장소·환경 (한국어)

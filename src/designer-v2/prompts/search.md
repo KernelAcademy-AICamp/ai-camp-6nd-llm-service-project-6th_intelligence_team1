@@ -12,6 +12,16 @@
 - **트렌드 콘텐츠의 핵심 키워드를 무드로 해석해 포함** (예: 트렌드 "수분 선케어"면 `dewy glow sunscreen`).
 - **3개를 서로 겹치지 않게** 다른 각도(무드/오브제/캠페인 스타일 등)로.
 
+## 샷 방향 (shot_direction) — 사용자 메시지에 명시됨
+
+쿼리 3개 모두 지정된 샷 방향에 맞는 이미지가 걸리도록 작성.
+
+| shot_direction | 수집 목표 | 쿼리 어휘 방향 |
+|---|---|---|
+| **model** | 인물·모델 중심 광고컷 | 쿼리 3개 모두 아래 **고정 템플릿** 사용: `[무드 형용사] + [beauty/skin/glow] + [model/portrait]`. 제품명·성분·카테고리 어휘 일절 금지. 무드 형용사 3개는 서로 달라야 함. 사용 가능한 무드 형용사 예시: `clean`, `dewy`, `minimal`, `luxury`, `natural`, `soft`, `luminous`, `pure`, `glowing`, `ethereal`. 예시: `clean beauty model portrait` / `dewy skin beauty portrait` / `luminous glow model editorial` |
+| **product** | 제품·텍스처 단독컷 | **`[텍스처/소재] + [aesthetic/still life/editorial] + [mood]` 구조**. 제품 자체(보틀·용기 형태)는 레퍼런스 사진이 담당하므로 쿼리에 포함 금지. 수집 목표는 텍스처·조명·구도 스타일. 예: `pure oil texture aesthetic`, `liquid texture still life minimal`, `golden oil drop editorial` |
+| **lifestyle** | 공간·리추얼·라이프스타일 | `morning ritual`, `vanity aesthetic`, `bathroom mood`, `daily routine visual` 등 공간·행위 어휘 포함 |
+
 ## ⚠️ 제품명 단어를 시각으로 **직역하지 말 것**
 
 뷰티 제품명에는 **마케팅 표현**과 **시각적 의미**가 섞여 있어요. 둘을 구분해서 쿼리에 반영하세요.

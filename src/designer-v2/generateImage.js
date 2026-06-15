@@ -28,31 +28,32 @@ export async function generateImage({ prompt, outputPath, aspectRatio = "3:4", r
   let imageBytes;
 
   if (hasRef) {
-    try {
-      const { data, mimeType } = await resizeTo3x4(absRef);
+    const { data, mimeType } = await resizeTo3x4(absRef);
+    const geminiParts = [
+      {
+        text: `You are a beauty advertising creative director. Create a high-quality beauty advertisement image based on this description:\n\n${prompt}\n\nThe reference image shows the product. Incorporate it naturally into the scene.`,
+      },
+      { inlineData: { mimeType, data } },
+    ];
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-image",
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                text: `You are a beauty advertising creative director. Create a high-quality beauty advertisement image based on this description:\n\n${prompt}\n\nThe reference image shows the product. Incorporate it naturally into the scene.`,
-              },
-              { inlineData: { mimeType, data } },
-            ],
-          },
-        ],
-        config: { responseModalities: [Modality.IMAGE] },
-      });
-
-      const parts = response.candidates?.[0]?.content?.parts ?? [];
-      const imagePart = parts.find((p) => p.inlineData?.mimeType?.startsWith("image/"));
-      imageBytes = imagePart?.inlineData?.data;
-    } catch (err) {
-      console.warn(`  ⚠️ Gemini 멀티모달 실패 (${err?.message ?? err}), Imagen 폴백`);
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash-image",
+          contents: [{ role: "user", parts: geminiParts }],
+          config: { responseModalities: [Modality.IMAGE] },
+        });
+        const parts = response.candidates?.[0]?.content?.parts ?? [];
+        const imagePart = parts.find((p) => p.inlineData?.mimeType?.startsWith("image/"));
+        imageBytes = imagePart?.inlineData?.data;
+        if (imageBytes) break;
+        console.warn(`  ⚠️ Gemini 시도 ${attempt}: 이미지 응답 없음`);
+      } catch (err) {
+        console.warn(`  ⚠️ Gemini 시도 ${attempt} 실패 (${err?.message ?? err})`);
+        if (attempt < 3) await new Promise((r) => setTimeout(r, 2000 * attempt));
+      }
     }
+    if (!imageBytes) console.warn("  ⚠️ Gemini 3회 실패, Imagen 폴백");
   }
 
   if (!imageBytes) {
