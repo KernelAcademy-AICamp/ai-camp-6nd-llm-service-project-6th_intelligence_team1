@@ -340,6 +340,25 @@
         .mockup-brand { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #bca0bc; margin-bottom: 8px; }
         .mockup-headline { font-size: 1.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 10px; letter-spacing: -0.02em; }
         .mockup-caption { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
+        /* 시안 원본 보기 - 카드 배지 */
+        .mockup-card.has-original { cursor: pointer; }
+        .mockup-zoom { position: absolute; top: 14px; right: 14px; z-index: 3; display: inline-flex; align-items: center; gap: 5px; background: rgba(31,27,46,0.78); color: #fff; padding: 6px 12px; border-radius: 100px; font-size: 0.72rem; font-weight: 700; backdrop-filter: blur(4px); }
+        .mockup-card.has-original:hover .mockup-zoom { background: rgba(31,27,46,0.95); }
+        /* 시안 원본 보기 - 라이트박스 */
+        .lightbox-overlay { position: fixed; inset: 0; background: rgba(10,8,18,0.82); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 40px; }
+        .lightbox-overlay.open { display: flex; }
+        .lightbox-content { position: relative; max-width: 90vw; max-height: 88vh; display: flex; flex-direction: column; align-items: center; }
+        .lightbox-img { max-width: 90vw; max-height: 78vh; object-fit: contain; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); background: #000; }
+        .lightbox-cap { color: #fff; text-align: center; margin-top: 16px; font-size: 0.95rem; }
+        .lightbox-cap .lb-title { font-weight: 800; display: block; margin-bottom: 4px; }
+        .lightbox-cap .lb-sub { color: #b8b2c8; font-size: 0.82rem; }
+        .lightbox-close { position: absolute; top: -46px; right: 0; width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.12); color: #fff; font-size: 1.5rem; border-radius: 50%; cursor: pointer; line-height: 1; }
+        .lightbox-close:hover { background: rgba(255,255,255,0.25); }
+        .lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border: none; background: rgba(255,255,255,0.12); color: #fff; font-size: 1.8rem; border-radius: 50%; cursor: pointer; line-height: 1; }
+        .lightbox-nav:hover { background: rgba(255,255,255,0.25); }
+        .lightbox-prev { left: -64px; }
+        .lightbox-next { right: -64px; }
+        @media (max-width: 768px) { .lightbox-prev { left: 8px; } .lightbox-next { right: 8px; } .lightbox-close { top: 8px; right: 8px; } }
         .mockup-note { font-size: 0.85rem; color: var(--text-secondary); font-style: italic; text-align: center; margin-bottom: 8px; opacity: 0.8; }
 
         /* ── Confirm card page ── */
@@ -658,7 +677,8 @@
             <div class="cascade-level" id="level-major">
                 <div class="pill-group">
                     <label class="pill"><input type="radio" name="major" value="cleansing" data-label="클렌징" onchange="selectMajor('cleansing')"><span>클렌징</span></label>
-                    <label class="pill"><input type="radio" name="major" value="skincare" data-label="스킨케어" onchange="selectMajor('skincare')"><span>스킨케어</span></label>
+                    <label class="pill"><input type="radio" name="major" value="skincare" data-label="기초제품" onchange="selectMajor('skincare')"><span>기초제품</span></label>
+                    <label class="pill"><input type="radio" name="major" value="suncare" data-label="선케어" onchange="selectMajor('suncare')"><span>선케어</span></label>
                     <label class="pill"><input type="radio" name="major" value="makeup" data-label="메이크업" onchange="selectMajor('makeup')"><span>메이크업</span></label>
                 </div>
             </div>
@@ -669,16 +689,24 @@
                     <label class="pill"><input type="radio" name="sub" value="cleansingbalm" data-label="클렌징밤" onchange="selectSub('cleansingbalm')"><span>클렌징밤</span></label>
                     <label class="pill"><input type="radio" name="sub" value="cleansingmilk" data-label="클렌징밀크" onchange="selectSub('cleansingmilk')"><span>클렌징밀크</span></label>
                     <label class="pill"><input type="radio" name="sub" value="cleansingwater" data-label="클렌징워터" onchange="selectSub('cleansingwater')"><span>클렌징워터</span></label>
+                    <label class="pill"><input type="radio" name="sub" value="cleansingtissue" data-label="클렌징티슈" onchange="selectSub('cleansingtissue')"><span>클렌징티슈</span></label>
                 </div>
             </div>
             <div class="cascade-level hidden" id="level-sub-skincare">
                 <div class="pill-group">
-                    <label class="pill"><input type="radio" name="sub" value="sunscreen" data-label="선크림" onchange="selectSub('sunscreen')"><span>선크림</span></label>
                     <label class="pill"><input type="radio" name="sub" value="toner" data-label="토너" onchange="selectSub('toner')"><span>토너</span></label>
                     <label class="pill"><input type="radio" name="sub" value="essence" data-label="에센스" onchange="selectSub('essence')"><span>에센스</span></label>
                     <label class="pill"><input type="radio" name="sub" value="serum" data-label="세럼" onchange="selectSub('serum')"><span>세럼</span></label>
                     <label class="pill"><input type="radio" name="sub" value="oil" data-label="오일" onchange="selectSub('oil')"><span>오일</span></label>
                     <label class="pill"><input type="radio" name="sub" value="cream" data-label="크림" onchange="selectSub('cream')"><span>크림</span></label>
+                </div>
+            </div>
+            <div class="cascade-level hidden" id="level-sub-suncare">
+                <div class="pill-group" id="suncare-sub-group">
+                    <label class="pill"><input type="radio" name="sub" value="suncream" data-label="선크림" onchange="selectSub('suncream')"><span>선크림</span></label>
+                    <label class="pill"><input type="radio" name="sub" value="sunstick" data-label="선스틱" onchange="selectSub('sunstick')"><span>선스틱</span></label>
+                    <label class="pill"><input type="radio" name="sub" value="suncushion" data-label="선쿠션" onchange="selectSub('suncushion')"><span>선쿠션</span></label>
+                    <button type="button" class="pill sub-add-btn" onclick="showSubInput(this)" style="border:none;background:none;padding:0;cursor:pointer;font-family:'Pretendard',sans-serif;"><span style="border-style:dashed;color:#9a8a9a;">＋ 직접 입력</span></button>
                 </div>
             </div>
             <div class="cascade-level hidden" id="level-sub-makeup">
@@ -702,18 +730,25 @@
                     <label class="pill"><input type="radio" name="detail" value="foundation" data-label="파운데이션" onchange="selectDetail('foundation')"><span>파운데이션</span></label>
                     <label class="pill"><input type="radio" name="detail" value="cushion" data-label="쿠션" onchange="selectDetail('cushion')"><span>쿠션</span></label>
                     <label class="pill"><input type="radio" name="detail" value="concealer" data-label="컨실러" onchange="selectDetail('concealer')"><span>컨실러</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="primer" data-label="프라이머" onchange="selectDetail('primer')"><span>프라이머</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="powder" data-label="파우더" onchange="selectDetail('powder')"><span>파우더</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="highlighter" data-label="하이라이터" onchange="selectDetail('highlighter')"><span>하이라이터</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="shading" data-label="셰이딩" onchange="selectDetail('shading')"><span>셰이딩</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="blusher" data-label="블러셔" onchange="selectDetail('blusher')"><span>블러셔</span></label>
                 </div>
             </div>
             <div class="cascade-level hidden" id="level-detail-eye">
                 <div class="pill-group">
-                    <label class="pill"><input type="radio" name="detail" value="shadow" data-label="아이섀도" onchange="selectDetail('shadow')"><span>아이섀도</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="shadow" data-label="섀도우" onchange="selectDetail('shadow')"><span>섀도우</span></label>
                     <label class="pill"><input type="radio" name="detail" value="liner" data-label="아이라이너" onchange="selectDetail('liner')"><span>아이라이너</span></label>
                     <label class="pill"><input type="radio" name="detail" value="mascara" data-label="마스카라" onchange="selectDetail('mascara')"><span>마스카라</span></label>
                     <label class="pill"><input type="radio" name="detail" value="brow" data-label="아이브로우" onchange="selectDetail('brow')"><span>아이브로우</span></label>
                 </div>
             </div>
             <div class="cascade-level hidden" id="level-features">
+                <label class="form-label" style="margin-top: 24px;">제품 특징 <span style="font-size:0.85rem;font-weight:400;color:#bca0bc;">선택 · 최대 3개</span></label>
                 <div class="pill-group" id="feature-chips" data-field="texture_keywords"></div>
+                <p class="feature-hint" style="font-size:0.82rem;color:#bca0bc;margin-top:12px;line-height:1.5;">💡 우리 제품을 한마디로 하면? 없는 특징은 <b style="color:#9a8a9a;">＋ 직접 입력</b>으로 추가할 수 있어요. 잘 모르겠으면 비워두고 넘어가도 AI가 카테고리 기준으로 채워줘요.</p>
             </div>
         </div>
 
@@ -964,8 +999,13 @@
         lipliner: ['매트', '글로시', '누드', '글로우', '촉촉'],
         foundation: ['매트', '글로우', '촉촉', '지속력', '밀착'],
         cushion: ['매트', '커버력', '세미매트', '촉촉', '밀착'],
-        concealer: ['글로우', '촉촉', '톤업', '매트', '커버력'],
-        shadow: ['매트', '글로우', '누드', '글리터', '시어'],
+        concealer: [],
+        primer: ['매트', '지속력', '톤업', '밀착', '글로우'],
+        powder: ['매트', '촉촉', '지속력', '벨벳', '밀착'],
+        highlighter: ['프레스드', '젤리', '리퀴드', '베이크드', '스틱', '피그먼트'],
+        shading: ['프레스드', '스틱', '크림'],
+        blusher: ['프레스드', '베이크드', '크림', '스틱', '리퀴드', '쿠션', '밤'],
+        shadow: ['매트', '글로우', '누드', '글리터', '시어', '팔레트'],
         liner: ['글리터', '지속력', '매트', '펄', '촉촉'],
         mascara: ['볼륨', '매트'],
         brow: ['매트', '지속력', '픽싱']
@@ -977,10 +1017,11 @@
     function clearRadios(name) { document.querySelectorAll(`input[name="${name}"]`).forEach(r => r.checked = false); }
 
     function selectMajor(major) {
-        hideAll(['level-sub-cleansing', 'level-sub-skincare', 'level-sub-makeup', 'level-detail-lip', 'level-detail-base', 'level-detail-eye', 'level-features']);
+        hideAll(['level-sub-cleansing', 'level-sub-skincare', 'level-sub-suncare', 'level-sub-makeup', 'level-detail-lip', 'level-detail-base', 'level-detail-eye', 'level-features']);
         clearRadios('sub'); clearRadios('detail');
         if (major === 'cleansing') show('level-sub-cleansing');
         if (major === 'skincare') show('level-sub-skincare');
+        if (major === 'suncare') show('level-sub-suncare');
         if (major === 'makeup') show('level-sub-makeup');
     }
     function selectSub(sub) {
@@ -995,13 +1036,156 @@
         hideAll(['level-features']);
         showFeatures(detail);
     }
+
+    /* ===== 선케어 한정: 중분류 직접 입력 =====
+       - 중분류는 단일 선택 유지(라디오) → 직접 입력 값이 기존 선택을 대체
+       - 직접 입력으로 고른 커스텀 중분류는 featureMap에 없으므로 제품 특징 단계가 뜨지 않음 */
+    function showSubInput(btn) {
+        const wrap = document.createElement('span');
+        wrap.className = 'sub-input-wrap';
+        wrap.style.cssText = 'display:inline-flex;align-items:center;';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.placeholder = '입력 후 Enter';
+        inp.style.cssText = "border:1.5px dashed #c9b6f0;border-radius:100px;padding:11px 18px;font-family:'Pretendard',sans-serif;font-size:0.9rem;color:#7e6b7e;outline:none;background:transparent;width:140px;";
+        wrap.appendChild(inp);
+        btn.parentNode.insertBefore(wrap, btn);
+        inp.focus();
+        let composing = false;
+        inp.addEventListener('compositionstart', function () { composing = true; });
+        inp.addEventListener('compositionend', function () { composing = false; });
+        inp.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') return;
+            if (composing || e.isComposing || e.keyCode === 229) return;
+            e.preventDefault();
+            addCustomSub(inp.value, wrap);
+        });
+        inp.addEventListener('blur', function () { if (!inp.value.trim()) wrap.remove(); });
+    }
+    function addCustomSub(val, wrap) {
+        val = (val || '').trim();
+        const inp = wrap.querySelector('input');
+        if (!val) { wrap.remove(); return; }
+        const group = document.getElementById('suncare-sub-group');
+        // 중복 검사 → 안내만 띄우고 입력창 유지
+        const exists = Array.from(group.querySelectorAll('input[name="sub"]'))
+            .some(i => i.value === val || (i.dataset.label || '') === val);
+        if (exists) {
+            showToast('이미 있는 중분류예요: ' + val);
+            if (inp) { inp.value = ''; inp.focus(); }
+            return;
+        }
+        // 직접 입력 중분류는 1개만 유지 (이전 커스텀 칩 제거)
+        group.querySelectorAll('.sub-custom').forEach(el => el.remove());
+        const label = document.createElement('label');
+        label.className = 'pill sub-custom';
+        const rb = document.createElement('input');
+        rb.type = 'radio'; rb.name = 'sub'; rb.value = val; rb.checked = true;
+        rb.setAttribute('data-label', val);
+        rb.addEventListener('change', function () { selectSub(val); });
+        const span = document.createElement('span');
+        span.style.borderStyle = 'dashed';
+        span.textContent = val;
+        const x = document.createElement('span');
+        x.textContent = '×';
+        x.style.cssText = 'padding:0;border:none;background:none;border-radius:0;display:inline;font-size:0.85em;line-height:1;opacity:0.5;cursor:pointer;margin-left:7px;vertical-align:baseline;';
+        x.addEventListener('click', function (e) {
+            e.preventDefault(); e.stopPropagation();
+            label.remove();
+            hideAll(['level-features']); // 커스텀 중분류 삭제 시 특징 단계도 숨김
+        });
+        span.appendChild(x);
+        label.appendChild(rb);
+        label.appendChild(span);
+        group.insertBefore(label, wrap); // 입력창이 있던 자리에 칩
+        wrap.remove();
+        // 단일 선택 보장 + 제품 특징 단계 생략 (featureMap에 없는 값이라 showFeatures 미호출)
+        selectSub(val);
+    }
+    const FEATURE_CAP = 3;
     function showFeatures(key) {
         const container = document.getElementById('feature-chips');
         const features = featureMap[key] || [];
         container.innerHTML = features.map(f =>
-            `<label class="pill"><input type="radio" name="feature" value="${f}"><span>${f}</span></label>`
-        ).join('');
+            `<label class="pill"><input type="checkbox" name="feature" value="${f}" onchange="onFeatureToggle(this)"><span>${f}</span></label>`
+        ).join('')
+        + `<button type="button" class="pill feature-add-btn" onclick="showFeatureInput(this)" style="border:none;background:none;padding:0;cursor:pointer;font-family:'Pretendard',sans-serif;"><span style="border-style:dashed;color:#9a8a9a;">＋ 직접 입력</span></button>`;
         show('level-features');
+    }
+    /* 특징: 복수 선택(최대 3) — cap 초과 시 방금 누른 항목 해제 */
+    function countFeatures() {
+        return document.querySelectorAll('#feature-chips input[name="feature"]:checked').length;
+    }
+    function onFeatureToggle(input) {
+        if (input.checked && countFeatures() > FEATURE_CAP) {
+            input.checked = false;
+            showToast('특징은 최대 ' + FEATURE_CAP + '개까지 선택할 수 있어요');
+        }
+    }
+    /* ＋직접 입력: 클릭하면 입력창 → Enter 시 칩으로 추가(칩 선택분과 함께 누적) */
+    function showFeatureInput(btn) {
+        if (countFeatures() >= FEATURE_CAP) {
+            showToast('특징은 최대 ' + FEATURE_CAP + '개까지 선택할 수 있어요');
+            return;
+        }
+        const wrap = document.createElement('span');
+        wrap.className = 'feature-input-wrap';
+        wrap.style.cssText = 'display:inline-flex;align-items:center;';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.placeholder = '입력 후 Enter';
+        inp.style.cssText = "border:1.5px dashed #c9b6f0;border-radius:100px;padding:11px 18px;font-family:'Pretendard',sans-serif;font-size:0.9rem;color:#7e6b7e;outline:none;background:transparent;width:140px;";
+        wrap.appendChild(inp);
+        btn.parentNode.insertBefore(wrap, btn);
+        inp.focus();
+        // 한글 IME 조합 중에는 Enter를 무시 (조합 끝난 완성 값으로만 칩 생성)
+        let composing = false;
+        inp.addEventListener('compositionstart', function () { composing = true; });
+        inp.addEventListener('compositionend', function () { composing = false; });
+        inp.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') return;
+            if (composing || e.isComposing || e.keyCode === 229) return;
+            e.preventDefault();
+            addCustomFeature(inp.value, wrap);
+        });
+        inp.addEventListener('blur', function () { if (!inp.value.trim()) wrap.remove(); });
+    }
+    function addCustomFeature(val, wrap) {
+        val = (val || '').trim();
+        const inp = wrap.querySelector('input');
+        if (!val) { wrap.remove(); return; }
+        // 중복 검사 → 칩 추가 대신 안내만 띄우고 입력창은 비워 유지
+        const all = Array.from(document.querySelectorAll('#feature-chips input[name="feature"]'));
+        const dup = all.find(i => i.value === val);
+        if (dup) {
+            showToast('이미 추가된 특징이에요: ' + val);
+            if (inp) { inp.value = ''; inp.focus(); }
+            return;
+        }
+        if (countFeatures() >= FEATURE_CAP) {
+            showToast('특징은 최대 ' + FEATURE_CAP + '개까지 선택할 수 있어요');
+            wrap.remove();
+            return;
+        }
+        const label = document.createElement('label');
+        label.className = 'pill';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.name = 'feature'; cb.value = val; cb.checked = true;
+        cb.addEventListener('change', function () { onFeatureToggle(cb); });
+        const span = document.createElement('span');
+        span.style.borderStyle = 'dashed';
+        span.textContent = val;
+        const x = document.createElement('span');
+        x.textContent = '×';
+        // .pill span 상속(알약 패딩/테두리)을 무력화해 일반 칩과 같은 크기로
+        x.style.cssText = 'padding:0;border:none;background:none;border-radius:0;display:inline;font-size:0.85em;line-height:1;opacity:0.5;cursor:pointer;margin-left:7px;vertical-align:baseline;';
+        x.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); label.remove(); });
+        span.appendChild(x);
+        label.appendChild(cb);
+        label.appendChild(span);
+        // 입력창이 있던 '그 자리'에 칩을 끼워 넣고 입력창 제거
+        wrap.parentNode.insertBefore(label, wrap);
+        wrap.remove();
     }
 
     /* ===== 동적 입력 행 ===== */
@@ -1057,7 +1241,6 @@
         } else if (step === 2) {
             if (!document.getElementById('product_name').value.trim()) errs.push('제품명');
             if (!getCategoryPath()) errs.push('카테고리');
-            if (!getFeature()) errs.push('제품 특징');
             if (!getOne('involvement')) errs.push('뷰티 관여도');
             if (getCheckedValues('motivation').length === 0) errs.push('소비 동기');
         }
@@ -1115,7 +1298,7 @@
             brand_channel_url: Array.from(document.querySelectorAll('.channel-url')).map(i => i.value.trim()).filter(Boolean),
             product_name: document.getElementById('product_name').value.trim(),
             category: getCategoryPath(),
-            texture_keywords: getFeature() ? [getFeature()] : [],
+            texture_keywords: getCheckedValues('texture_keywords'),
             tone_and_manner: getCheckedValues('tone_and_manner'),
             target: {
                 gender: getOne('gender'),
@@ -1139,7 +1322,8 @@
         if (d.tone_and_manner.length === 0) e.push('톤앤매너');
         if (!d.product_name) e.push('제품명');
         if (!d.category) e.push('카테고리');
-        if (d.texture_keywords.length === 0) e.push('제품 특징');
+        const hasFeatureOptions = document.querySelectorAll('#feature-chips input[name="feature"]').length > 0;
+        if (hasFeatureOptions && d.texture_keywords.length === 0) e.push('제품 특징');
         if (!d.target.involvement) e.push('뷰티 관여도');
         if (d.target.motivation.length === 0) e.push('소비 동기');
         if (!d.campaign_kpi) e.push('캠페인 KPI');
@@ -1387,17 +1571,29 @@
                 + `</svg>`;
         }
 
+        const lbItems = [];
         document.getElementById('mock_grid').innerHTML = contents.map((c, i) => {
             const kw = (c.keywords || [])[0] || (d.texture_keywords || [])[0] || '트렌드';
             const head = [`"${kw}", 지금`, `내 ${cat || '메이크업'}`, `${d.product_name || brand}`][i] || kw;
+            const imgUrl = imgUrlOf(c);
+            // placeholder SVG를 항상 깔고, 실제 시안 이미지가 있으면 그 위에 <img>를 얹음.
+            // 이미지 로드 실패(onerror) 시 img만 제거 → 뒤의 SVG placeholder가 그대로 노출.
+            const imgTag = imgUrl
+                ? `<img src="${esc(imgUrl)}" alt="${esc(c.trend_name || '')} 시안" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.remove()">`
+                : '';
+            const visualInner = creative(i, head) + imgTag;
+            const tagText = (imgUrl ? `${tags[i] || 'Visual'} · AI 시안` : `${tags[i] || 'Visual'} · 시안`);
+            const capBase = esc((c.keywords || []).slice(0, 3).join(' · ') || c.verdict || '');
+            const caption = imgUrl ? `${capBase} · AI 생성 시안` : `${capBase} · 예상 시안(placeholder)`;
             return `<div class="mockup-card">`
-                + `<div class="mockup-visual">${creative(i, head)}<div class="mockup-tag" style="position:relative;z-index:2">${tags[i] || 'Visual'} · 시안</div></div>`
+                + `<div class="mockup-visual">${visualInner}<div class="mockup-tag" style="position:relative;z-index:2">${tagText}</div></div>`
                 + `<div class="mockup-body">`
                 + `<div class="mockup-brand">${esc(brand)}</div>`
                 + `<h3 class="mockup-headline">${esc(c.trend_name || '')}</h3>`
                 + `<p class="mockup-caption">${esc((c.keywords || []).slice(0, 3).join(' · ') || c.verdict || '')} · 예상 시안(placeholder)</p>`
                 + `</div></div>`;
         }).join('');
+        window.__lightboxItems = lbItems;
     }
 
     function buildReport(d) {
@@ -1563,6 +1759,57 @@
                 el.style.transform = el.classList && el.classList.contains('micro-element') ? '' : 'translateY(0)';
             }, 200 + (i * 150));
         });
+    });
+</script>
+
+<!-- 시안 원본 라이트박스 -->
+<div class="lightbox-overlay" id="lightbox" onclick="if(event.target===this)closeLightbox()">
+    <div class="lightbox-content">
+        <button class="lightbox-close" onclick="closeLightbox()" aria-label="닫기">×</button>
+        <button class="lightbox-nav lightbox-prev" onclick="lightboxStep(-1)" aria-label="이전">‹</button>
+        <img class="lightbox-img" id="lightbox-img" src="" alt="시안 원본">
+        <button class="lightbox-nav lightbox-next" onclick="lightboxStep(1)" aria-label="다음">›</button>
+        <div class="lightbox-cap">
+            <span class="lb-title" id="lightbox-title"></span>
+            <span class="lb-sub" id="lightbox-sub"></span>
+        </div>
+    </div>
+</div>
+<script>
+    let __lbIndex = 0;
+    function openLightbox(index) {
+        const items = window.__lightboxItems || [];
+        if (!items.length) return;
+        __lbIndex = index;
+        renderLightbox();
+        document.getElementById('lightbox').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    function lightboxStep(dir) {
+        const items = window.__lightboxItems || [];
+        if (!items.length) return;
+        __lbIndex = (__lbIndex + dir + items.length) % items.length;
+        renderLightbox();
+    }
+    function renderLightbox() {
+        const items = window.__lightboxItems || [];
+        const it = items[__lbIndex];
+        if (!it) return;
+        document.getElementById('lightbox-img').src = it.url;
+        document.getElementById('lightbox-title').textContent = it.title || '';
+        document.getElementById('lightbox-sub').textContent =
+            (it.caption || '') + '  ·  ' + (__lbIndex + 1) + ' / ' + items.length;
+    }
+    document.addEventListener('keydown', (e) => {
+        const lb = document.getElementById('lightbox');
+        if (!lb || !lb.classList.contains('open')) return;
+        if (e.key === 'Escape') closeLightbox();
+        else if (e.key === 'ArrowLeft') lightboxStep(-1);
+        else if (e.key === 'ArrowRight') lightboxStep(1);
     });
 </script>
 </body>

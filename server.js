@@ -10,6 +10,7 @@
 //   PORT      기본 3000
 //   RUN_CMD   기본 "npm run pipeline" (테스트 시 가벼운 명령으로 바꿔치기 가능)
 
+import "dotenv/config"; // .env 로드 (SLACK_WEBHOOK_URL 등)
 import http from "node:http";
 import { readFile, writeFile } from "node:fs/promises";
 import { exec } from "node:child_process";
@@ -163,6 +164,47 @@ const server = http.createServer(async (req, res) => {
         stage,
         log: (result.stdout + "\n" + result.stderr).slice(-4000)
       }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: false, error: String(e) }));
+    }
+    return;
+  }
+
+  // Slack 공유: UI가 보낸 텍스트 요약을 .env의 웹훅으로 게시 (웹훅 URL은 서버에만 보관)
+  if (req.method === "POST" && req.url === "/share/slack") {
+    try {
+      const webhook = process.env.SLACK_WEBHOOK_URL;
+      if (!webhook) {
+        res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: false, error: "SLACK_WEBHOOK_URL 미설정 (.env 확인 후 서버 재시작)" }));
+        return;
+      }
+      const body = await readBody(req);
+      const payload = body ? JSON.parse(body) : {};
+      const text = (payload.text || "").toString().trim();
+      const blocks = Array.isArray(payload.blocks) ? payload.blocks : null;
+      if (!text && !blocks) {
+        res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: false, error: "보낼 내용이 비어 있어요" }));
+        return;
+      }
+      // blocks가 있으면 이미지 포함 게시, text는 알림/폴백용으로 함께 전달
+      const slackPayload = blocks ? { text: text || "TrendFit 제안서", blocks } : { text };
+      const slackRes = await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(slackPayload)
+      });
+      const respText = await slackRes.text();
+      if (!slackRes.ok) {
+        res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: false, error: `Slack 응답 ${slackRes.status}: ${respText}` }));
+        return;
+      }
+      console.log("[share/slack] 게시 완료");
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: true }));
     } catch (e) {
       res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ ok: false, error: String(e) }));
