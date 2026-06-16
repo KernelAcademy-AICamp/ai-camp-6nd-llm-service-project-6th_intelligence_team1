@@ -69,8 +69,13 @@ function buildBrandInput(f) {
     // collect()는 배열로 보냄 → 첫 URL만 사용 (스키마는 문자열)
     brand_channel_url: Array.isArray(f.brand_channel_url) ? (f.brand_channel_url[0] || "") : (f.brand_channel_url || ""),
     product_name: f.product_name || "",
-    category: f.category || "",
-    texture_keywords: toArray(f.texture_keywords),
+    // 카테고리 4단계 분리 (브랜드분석가 BrandInputSchema v2)
+    category_major: f.category_major || "",
+    category_mid: f.category_mid || "",
+    category_sub: f.category_sub || "",
+    // 제품특징: 옵션 선택 + 자유 입력 (각 최대 3개)
+    product_features: toArray(f.product_features),
+    product_features_custom: toArray(f.product_features_custom),
     tone_and_manner: toArray(f.tone_and_manner),
     target: {
       gender: t.gender || "",

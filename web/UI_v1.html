@@ -733,7 +733,7 @@
                     <label class="pill"><input type="radio" name="detail" value="primer" data-label="프라이머" onchange="selectDetail('primer')"><span>프라이머</span></label>
                     <label class="pill"><input type="radio" name="detail" value="powder" data-label="파우더" onchange="selectDetail('powder')"><span>파우더</span></label>
                     <label class="pill"><input type="radio" name="detail" value="highlighter" data-label="하이라이터" onchange="selectDetail('highlighter')"><span>하이라이터</span></label>
-                    <label class="pill"><input type="radio" name="detail" value="shading" data-label="셰이딩" onchange="selectDetail('shading')"><span>셰이딩</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="shading" data-label="쉐딩" onchange="selectDetail('shading')"><span>쉐딩</span></label>
                     <label class="pill"><input type="radio" name="detail" value="blusher" data-label="블러셔" onchange="selectDetail('blusher')"><span>블러셔</span></label>
                 </div>
             </div>
@@ -980,35 +980,46 @@
 
 <script>
     /* ===== 카테고리/특징 매핑 ===== */
+    // 브랜드분석가 schemas.js의 PRODUCT_FEATURES_BY_CATEGORY와 동기화 (키 = 라디오 value)
+    // 빈 배열 = 옵션 없음(자유 입력만). 값 변경 시 스키마와 양쪽 같이 갱신.
     const featureMap = {
-        cleansingfoam: ['약산성', '민감', '알칼리성', '저자극', '진정'],
-        cleansingoil: ['딥클렌징', '약산성', '촉촉', '저자극', '보습'],
-        cleansingbalm: ['딥클렌징', '저자극', '각질', '모공', '보습'],
-        cleansingmilk: ['민감', '저자극', '약산성', '촉촉', '모공'],
-        cleansingwater: ['산뜻한', '수분', '약산성', '보습', '트러블'],
-        sunscreen: ['민감', '산뜻한', '세라마이드', '촉촉', '수분'],
-        toner: ['수분', '보습', '진정', '톤업', '촉촉'],
-        essence: ['수분', '보습', '진정', '촉촉', '탄력'],
-        serum: ['안티에이징', '탄력', '수분', '주름', '레티놀'],
-        oil: ['보습', '수분', 'PDRN', '재생', '탄력'],
-        cream: ['보습', '수분', '레티놀', '각질', '히알루론산'],
-        tint: ['글로우', '촉촉', '글로시', '벨벳', '누드'],
-        lipstick: ['벨벳', '매트', '글로우', '누드', '글로시'],
-        lipgloss: ['글로시', '촉촉', '매트', '글로우', '누드'],
-        lipbalm: ['글로우', '촉촉', '글로시', '볼륨', '누드'],
-        lipliner: ['매트', '글로시', '누드', '글로우', '촉촉'],
-        foundation: ['매트', '글로우', '촉촉', '지속력', '밀착'],
-        cushion: ['매트', '커버력', '세미매트', '촉촉', '밀착'],
+        // 클렌징
+        cleansingfoam: ['약산성', '민감성', '알칼리성'],
+        cleansingoil: ['딥클렌징', '약산성', '민감성', '보습'],
+        cleansingbalm: ['딥클렌징', '민감성', '모공', '보습'],
+        cleansingmilk: ['민감성', '약산성', '보습'],
+        cleansingwater: ['산뜻한', '수분', '약산성'],
+        cleansingtissue: [],
+        // 기초제품
+        toner: ['수분', '보습', '진정', '각질', '모공', '미백'],
+        essence: ['수분', '보습', '광채', '미백', '진정', '주름'],
+        serum: ['수분', '보습', '진정', '미백', '탄력', '주름'],
+        oil: ['보습', '영양', '윤광', '장벽'],
+        cream: ['수분', '보습', '장벽', '진정', '탄력', '미백', '영양'],
+        // 선케어
+        suncream: ['무기자차', '유기자차', '혼합자차'],
+        sunstick: ['무기자차', '유기자차', '혼합자차'],
+        suncushion: ['무기자차', '유기자차', '혼합자차'],
+        // 메이크업 > 립
+        tint: ['워터', '잉크', '글로우', '벨벳'],
+        lipstick: ['벨벳', '매트', '글로우', '누드'],
+        lipgloss: ['글로시', '시머', '글리터', '플럼핑'],
+        lipbalm: [],
+        lipliner: [],
+        // 메이크업 > 베이스
+        foundation: ['매트', '글로우', '촉촉', '커버력'],
+        cushion: ['촉촉', '매트', '밀착', '수부지', '톤업'],
         concealer: [],
-        primer: ['매트', '지속력', '톤업', '밀착', '글로우'],
-        powder: ['매트', '촉촉', '지속력', '벨벳', '밀착'],
+        primer: ['매트', '톤업', '젤', '크림', '밤', '스틱'],
+        powder: ['루스', '프레스드', '베이크드'],
         highlighter: ['프레스드', '젤리', '리퀴드', '베이크드', '스틱', '피그먼트'],
         shading: ['프레스드', '스틱', '크림'],
         blusher: ['프레스드', '베이크드', '크림', '스틱', '리퀴드', '쿠션', '밤'],
+        // 메이크업 > 아이
         shadow: ['매트', '글로우', '누드', '글리터', '시어', '팔레트'],
-        liner: ['글리터', '지속력', '매트', '펄', '촉촉'],
-        mascara: ['볼륨', '매트'],
-        brow: ['매트', '지속력', '픽싱']
+        liner: ['펜슬', '리퀴드', '젤'],
+        mascara: ['컬링', '볼륨', '롱래쉬', '픽서'],
+        brow: ['펜슬', '파우더', '젤', '펜', '타투']
     };
 
     /* ===== 카테고리 캐스케이드 ===== */
@@ -1171,6 +1182,7 @@
         label.className = 'pill';
         const cb = document.createElement('input');
         cb.type = 'checkbox'; cb.name = 'feature'; cb.value = val; cb.checked = true;
+        cb.dataset.custom = '1'; // 자유 입력 칩 표식 (product_features_custom 분리용)
         cb.addEventListener('change', function () { onFeatureToggle(cb); });
         const span = document.createElement('span');
         span.style.borderStyle = 'dashed';
@@ -1287,6 +1299,28 @@
         if (detail) path.push(detail.dataset.label);
         return path.join(' > ');
     }
+    /* 카테고리 4단계 분리 (브랜드분석가 BrandInputSchema v2)
+       - sub 라디오 = 중분류(비메이크업: 클렌징폼·토너·선크림 / 메이크업: 립·베이스·아이)
+       - detail 라디오 = 소분류(메이크업 전용: 틴트·블러셔 등) */
+    function getCategoryFields() {
+        const major = document.querySelector('input[name="major"]:checked');
+        const mid = document.querySelector('input[name="sub"]:checked');
+        const sub = document.querySelector('input[name="detail"]:checked');
+        return {
+            category_major: major ? major.dataset.label : '',
+            category_mid: mid ? mid.dataset.label : '',
+            category_sub: sub ? sub.dataset.label : ''
+        };
+    }
+    /* 제품특징: 옵션 선택(product_features) vs 자유 입력(product_features_custom) 분리 */
+    function getProductFeatures() {
+        return Array.from(document.querySelectorAll('#feature-chips input[name="feature"]:checked'))
+            .filter(i => !i.dataset.custom).map(i => i.value);
+    }
+    function getProductFeaturesCustom() {
+        return Array.from(document.querySelectorAll('#feature-chips input[name="feature"]:checked'))
+            .filter(i => i.dataset.custom).map(i => i.value);
+    }
     function getFeature() {
         const f = document.querySelector('input[name="feature"]:checked');
         return f ? f.value : '';
@@ -1297,6 +1331,11 @@
             current_channels: getCheckedValues('current_channels'),
             brand_channel_url: Array.from(document.querySelectorAll('.channel-url')).map(i => i.value.trim()).filter(Boolean),
             product_name: document.getElementById('product_name').value.trim(),
+            // 카테고리 4단계 + 제품특징 옵션/자유입력 분리 (스키마 v2 입력 형식)
+            ...getCategoryFields(),
+            product_features: getProductFeatures(),
+            product_features_custom: getProductFeaturesCustom(),
+            // 내부 미리보기(validate·리포트 렌더) 호환용 파생 필드 — 서버는 위 필드만 사용
             category: getCategoryPath(),
             texture_keywords: getCheckedValues('texture_keywords'),
             tone_and_manner: getCheckedValues('tone_and_manner'),
