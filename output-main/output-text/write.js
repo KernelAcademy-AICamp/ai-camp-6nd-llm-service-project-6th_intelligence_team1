@@ -555,94 +555,158 @@ function normalizeChannelItem(item) {
   };
 }
 
-// KPI별 콘텐츠 추천 한 줄. 매칭 없으면 null 반환(해당 부분 생략).
-// 본인이 나중에 표현 다듬기 쉽도록 상수로 분리.
-const KPI_RECOMMENDATION = {
-  "신제품 런칭": "신제품 런칭에 맞춰 언박싱·첫 사용 후기 콘텐츠 추천",
-  "시즌 프로모션": "시즌 프로모션에 맞춰 시즌 루틴·한정 할인 메시지 추천",
-  "재구매 유도": "재구매 유도에 맞춰 공병 후기·데일리 루틴 콘텐츠 추천",
+// KPI별 콘텐츠 형식 — 문장 합성용 명사구 (조사 "로/으로"는 buildUsagePlan에서)
+const KPI_CONTENT = {
+  "신제품 런칭": "30초 숏폼 언박싱과 첫 사용 후기 콘텐츠",
+  "시즌 프로모션": "시즌 루틴·한정 할인 메시지",
+  "재구매 유도": "공병 후기·데일리 루틴 콘텐츠",
 };
 
-// 기간/예산 조합 → 트렌드 활용 성격 한 줄. period 단독 매핑이 우선이고
-// "한달"만 budget 갈래 둘로 분기.
+// 트렌드 단계(trend_stage) → 자연 한국어 라벨
+const STAGE_LABEL = {
+  emerging: "성장세",
+  peak: "정점",
+  declining: "하락기",
+};
+
+// 기간/예산 조합 → 트렌드 활용 성격 명사구. period 단독 매핑이 우선이고
+// "한달"만 budget 갈래 둘로 분기. (조사 "로"는 buildUsagePlan에서 붙임)
 function mapPeriodBudget(period, budget) {
-  if (period === "1주") return "단기 빠른 진입형 트렌드로 적합";
-  if (period === "3개월") return "중기 안정형 트렌드로 적합";
-  if (period === "1년") return "장기 안정형 트렌드로 적합";
+  if (period === "1주") return "단기 빠른 진입형 트렌드";
+  if (period === "3개월") return "중기 안정형 트렌드";
+  if (period === "1년") return "장기 안정형 트렌드";
   if (period === "한달") {
     if (budget === "200만원 미만" || budget === "200~500만원") {
-      return "단기 효율형 트렌드로 적합";
+      return "단기 효율형 트렌드";
     }
     if (budget === "500~1000만원" || budget === "1000만원 초과") {
-      return "단기 화제 트렌드로 적합";
+      return "단기 화제 트렌드";
     }
     return null; // 한달인데 예산 미상 → 매핑 생략 (시스템 안전)
   }
   return null;
 }
 
-// usage_plan 한 줄 합성. 세 정보를 마침표로 이어 출력:
-//   1) 채널 비교 (마케터 매핑 가능 채널 0건이면 생략)
-//   2) KPI 추천 문장 (campaign_kpi 매핑 없으면 생략)
-//   3) 기간/예산 매핑 문장 (조합 매핑 없으면 생략)
+// 트렌드 수명 한 줄 — stage 라벨 + lifespan_estimate 조합. 한쪽만 있어도 출력.
+function buildLifespanPhrase(td) {
+  const stage = STAGE_LABEL[td?.trend_stage] ?? null;
+  const lifespan = td?.lifespan_estimate;
+  if (stage && lifespan) return `${stage}이며 ${lifespan} 흐름`;
+  if (stage) return `${stage} 단계`;
+  if (lifespan) return `${lifespan} 흐름`;
+  return null;
+}
+
+// 트렌드 키워드 따옴표 묶음 — 처음 N개를 'kw' 형식으로
+function buildKeywordPhrase(td, n = 3) {
+  const kws = (td?.keywords ?? [])
+    .filter((k) => typeof k === "string" && k.trim().length > 0)
+    .slice(0, n);
+  if (kws.length === 0) return null;
+  return kws.map((k) => `'${k}'`).join(", ");
+}
+
+// usage_plan 한 단락 합성. 다섯 정보를 세 문장으로 자연스럽게 결합:
+//   문장 1) 트렌드 현황 — [채널 활성] + evidence + 트렌드 수명
+//   문장 2) 행동 제안   — KPI 톤 + 키워드 강조 + KPI 콘텐츠 형식 + 채널 비교
+//   문장 3) 기간/예산   — 마케터 기간·예산 → 트렌드 활용 성격
+//
+// 데이터가 비면 해당 부분/문장 생략 (시스템 안전, 어색한 빈 자리 X).
 //
 // 결과 예:
-//   "[유튜브 활성] 베이스 메이크업 튜토리얼 다수. 지금 채널과 잘 맞습니다.
-//    시즌 프로모션에 맞춰 시즌 루틴·한정 할인 메시지 추천.
-//    단기 화제 트렌드로 적합."
+//   "[유튜브 활성] 세미매트 쿠션 추천 영상 다수, 정점이며 6개월 이상 흐름.
+//    시즌 프로모션에 맞춰 '세미매트', '쿠션' 키워드 중심의 시즌 루틴·한정
+//    할인 메시지로 인스타그램 외 유튜브 확장 추천.
+//    한달 + 200만원 미만 예산이라 단기 효율형 트렌드로 활용 가능."
 function buildUsagePlan(brand, td) {
   if (!td?.trend_name) return "";
 
-  const parts = []; // 한 줄을 구성할 절(節)들. join(". ")으로 합침.
-
-  // ─ 1) 채널 비교 ─────────────────────────────────────────────────
-  // 자사몰·네이버스토어·오프라인만 입력된 마케터(마케터 매핑 결과 0건)는
-  // 채널 비교 자체를 생략하고 KPI·기간/예산 부분만 노출.
+  // ─ 채널 비교 ────────────────────────────────────────────────────
   const marketer = getEffectiveMarketerChannels(brand);
   const items = Array.isArray(td?.media_channel_status)
     ? td.media_channel_status.map(normalizeChannelItem).filter((x) => x.keys.length > 0)
     : [];
 
-  if (items.length > 0 && marketer.length > 0) {
-    // 잘 맞음 — 마케터 채널과 겹치는 트렌드 항목 첫 번째 우선
+  let channelTag = null; // "[유튜브 활성]"
+  let channelEvidence = null; // status 텍스트
+  let channelAction = null; // "지금 채널과 잘 맞으니 강화" / "X 외 Y 확장 추천"
+
+  if (items.length > 0) {
     let matched = null;
     let matchedKey = null;
-    for (const item of items) {
-      const k = item.keys.find((k) => marketer.includes(k));
-      if (k) { matched = item; matchedKey = k; break; }
+    if (marketer.length > 0) {
+      for (const item of items) {
+        const k = item.keys.find((k) => marketer.includes(k));
+        if (k) { matched = item; matchedKey = k; break; }
+      }
     }
     if (matched) {
       const channel = CHANNEL_LABEL[matchedKey] ?? matched.rawName;
-      const evidence = matched.status || "활성도 있음";
-      parts.push(`[${channel} 활성] ${evidence}`);
-      parts.push("지금 채널과 잘 맞습니다");
+      channelTag = `[${channel} 활성]`;
+      channelEvidence = matched.status || null;
+      channelAction = "지금 채널과 잘 맞으니 강화 추천";
     } else {
       // 확장 — 트렌드 첫 활성 채널로 확장 제안
       const first = items[0];
       const firstKey = first.keys[0];
       const channel = CHANNEL_LABEL[firstKey] ?? first.rawName;
-      const evidence = first.status || "활성도 있음";
-      const marketerLabels = marketer
-        .map((k) => CHANNEL_LABEL[k])
-        .filter(Boolean)
-        .join("·");
-      parts.push(`[${channel} 활성] ${evidence}`);
-      parts.push(`${marketerLabels} 외 ${channel} 확장 추천`);
+      channelTag = `[${channel} 활성]`;
+      channelEvidence = first.status || null;
+      if (marketer.length > 0) {
+        const marketerLabels = marketer
+          .map((k) => CHANNEL_LABEL[k])
+          .filter(Boolean)
+          .join("·");
+        channelAction = `${marketerLabels} 외 ${channel} 확장 추천`;
+      }
+      // marketer가 0건이면 channelAction 그대로 null — 행동 제안에서 채널 비교 부분 생략
     }
   }
-  // 마케터가 자사몰·오프라인만 가진 케이스, 또는 트렌드 채널 evidence 0건은
-  // 채널 비교 절을 생략. 아래 KPI·기간/예산만 노출.
 
-  // ─ 2) KPI 추천 ──────────────────────────────────────────────────
-  const kpi = KPI_RECOMMENDATION[brand?.campaign_kpi];
-  if (kpi) parts.push(kpi);
+  // ─ 보조 정보 ────────────────────────────────────────────────────
+  const lifespanPhrase = buildLifespanPhrase(td); // "정점이며 6개월 이상 흐름"
+  const keywordPhrase = buildKeywordPhrase(td);   // "'세미매트', '쿠션'"
+  const kpiTone = brand?.campaign_kpi ?? null;    // "시즌 프로모션"
+  const kpiContent = KPI_CONTENT[kpiTone] ?? null; // "시즌 루틴·한정 할인 메시지"
+  const pbLabel = mapPeriodBudget(brand?.campaign_period, brand?.campaign_budget); // "단기 효율형 트렌드"
 
-  // ─ 3) 기간/예산 매핑 ────────────────────────────────────────────
-  const pb = mapPeriodBudget(brand?.campaign_period, brand?.campaign_budget);
-  if (pb) parts.push(pb);
+  // ─ 문장 1: 트렌드 현황 ──────────────────────────────────────────
+  // "[유튜브 활성] {evidence}, {수명}"
+  let sentence1 = null;
+  if (channelTag) {
+    const tail = [channelEvidence, lifespanPhrase].filter(Boolean).join(", ");
+    sentence1 = tail ? `${channelTag} ${tail}` : channelTag;
+  } else if (lifespanPhrase) {
+    sentence1 = lifespanPhrase;
+  }
 
-  if (parts.length === 0) return "";
-  return parts.join(". ") + ".";
+  // ─ 문장 2: 행동 제안 ───────────────────────────────────────────
+  // "{KPI 톤}에 맞춰 {키워드 강조} {KPI 콘텐츠}로 {채널 비교} 추천"
+  let sentence2 = null;
+  if (kpiTone || kpiContent || channelAction) {
+    const head = kpiTone ? `${kpiTone}에 맞춰` : null;
+    const kwPart = keywordPhrase ? `${keywordPhrase} 키워드 중심의` : null;
+    const body = kpiContent ? `${kpiContent}로` : null;
+    const tail = channelAction ?? null;
+    sentence2 = [head, kwPart, body, tail].filter(Boolean).join(" ");
+  }
+
+  // ─ 문장 3: 기간/예산 ───────────────────────────────────────────
+  // "{기간} + {예산} 예산이라 {pb}로 활용 가능"
+  let sentence3 = null;
+  if (pbLabel) {
+    const p = brand?.campaign_period;
+    const b = brand?.campaign_budget;
+    if (p && b) {
+      sentence3 = `${p} + ${b} 예산이라 ${pbLabel}로 활용 가능`;
+    } else {
+      sentence3 = `${pbLabel}로 활용 가능`;
+    }
+  }
+
+  const sentences = [sentence1, sentence2, sentence3].filter(Boolean);
+  if (sentences.length === 0) return "";
+  return sentences.join(". ") + ".";
 }
 
 // ─── LLM 카드 풍부화 (디자인 담당 합의) ────────────────────────────
