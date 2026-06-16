@@ -66,8 +66,8 @@ function buildBrandInput(f) {
   return {
     brand_name: f.brand_name || "",
     current_channels: toArray(f.current_channels),
-    // collect()는 배열로 보냄 → 첫 URL만 사용 (스키마는 문자열)
-    brand_channel_url: Array.isArray(f.brand_channel_url) ? (f.brand_channel_url[0] || "") : (f.brand_channel_url || ""),
+    // collect()는 배열로 보냄. 스키마는 URL 배열을 기대 → 배열 그대로 통과
+    brand_channel_url: toArray(f.brand_channel_url),
     product_name: f.product_name || "",
     // 카테고리 4단계 분리 (브랜드분석가 BrandInputSchema v2)
     category_major: f.category_major || "",
