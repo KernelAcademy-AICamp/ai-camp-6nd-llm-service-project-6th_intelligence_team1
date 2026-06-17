@@ -14,6 +14,7 @@
 - **제품 형태·재질·색 텍스트 어휘 금지** — 제품 자체는 첨부 사진(Img2Img)이 담당. 제품 묘사는 `"the product"`로 일반화.
 - ⚠️ **shot_type이 제품샷(product still life, texture shot 등)이면 `key_objects` 무시** — 레퍼런스 이미지에서 추출된 오브젝트(dropper, bottle, container 등)는 참고 제품과 다를 수 있으므로 프롬프트에 포함하지 말 것. 조명·텍스처·배경·컬러만 반영.
 - ⚠️ **product shot에서 액체·오일·텍스처가 등장하면 반드시 출처를 `the product`로 명시** — `oil falling from the product`, `the product dispensing a drop of oil onto a palm` 등 제품이 액체의 출처임을 프롬프트에서 연결. 출처 없이 떠 있는 액체 묘사 금지.
+- ⚠️ **오일 흐름은 연출할 때만, 그리고 토출구에서만** — 흐르는 오일을 모든 컷에 억지로 넣지 말 것(흐름 연출 여부는 구도에 맡긴다). 다만 흐름을 연출한다면 **펌프형 제품은 펌프 헤드를 누른 상태에서 전면 스파웃(토출구)으로만** 오일이 나오도록 명시: `the pump head pressed down, a clean thread of oil streaming from the front spout of the pump`. **금지: 병 몸통·옆면·바닥에서 새는 오일, 토출구와 무관하게 떠다니는 droplets, 프레임을 가로지르는 diagonal 오일 줄기.** 베이스 분석에 `diagonal flow`·떠다니는 droplet 어휘가 있어도 토출구 흐름으로 치환할 것.
 - ⚠️ **제품(`the product`)은 인물샷에서 반드시 본문에 명시** — 누락하면 img2img가 제품을 옷·몸·빈 공간에 어색하게 얹는다. 제품 배치는 아래 두 갈래 중 하나를 **트렌드·무드에 맞게 선택**(모든 컷을 한 가지로 통일하지 말 것):
   - **(A) 제품을 손에 쥐는 구도** — 이 경우 **화면에 손은 그 한 손만, 반대손은 프레임 밖**: `one hand holding the product upright with fingers wrapped around it, the other hand completely out of frame`. 그 손은 얼굴·턱·뺨을 만지지 말고 제품만 쥔다. 두 손을 함께 묘사하지 말 것(반대손이 어색하게 렌더됨).
   - **(B) 제품을 테이블·바닥 등 별도 표면에 세우는 구도** — 이 경우 **모델의 손·포즈는 자유**(양손으로 얼굴 받치기 등 자연스러운 포즈 허용). 제품은 손과 무관하게 표면 위에 또렷이 세워둔다.
