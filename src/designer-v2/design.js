@@ -69,13 +69,12 @@ const contents = matchData.recommendations
     const reasonBullets = (rec.summary_reasons ?? []).map(
       (r) => `${r.category}: ${r.fact}${r.source ? ` (${r.source})` : ""}`
     );
-    const SHOT_DIRECTION = { 1: "model", 2: "product", 3: "lifestyle" };
     return {
       content_id: `R${rec.rank}`,
       trend_name: rec.trend_name,
       summary_bullets: summaryBullets,
       reason_bullets: reasonBullets,
-      shot_direction: SHOT_DIRECTION[rec.rank] ?? null,
+      shot_direction: "model", // 시안가 출력물을 모델샷으로 고정 (rank 무관)
     };
   });
 
@@ -186,18 +185,23 @@ for (const c of contents) {
   }
 
   // 4단계: 이미지 생성 (제품 사진 SUBJECT 레퍼런스)
+  // 기본은 프롬프트만 생성(이미지 OFF). GEN_IMAGE=1일 때만 Gemini 이미지 생성.
   const outputImagePath = `shared/data/images/${brandName}/${c.content_id ?? visuals.length}.png`;
   let generatedImageUrl = null;
-  try {
-    generatedImageUrl = await generateImage({
-      prompt: generation_prompt,
-      outputPath: outputImagePath,
-      aspectRatio: "3:4",
-      referenceImagePath: productImagePath,
-    });
-    console.log(`  [4단계] 이미지 저장: ${generatedImageUrl}`);
-  } catch (err) {
-    console.error(`  ❌ [4단계] 실패: ${err.message}`);
+  if (process.env.GEN_IMAGE) {
+    try {
+      generatedImageUrl = await generateImage({
+        prompt: generation_prompt,
+        outputPath: outputImagePath,
+        aspectRatio: "3:4",
+        referenceImagePath: productImagePath,
+      });
+      console.log(`  [4단계] 이미지 저장: ${generatedImageUrl}`);
+    } catch (err) {
+      console.error(`  ❌ [4단계] 실패: ${err.message}`);
+    }
+  } else {
+    console.log(`  [4단계] 이미지 생성 건너뜀 (프롬프트만, 켜려면 GEN_IMAGE=1)`);
   }
 
   visuals.push({
