@@ -627,6 +627,29 @@ function buildUsagePlan(brand, td) {
     ? td.media_channel_status.map(normalizeChannelItem).filter((x) => x.keys.length > 0)
     : [];
 
+  // 보강: channel_activity(Apify 결과)에서 인스타·틱톡 보완. media_channel_status에
+  // 누락된 채널만 추가 — 트렌드 분석가가 두 필드를 분리해서 저장하는 케이스 흡수.
+  const pools = Array.isArray(td?.channel_activity) ? td.channel_activity : [];
+  if (pools.length > 0) {
+    const existingKeys = new Set(items.flatMap((x) => x.keys));
+    for (const pool of pools) {
+      const scores = pool?.scores ?? {};
+      for (const ch of ["instagram", "tiktok", "youtube"]) {
+        if (existingKeys.has(ch)) continue; // 이미 media_channel_status에 있음
+        const data = scores[ch];
+        if (!data) continue;
+        // score 0이어도 evidence가 있으면 포함 ("없다" 단정 금지 규칙)
+        if (!data.evidence && (data.score ?? 0) <= 0) continue;
+        items.push({
+          keys: [ch],
+          status: data.evidence || `${CHANNEL_LABEL[ch]} 관련 콘텐츠 활발`,
+          rawName: CHANNEL_LABEL[ch] ?? ch,
+        });
+        existingKeys.add(ch); // 이후 pool에서 중복 추가 방지
+      }
+    }
+  }
+
   let channelTag = null; // "[유튜브 활성]"
   let channelEvidence = null; // status 텍스트
   let channelAction = null; // "지금 채널과 잘 맞으니 강화" / "X 외 Y 확장 추천"
@@ -670,14 +693,27 @@ function buildUsagePlan(brand, td) {
   const kpiContent = KPI_CONTENT[kpiTone] ?? null; // "시즌 루틴·한정 할인 메시지"
   const pbLabel = mapPeriodBudget(brand?.campaign_period, brand?.campaign_budget); // "단기 효율형 트렌드"
 
+  // 검색량·증가율 — headline_metric에서 추출 (있을 때만 노출).
+  // 예: "월별 검색지수 32.4 (-67.6%)" / value만 있으면 "월별 검색지수 32.4"
+  const hm = td?.headline_metric ?? {};
+  let metricPhrase = null;
+  if (hm.value) {
+    const label = hm.metric || "검색량";
+    metricPhrase = hm.delta ? `${label} ${hm.value} (${hm.delta})` : `${label} ${hm.value}`;
+  }
+
   // ─ 문장 1: 트렌드 현황 ──────────────────────────────────────────
-  // "[유튜브 활성] {evidence}, {수명}"
+  // "[채널 활성] {evidence}, {검색량/증가율}, {수명}"
   let sentence1 = null;
   if (channelTag) {
-    const tail = [channelEvidence, lifespanPhrase].filter(Boolean).join(", ");
+    const tail = [channelEvidence, metricPhrase, lifespanPhrase]
+      .filter(Boolean)
+      .join(", ");
     sentence1 = tail ? `${channelTag} ${tail}` : channelTag;
-  } else if (lifespanPhrase) {
-    sentence1 = lifespanPhrase;
+  } else {
+    // 채널 정보 없어도 검색량·수명만으로 문장 1 합성
+    const parts = [metricPhrase, lifespanPhrase].filter(Boolean);
+    if (parts.length > 0) sentence1 = parts.join(", ");
   }
 
   // ─ 문장 2: 행동 제안 ───────────────────────────────────────────
@@ -704,9 +740,11 @@ function buildUsagePlan(brand, td) {
     }
   }
 
+  // 세 문장을 줄바꿈으로 분리해 출력 (최대 3줄). 데이터 비어 있는 문장은 자동 생략.
+  // 한 줄에 한 문장씩 들어가게 ".\n"으로 join — 마지막 문장도 마침표 한 번씩.
   const sentences = [sentence1, sentence2, sentence3].filter(Boolean);
   if (sentences.length === 0) return "";
-  return sentences.join(". ") + ".";
+  return sentences.map((s) => `${s}.`).join("\n");
 }
 
 // ─── LLM 카드 풍부화 (디자인 담당 합의) ────────────────────────────
