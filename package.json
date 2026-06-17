@@ -13,15 +13,19 @@
     "brand": "node src/brand/analyze.js",
     "design": "node src/designer/design.js",
     "design-v2": "node src/designer-v2/design.js",
-    "pipeline": "npm run brand && npm run trend && npm run match && npm run write && npm run design-v2"
+    "pipeline": "npm run brand && npm run trend && npm run match && npm run write && npm run design-v2",
+    "tokens": "node src/shared/token-report.js",
+    "tokens:reset": "node src/shared/token-report.js --reset"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.1",
     "@google/genai": "^2.7.0",
+    "@imgly/background-removal-node": "^1.4.5",
     "@tavily/core": "^0.7.3",
     "apify-client": "^2.23.4",
     "axios": "^1.16.1",
     "dotenv": "^17.4.2",
+    "sharp": "^0.35.1",
     "zod": "^4.4.3"
   }
 }

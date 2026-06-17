@@ -34,7 +34,25 @@ async function fetchTrendArticles(query) {
   }));
 }
 
+// ── 7일 캐시: tavily_raw.json이 7일 이내면 API 호출 없이 재사용 (Tavily 할당량 절약) ──
+const CACHE_PATH = "trend/data/tavily_raw.json";
+const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7일
+const FRESH = process.env.TAVILY_FRESH === "1";   // 강제 새로고침 플래그
+function cacheIsFresh() {
+  try {
+    if (!fs.existsSync(CACHE_PATH)) return false;
+    const cached = JSON.parse(fs.readFileSync(CACHE_PATH, "utf-8"));
+    const ts = cached.collected_at ? new Date(cached.collected_at).getTime() : 0;
+    const age = Date.now() - ts;
+    return age >= 0 && age < CACHE_MAX_AGE_MS;
+  } catch { return false; }
+}
+
 async function main() {
+  if (!FRESH && cacheIsFresh()) {
+    console.log("Tavily: 7일 이내 캐시(tavily_raw.json) 재사용 — API 호출 건너뜀. (새로 받으려면 TAVILY_FRESH=1)");
+    return;
+  }
   console.log("Tavily 트렌드 기사 수집 시작...\n");
   console.log(`검색어 ${QUERIES.length}개를 brand-analysis.json에서 읽어왔어!\n`);
 

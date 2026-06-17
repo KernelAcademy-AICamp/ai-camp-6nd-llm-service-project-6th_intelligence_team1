@@ -9,6 +9,7 @@ import { generatePromptFromSources } from "./prompt.js";
 import { wrap, wrapError } from "../../shared/envelope.js";
 import { generateImage } from "./generateImage.js";
 import { generateConcept } from "./concept.js";
+import { recordUsage } from "../shared/token-log.js";
 
 // 시안가 v2 — 매체별 강점 활용 흐름:
 //   1단계 검색 — 트렌드별 매체별 수집 (Pinterest·Instagram·Mintoiro 각 10장)
@@ -60,6 +61,7 @@ const brandName = matchData.brand_name;
 const contents = matchData.recommendations
   .slice()
   .sort((a, b) => a.rank - b.rank)
+  .slice(0, process.env.MAX_CONTENTS ? Number(process.env.MAX_CONTENTS) : undefined)
   .map((rec) => {
     const trendData = trendByName.get(rec.trend_name);
     const summaryBullets = trendData?.summary
@@ -68,11 +70,13 @@ const contents = matchData.recommendations
     const reasonBullets = (rec.summary_reasons ?? []).map(
       (r) => `${r.category}: ${r.fact}${r.source ? ` (${r.source})` : ""}`
     );
+    const SHOT_DIRECTION = { 1: "model", 2: "product", 3: "lifestyle" };
     return {
       content_id: `R${rec.rank}`,
       trend_name: rec.trend_name,
       summary_bullets: summaryBullets,
       reason_bullets: reasonBullets,
+      shot_direction: SHOT_DIRECTION[rec.rank] ?? null,
     };
   });
 
@@ -104,6 +108,7 @@ const startTime = Date.now();
 const visuals = [];
 let totalInputTokens = 0;
 let totalOutputTokens = 0;
+const usedQueries = []; // R1 → R2 → R3 순으로 누적, 중복 방지
 
 for (const c of contents) {
   console.log(`▶ ${c.trend_name} (${c.content_id ?? "id 없음"})`);
@@ -125,20 +130,17 @@ for (const c of contents) {
 
   // 1단계: 매체별 수집
   let queries = [];
-  let instagram_hashtags = [];
-  let refsBySource = { pinterest: [], instagram: [], mintoiro: [] };
+  let refsBySource = { pinterest: [] };
   try {
-    const r = await generateQueriesAndSearch({ brand: brandData, content: c });
+    const r = await generateQueriesAndSearch({ brand: brandData, content: c, usedQueries, shot_direction: c.shot_direction });
     queries = r.queries;
-    instagram_hashtags = r.instagram_hashtags;
+    usedQueries.push(...queries);
     refsBySource = r.references_by_source;
     if (r.usage) {
       totalInputTokens += r.usage.input_tokens ?? 0;
       totalOutputTokens += r.usage.output_tokens ?? 0;
     }
-    console.log(
-      `  [1단계] Pinterest ${refsBySource.pinterest.length} / Instagram ${refsBySource.instagram.length} / Mintoiro ${refsBySource.mintoiro.length}`,
-    );
+    console.log(`  [1단계] Pinterest ${refsBySource.pinterest.length}`);
   } catch (err) {
     console.error(`  ❌ [1단계] 실패: ${err.message}`);
     continue;
@@ -149,8 +151,6 @@ for (const c of contents) {
   try {
     analyses = await Promise.all([
       analyzeOneSource({ brand: brandData, content: c, source: "pinterest", references: refsBySource.pinterest }),
-      analyzeOneSource({ brand: brandData, content: c, source: "instagram", references: refsBySource.instagram }),
-      analyzeOneSource({ brand: brandData, content: c, source: "mintoiro", references: refsBySource.mintoiro }),
     ]);
     analyses.forEach((a) => {
       if (a.usage) {
@@ -205,7 +205,6 @@ for (const c of contents) {
     content_id: c.content_id,
     trend_name: c.trend_name,
     search_queries: queries,
-    instagram_hashtags,
     references_by_source: refsBySource,
     analyses_by_source: analyses.map(({ usage, ...rest }) => rest),
     generation_prompt,
@@ -230,4 +229,10 @@ console.log(`소요 시간     : ${elapsed}s`);
 console.log(`산출 시안     : ${visuals.length}개`);
 console.log(`입력 토큰     : ${totalInputTokens} (Anthropic 누적)`);
 console.log(`출력 토큰     : ${totalOutputTokens} (Anthropic 누적)`);
+// 시안가는 여러 LLM 호출을 합산해 한 번에 기록 (이미지 생성 모델 토큰은 제외, Anthropic 텍스트만)
+recordUsage(
+  "designer-v2",
+  { input_tokens: totalInputTokens, output_tokens: totalOutputTokens },
+  "claude-haiku-4-5",
+);
 console.log(`결과 저장     : ${outputPath}`);
