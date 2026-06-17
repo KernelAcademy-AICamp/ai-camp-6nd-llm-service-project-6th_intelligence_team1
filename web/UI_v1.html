@@ -1022,7 +1022,7 @@
 
         <div class="mockup-grid" id="mock_grid"></div>
 
-        <p class="mockup-note">* 시안은 입력 정보를 바탕으로 한 예시 미리보기입니다.</p>
+        <p class="mockup-note">* 시안은 입력 정보를 바탕으로 AI가 생성한 이미지입니다.</p>
 
         <div class="submit-row">
             <button class="back-button" onclick="showPageById('page-photo')">← 돌아가기</button>
@@ -1978,14 +1978,21 @@
     /* 리포트(step4)를 브라우저 기본 인쇄로 PDF 저장
        → @media print CSS가 리포트만 전체 출력. 사용자는 인쇄 창에서 "PDF로 저장" 선택. */
     function downloadPDF() {
-        const body = document.getElementById('report_body');
-        if (!body || !body.innerHTML.trim()) {
-            showToast('리포트가 아직 준비되지 않았어요');
-            return;
-        }
-        showToast('인쇄 창에서 "PDF로 저장"을 선택하세요');
-        window.print();
+    const body = document.getElementById('report_body');
+    if (!body || !body.innerHTML.trim()) {
+        showToast('리포트가 아직 준비되지 않았어요');
+        return;
     }
+    showToast('인쇄 창에서 "PDF로 저장"을 선택하세요');
+    // 저장 파일명: TrendFit_report_MMDD (브라우저가 document.title을 기본 파일명으로 사용)
+    const now = new Date();
+    const mmdd = String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
+    const prevTitle = document.title;
+    document.title = 'TrendFit_report_' + mmdd;
+    const restore = () => { document.title = prevTitle; window.removeEventListener('afterprint', restore); };
+    window.addEventListener('afterprint', restore);
+    window.print();
+}
 
     /* ===== 마우스 이펙트 ===== */
     document.addEventListener('mousemove', (e) => {
