@@ -9,6 +9,7 @@ import { generatePromptFromSources } from "./prompt.js";
 import { wrap, wrapError } from "../../shared/envelope.js";
 import { generateImage } from "./generateImage.js";
 import { generateConcept } from "./concept.js";
+import { recordUsage } from "../shared/token-log.js";
 
 // 시안가 v2 — 매체별 강점 활용 흐름:
 //   1단계 검색 — 트렌드별 매체별 수집 (Pinterest·Instagram·Mintoiro 각 10장)
@@ -228,4 +229,10 @@ console.log(`소요 시간     : ${elapsed}s`);
 console.log(`산출 시안     : ${visuals.length}개`);
 console.log(`입력 토큰     : ${totalInputTokens} (Anthropic 누적)`);
 console.log(`출력 토큰     : ${totalOutputTokens} (Anthropic 누적)`);
+// 시안가는 여러 LLM 호출을 합산해 한 번에 기록 (이미지 생성 모델 토큰은 제외, Anthropic 텍스트만)
+recordUsage(
+  "designer-v2",
+  { input_tokens: totalInputTokens, output_tokens: totalOutputTokens },
+  "claude-haiku-4-5",
+);
 console.log(`결과 저장     : ${outputPath}`);
