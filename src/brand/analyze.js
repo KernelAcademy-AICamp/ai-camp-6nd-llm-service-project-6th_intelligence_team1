@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { wrap } from "../../shared/envelope.js";
 import {
+  ALL_CATEGORY_NOUNS,
   BrandInputSchema,
   BrandKeywordsLlmSchema,
   buildProductFeatures,
@@ -86,9 +87,14 @@ function buildForbiddenAttributeWords(input) {
       const w = tokens[0];
       // 카테고리 명사와 부분 일치도 허용 — 사용자가 "아이섀도우" 적었는데
       // 카테고리엔 "아이섀도"로 등록된 케이스 같은 미세 차이 흡수.
-      const isCategoryNoun = [...categoryNouns].some(
-        (n) => n.length >= 2 && (n.includes(w) || w.includes(n)),
-      );
+      // 또한 ALL_CATEGORY_NOUNS(전역 카테고리 명사) 안에 있으면 forbidden 제외:
+      // 사용자가 "쿠션"이라 적었는데 카테고리는 "기초제품 > 오일"인 케이스 등,
+      // product_name이 사실상 카테고리 명사인 경우 검색 키워드가 다 막히는 걸 방지.
+      const isCategoryNoun =
+        ALL_CATEGORY_NOUNS.has(w) ||
+        [...categoryNouns].some(
+          (n) => n.length >= 2 && (n.includes(w) || w.includes(n)),
+        );
       if (w.length >= 2 && !isCategoryNoun) forbidden.add(w);
     } else {
       for (let i = 0; i < tokens.length - 1; i++) {
