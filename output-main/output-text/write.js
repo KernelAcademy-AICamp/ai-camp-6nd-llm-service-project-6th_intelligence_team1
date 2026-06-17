@@ -5,6 +5,7 @@ import { z } from "zod";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { recordUsage } from "../../src/shared/token-log.js";
 
 // 작성가 v1 — 순수 데이터 매핑 + 카드 텍스트 LLM 풍부화 (디자인 담당 합의).
 //
@@ -832,6 +833,7 @@ ${(rawContent?.summary_bullets ?? []).map((s) => "  - " + s).join("\n") || "  (�
       messages: [{ role: "user", content: userMessage }],
       output_config: { format: zodOutputFormat(ContentEnrichmentSchema) },
     });
+    recordUsage("writer", response.usage, "claude-haiku-4-5");
     return response.parsed_output ?? null;
   } catch (err) {
     console.warn(`⚠️ enrichContent 실패 (${td?.trend_name ?? "?"}): ${err.message}`);

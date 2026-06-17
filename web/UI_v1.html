@@ -1028,7 +1028,10 @@
             <button class="back-button" onclick="showPageById('page-photo')">← 돌아가기</button>
             <div class="share-area">
                 <button class="cta-button" id="share-report-btn" onclick="toggleShareOptions()">리포트 공유하기</button>
-                <div id="share-options-row" class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
+                <div id="share-options-row" class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end;">
+                    <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-secondary);cursor:pointer;white-space:nowrap;">
+                        <input type="checkbox" id="include-visuals"> 시안 포함하기
+                    </label>
                     <button class="share-btn-channel" onclick="shareTo('PDF')">📄 PDF</button>
                     <button class="share-btn-channel" onclick="shareTo('Notion')">📝 Notion</button>
                     <button class="share-btn-channel" onclick="shareTo('Slack')">💬 Slack</button>
@@ -1663,6 +1666,9 @@
           + `<div class="rp-section"><div class="rp-section-title">트렌드별 상세</div><div class="rp-cards">${cardsHtml}</div></div>`;
     }
 
+    // 공유(슬랙·노션)용 시안 이미지 공개 URL 베이스 — 공개 저장소 trendfit-assets의 raw
+    // 새 시안 생성 시 R1·R2·R3.png를 이 저장소에 다시 업로드하면 자동 반영됨
+    const SHARE_IMAGE_BASE = 'https://raw.githubusercontent.com/ga-jisu/trendfit-assets/main/';
     function buildMockupsReal(data, d, design) {
         const contents = ((data && data.contents) || []).slice().sort((a, c) => (a.rank || 9) - (c.rank || 9));
         // 시안가 v2 산출(design-output.json)의 실제 이미지 매핑 (trend_name·content_id 기준)
@@ -1702,6 +1708,8 @@
                 + `</svg>`;
         }
 
+        const lbItems = [];
+        const shareVisuals = [];
         document.getElementById('mock_grid').innerHTML = contents.map((c, i) => {
             const kw = (c.keywords || [])[0] || (d.texture_keywords || [])[0] || '트렌드';
             const head = [`"${kw}", 지금`, `내 ${cat || '메이크업'}`, `${d.product_name || brand}`][i] || kw;
@@ -1712,17 +1720,25 @@
                 ? `<img src="${esc(imgUrl)}" alt="${esc(c.trend_name || '')} 시안" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.remove()">`
                 : '';
             const visualInner = creative(i, head) + imgTag;
-            const tagText = (imgUrl ? `${tags[i] || 'Visual'} · AI 시안` : `${tags[i] || 'Visual'} · 시안`);
-            const capBase = esc((c.keywords || []).slice(0, 3).join(' · ') || c.verdict || '');
-            const caption = imgUrl ? `${capBase} · AI 생성 시안` : `${capBase} · 예상 시안(placeholder)`;
+            const caption = esc((c.keywords || []).slice(0, 3).join(' · ') || c.verdict || '');
+            // 라이트박스(원본 보기): 실제 시안 이미지가 있으면 그걸, 없으면 SVG placeholder를 data-URI로
+            const lbUrl = imgUrl || ('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(creative(i, head)));
+            lbItems.push({ url: lbUrl, title: c.trend_name || '', caption: caption });
+            // 공유(시안 포함)용: 슬랙·노션이 접근 가능한 공개 raw URL로 매핑 (파일명 R1.png 등)
+            if (imgUrl) {
+                const file = imgUrl.split('?')[0].split('/').pop();
+                shareVisuals.push({ url: SHARE_IMAGE_BASE + file, title: c.trend_name || '' });
+            }
             return `<div class="mockup-card">`
-                + `<div class="mockup-visual">${visualInner}<div class="mockup-tag" style="position:relative;z-index:2">${tagText}</div></div>`
+                + `<div class="mockup-visual" style="cursor:zoom-in" onclick="openLightbox(${i})" title="원본 보기">${visualInner}</div>`
                 + `<div class="mockup-body">`
                 + `<div class="mockup-brand">${esc(brand)}</div>`
                 + `<h3 class="mockup-headline">${esc(c.trend_name || '')}</h3>`
                 + `<p class="mockup-caption">${caption}</p>`
                 + `</div></div>`;
         }).join('');
+        window.__lightboxItems = lbItems;
+        window.__visualUrls = shareVisuals;
     }
 
     function buildReport(d) {
@@ -1781,7 +1797,7 @@
 
         document.getElementById('mock_grid').innerHTML = cards.map(c =>
             '<div class="mockup-card">'
-            + '<div class="mockup-visual ' + c.cls + '"><div class="mockup-tag">' + c.tag + '</div></div>'
+            + '<div class="mockup-visual ' + c.cls + '"></div>'
             + '<div class="mockup-body">'
             + '<div class="mockup-brand">' + c.brand + '</div>'
             + '<h3 class="mockup-headline">' + c.head + '</h3>'
@@ -1802,6 +1818,19 @@
         const row = document.getElementById('share-options-row');
         row.style.display = 'flex';
         row.classList.add('show');
+        // 공유 영역 밖을 클릭하면 다시 [리포트 공유하기] 버튼으로 복원
+        setTimeout(() => document.addEventListener('click', onOutsideShareClick), 0);
+    }
+    function hideShareOptions() {
+        const row = document.getElementById('share-options-row');
+        row.style.display = 'none';
+        row.classList.remove('show');
+        document.getElementById('share-report-btn').style.display = '';
+        document.removeEventListener('click', onOutsideShareClick);
+    }
+    function onOutsideShareClick(e) {
+        const area = document.querySelector('.share-area');
+        if (area && !area.contains(e.target)) hideShareOptions();
     }
     /* 외부 서비스 URL */
     const SHARE_URLS = {
@@ -1810,15 +1839,140 @@
         'Google Drive': 'https://drive.google.com'
     };
     function shareTo(channel) {
-        if (channel === 'PDF') {
-            downloadPDF();
-            return;
+        if (channel === 'PDF') { downloadPDF(); return; }
+        if (channel === 'Notion') { shareToNotion(); return; }
+        if (channel === 'Slack') { shareToSlack(); return; }
+        if (channel === 'Google Drive') { shareToDrive(); return; }
+    }
+
+    /* [시안 포함하기] 체크 여부 */
+    function includeVisuals() {
+        const cb = document.getElementById('include-visuals');
+        return !!(cb && cb.checked);
+    }
+
+    /* 리포트 데이터(window.__writerData) → 마크다운 문자열 */
+    function reportToMarkdown(wd) {
+        const b = wd.brand || {};
+        const cam = b.campaign || {};
+        let md = `# TrendFit 트렌드 매칭 리포트\n\n`;
+        md += `**브랜드**: ${b.name || ''}${b.product_name ? ' / ' + b.product_name : ''}\n`;
+        if (b.category) md += `**카테고리**: ${b.category}\n`;
+        if (b.target_display) md += `**타겟**: ${b.target_display}\n`;
+        if (cam.kpi || cam.period || cam.budget) md += `**캠페인**: ${[cam.kpi, cam.period, cam.budget].filter(Boolean).join(' · ')}\n`;
+        const contents = wd.contents || [];
+        md += `\n## 추천 트렌드 ${contents.length}선\n`;
+        contents.forEach(ct => {
+            md += `\n### ${ct.verdict || (ct.rank + '순위')}. ${ct.trend_name || ''}`;
+            if (ct.matching_grade) md += ` (매칭 ${ct.matching_grade})`;
+            md += `\n`;
+            if (ct.keywords && ct.keywords.length) md += `\n${ct.keywords.map(k => '`' + k + '`').join(' ')}\n`;
+            const hm = ct.headline_metric;
+            if (hm && (hm.value || hm.metric)) md += `\n- **${hm.metric || '핵심지표'}**: ${hm.value || ''}${hm.delta ? ' (' + hm.delta + ')' : ''}\n`;
+            if (ct.summary_bullets && ct.summary_bullets.length) { md += `\n**유행현황**\n`; ct.summary_bullets.forEach(s => md += `- ${s}\n`); }
+            if (ct.reason_bullets && ct.reason_bullets.length) { md += `\n**매칭이유**\n`; ct.reason_bullets.forEach(s => md += `- ${s}\n`); }
+            if (ct.evidence && ct.evidence.length) {
+                md += `\n**근거**\n`;
+                ct.evidence.forEach(e => { md += e.url ? `- [${e.label || e.source || '출처'}](${e.url}) — ${e.description || ''}\n` : `- ${e.label || e.source || ''} — ${e.description || ''}\n`; });
+            }
+        });
+        return md;
+    }
+
+    /* 노션: 리포트를 마크다운으로 클립보드 복사 */
+    async function shareToNotion() {
+        const wd = window.__writerData;
+        if (!wd) { showToast('리포트가 아직 준비되지 않았어요'); return; }
+        let md = reportToMarkdown(wd);
+        if (includeVisuals()) {
+            const vis = window.__visualUrls || [];
+            if (vis.length) { md += `\n## 예상 시안\n`; vis.forEach(v => { md += `\n![${v.title || '시안'}](${v.url})\n`; }); }
         }
-        const url = SHARE_URLS[channel];
-        if (url) {
-            window.open(url, '_blank', 'noopener,noreferrer');
-            showToast(channel + ' 페이지를 새 탭에서 열었어요');
+        try {
+            await navigator.clipboard.writeText(md);
+            showToast('마크다운으로 복사했어요! 노션에 붙여넣으세요 (Cmd+V)');
+        } catch (e) {
+            const ta = document.createElement('textarea');
+            ta.value = md; ta.style.cssText = 'position:fixed;left:-9999px';
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); showToast('마크다운으로 복사했어요! 노션에 붙여넣으세요'); }
+            catch (_) { showToast('복사 실패 — 직접 선택해 복사해주세요'); }
+            ta.remove();
         }
+    }
+
+    /* 슬랙: 리포트 요약을 서버(/share/slack) 통해 웹훅으로 채널 게시 */
+    function reportToSlackBlocks(wd) {
+        const b = wd.brand || {};
+        const cam = b.campaign || {};
+        const cut = (s) => String(s).slice(0, 2900); // Slack section 텍스트 3000자 제한 방어
+        const blocks = [];
+        blocks.push({ type: 'header', text: { type: 'plain_text', text: '📊 TrendFit 트렌드 매칭 리포트', emoji: true } });
+        let meta = `*${b.name || ''}*${b.product_name ? ' / ' + b.product_name : ''}`;
+        if (b.category) meta += `\n${b.category}`;
+        if (b.target_display) meta += `\n🎯 ${b.target_display}`;
+        if (cam.kpi || cam.period || cam.budget) meta += `\n📅 ${[cam.kpi, cam.period, cam.budget].filter(Boolean).join(' · ')}`;
+        blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut(meta) } });
+        blocks.push({ type: 'divider' });
+        (wd.contents || []).forEach(ct => {
+            let head = `*${ct.verdict || (ct.rank + '순위')}. ${ct.trend_name || ''}*`;
+            if (ct.matching_grade) head += ` _(매칭 ${ct.matching_grade})_`;
+            if (ct.keywords && ct.keywords.length) head += `\n${ct.keywords.map(k => '`' + k + '`').join(' ')}`;
+            const hm = ct.headline_metric;
+            if (hm && hm.value) head += `\n📈 ${hm.metric || '지표'}: *${hm.value}*${hm.delta ? ' (' + hm.delta + ')' : ''}`;
+            blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut(head) } });
+            if (ct.summary_bullets && ct.summary_bullets.length)
+                blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut('*📊 유행현황*\n' + ct.summary_bullets.map(s => '• ' + s).join('\n')) } });
+            if (ct.reason_bullets && ct.reason_bullets.length)
+                blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut('*💘 매칭이유*\n' + ct.reason_bullets.map(s => '• ' + s).join('\n')) } });
+            if (ct.evidence && ct.evidence.length) {
+                const ev = ct.evidence.map(e => e.url ? `• <${e.url}|${e.label || e.source || '출처'}> — ${e.description || ''}` : `• ${e.label || e.source || ''} — ${e.description || ''}`).join('\n');
+                blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut('*📚 근거*\n' + ev) } });
+            }
+            blocks.push({ type: 'divider' });
+        });
+        const fallback = `TrendFit 트렌드 매칭 리포트 — ${b.name || ''}${b.product_name ? ' / ' + b.product_name : ''}`;
+        return { blocks: blocks.slice(0, 50), text: fallback }; // Slack 블록 최대 50개
+    }
+    async function shareToSlack() {
+        const wd = window.__writerData;
+        if (!wd) { showToast('리포트가 아직 준비되지 않았어요'); return; }
+        showToast('슬랙으로 전송 중...');
+        try {
+            const { blocks, text } = reportToSlackBlocks(wd);
+            if (includeVisuals()) {
+                (window.__visualUrls || []).forEach(v => {
+                    blocks.push({ type: 'image', image_url: v.url, alt_text: v.title || '시안' });
+                });
+            }
+            const res = await fetch('/share/slack', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, blocks: blocks.slice(0, 50) })
+            });
+            const out = await res.json();
+            if (out.ok) showToast('슬랙 채널에 리포트를 게시했어요! 💬');
+            else showToast('슬랙 전송 실패: ' + (out.error || ''));
+        } catch (e) { showToast('슬랙 전송 오류: ' + e.message); }
+    }
+
+    /* 구글 드라이브: 인쇄 창(PDF 저장) 후 드라이브로 이동 버튼 노출 */
+    function shareToDrive() {
+        const body = document.getElementById('report_body');
+        if (!body || !body.innerHTML.trim()) { showToast('리포트가 아직 준비되지 않았어요'); return; }
+        showToast('인쇄 창에서 "PDF로 저장" 후, 드라이브로 이동하세요');
+        window.print();
+        showDriveButton();
+    }
+    function showDriveButton() {
+        if (document.getElementById('drive-go-btn')) return;
+        const btn = document.createElement('button');
+        btn.id = 'drive-go-btn';
+        btn.textContent = '📁 구글 드라이브로 이동';
+        btn.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:1200;padding:13px 22px;border:none;border-radius:100px;background:#1a73e8;color:#fff;font-family:Pretendard,sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(26,115,232,0.4)';
+        btn.onclick = () => { window.open('https://drive.google.com/drive/my-drive', '_blank', 'noopener,noreferrer'); btn.remove(); };
+        document.body.appendChild(btn);
+        setTimeout(() => { const b = document.getElementById('drive-go-btn'); if (b) b.remove(); }, 30000);
     }
 
     /* 리포트(step4)를 브라우저 기본 인쇄로 PDF 저장

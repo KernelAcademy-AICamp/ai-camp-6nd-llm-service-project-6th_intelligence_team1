@@ -2,6 +2,7 @@ import "dotenv/config";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { wrap } from "../../shared/envelope.js";
+import { recordUsage } from "../shared/token-log.js";
 import {
   ALL_CATEGORY_NOUNS,
   BrandInputSchema,
@@ -332,6 +333,7 @@ if (isDirectRun) {
     console.log(
       `   토큰: 입력 ${usage.input_tokens} / 캐시 읽기 ${cacheRead} / 캐시 쓰기 ${cacheWrite} / 출력 ${usage.output_tokens}`,
     );
+    recordUsage("brand", usage, "claude-haiku-4-5");
   }
   console.log(`   저장: ${outPath}`);
 }

@@ -6,6 +6,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { LlmMatchDataSchema, InputBrandSchema, InputTrendSchema, ConflictCheckSchema } from "./schemas.js";
 import { wrap, wrapError } from "../../shared/envelope.js";
+import { recordUsage } from "../shared/token-log.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, "../..");
@@ -700,5 +701,6 @@ if (usage) {
   console.log(
     `예상 비용     : $${cost.toFixed(6)} (≈ ${(cost * 1300).toFixed(2)}원)`,
   );
+  recordUsage("match", usage, modelName ?? "claude-haiku-4-5");
 }
 console.log(`결과 저장     : ${outputPath}`);
