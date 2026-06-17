@@ -10,6 +10,7 @@
 //   PORT      기본 3000
 //   RUN_CMD   기본 "npm run pipeline" (테스트 시 가벼운 명령으로 바꿔치기 가능)
 
+import "dotenv/config"; // .env 로드 (SLACK_WEBHOOK_URL 등)
 import http from "node:http";
 import { readFile, writeFile, mkdir, unlink } from "node:fs/promises";
 import { exec } from "node:child_process";
@@ -69,8 +70,13 @@ function buildBrandInput(f) {
     // collect()는 배열로 보냄 → 스키마도 배열(z.array)이므로 배열 그대로 보관 (빈 값 제거)
     brand_channel_url: Array.isArray(f.brand_channel_url) ? f.brand_channel_url.filter(Boolean) : (f.brand_channel_url ? [f.brand_channel_url] : []),
     product_name: f.product_name || "",
-    category: f.category || "",
-    texture_keywords: toArray(f.texture_keywords),
+    // 카테고리 4단계 분리 (브랜드분석가 BrandInputSchema v2)
+    category_major: f.category_major || "",
+    category_mid: f.category_mid || "",
+    category_sub: f.category_sub || "",
+    // 제품특징: 옵션 선택 + 자유 입력 (각 최대 3개)
+    product_features: toArray(f.product_features),
+    product_features_custom: toArray(f.product_features_custom),
     tone_and_manner: toArray(f.tone_and_manner),
     target: {
       gender: t.gender || "",
@@ -216,6 +222,47 @@ const server = http.createServer(async (req, res) => {
           ? (result.stdout + "\n" + result.stderr).slice(-4000) // 성공 로그는 기존대로(꼬리)
           : focusError(result.stdout, result.stderr)             // 실패 로그는 진짜 에러를 앞으로
       }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: false, error: String(e) }));
+    }
+    return;
+  }
+
+  // Slack 공유: UI가 보낸 텍스트 요약을 .env의 웹훅으로 게시 (웹훅 URL은 서버에만 보관)
+  if (req.method === "POST" && req.url === "/share/slack") {
+    try {
+      const webhook = process.env.SLACK_WEBHOOK_URL;
+      if (!webhook) {
+        res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: false, error: "SLACK_WEBHOOK_URL 미설정 (.env 확인 후 서버 재시작)" }));
+        return;
+      }
+      const body = await readBody(req);
+      const payload = body ? JSON.parse(body) : {};
+      const text = (payload.text || "").toString().trim();
+      const blocks = Array.isArray(payload.blocks) ? payload.blocks : null;
+      if (!text && !blocks) {
+        res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: false, error: "보낼 내용이 비어 있어요" }));
+        return;
+      }
+      // blocks가 있으면 이미지 포함 게시, text는 알림/폴백용으로 함께 전달
+      const slackPayload = blocks ? { text: text || "TrendFit 제안서", blocks } : { text };
+      const slackRes = await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(slackPayload)
+      });
+      const respText = await slackRes.text();
+      if (!slackRes.ok) {
+        res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: false, error: `Slack 응답 ${slackRes.status}: ${respText}` }));
+        return;
+      }
+      console.log("[share/slack] 게시 완료");
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: true }));
     } catch (e) {
       res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ ok: false, error: String(e) }));
