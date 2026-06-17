@@ -65,6 +65,13 @@ const SHOT_DIRECTION_BY_RANK = {
 };
 const DEFAULT_SHOT_DIRECTION = "product";
 
+// 슬롯별 구도 키워드 — 같은 shot_direction이라도 구도가 겹치지 않도록 강제
+const COMPOSITION_BY_RANK = {
+  1: "top-down flat lay, overhead arrangement, neatly arranged composition", // R1 평면 배치
+  2: "upper-body portrait close-up", // R2 인물 클로즈업
+  3: "extreme macro close-up, ingredient and liquid texture detail", // R3 초근접 매크로
+};
+
 const contents = matchData.recommendations
   .slice()
   .sort((a, b) => a.rank - b.rank)
@@ -83,6 +90,7 @@ const contents = matchData.recommendations
       summary_bullets: summaryBullets,
       reason_bullets: reasonBullets,
       shot_direction: SHOT_DIRECTION_BY_RANK[rec.rank] ?? DEFAULT_SHOT_DIRECTION,
+      composition_hint: COMPOSITION_BY_RANK[rec.rank] ?? null,
     };
   });
 

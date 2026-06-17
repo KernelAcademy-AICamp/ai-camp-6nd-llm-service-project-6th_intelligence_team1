@@ -106,7 +106,7 @@ export async function generatePromptFromSources({ brand, content, analyses }) {
 
 ## 트렌드 콘텐츠
 - trend_name: ${content.trend_name}
-- concept: ${content.concept ?? "(없음)"}
+- concept: ${content.concept ?? "(없음)"}${content.composition_hint ? `\n- **고정 구도 (필수)**: ${content.composition_hint} — 이 구도를 프롬프트 구도 어휘로 반드시 반영하고, 다른 구도로 바꾸지 말 것.` : ""}
 
 ## 매체 분석
 
