@@ -457,7 +457,7 @@ if (passedTrends.length > 0) {
 
   const response = await client.messages.parse({
     model: "claude-haiku-4-5",
-    max_tokens: 8192,
+    max_tokens: 16384, // 8192→16384: 트렌드 데이터 증가로 매칭 결과 JSON이 잘리던 문제 해결
     temperature: 0, // 정성 판정(1-A·1-B·2-B) 흔들림 최소화 — 경계선 트렌드 순위 안정화
     system: systemContent,
     messages: [{ role: "user", content: userMessage }],
