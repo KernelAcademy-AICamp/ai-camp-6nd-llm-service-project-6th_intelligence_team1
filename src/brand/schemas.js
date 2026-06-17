@@ -110,6 +110,14 @@ export function getFeaturesForCategory(major, mid, sub) {
   return PRODUCT_FEATURES_BY_CATEGORY[key] ?? [];
 }
 
+// 모든 카테고리 명사 평탄화 — product_name이 어떤 카테고리든 카테고리 명사면
+// sanitize forbidden에서 제외하기 위한 전역 화이트리스트.
+export const ALL_CATEGORY_NOUNS = new Set([
+  ...CATEGORY_MAJOR,
+  ...Object.values(CATEGORY_MID_BY_MAJOR).flat(),
+  ...Object.values(CATEGORY_SUB_BY_MID).flat(),
+]);
+
 // ─── 그 외 enum ───────────────────────────────────────────────────
 export const INVOLVEMENT = ["입문자", "일상사용자", "얼리어답터"];
 
