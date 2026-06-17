@@ -50,7 +50,27 @@ const FIXED_NEGATIVE = [
   "blurry",
   "oversaturated",
   "deformed packaging",
+  "product resting on the back of the hand",
+  "product balanced flat on hand",
+  "product lying flat on skin",
+  "floating product",
+  "product standing on the chest",
+  "product propped against the body",
+  "product resting on the shoulder",
+  "product balanced on décolletage",
+  "product standing on clothing",
+  "product propped on fabric",
 ];
+// (A) 제품을 손에 쥐는 구도일 때만 추가 — 한 손만 보이게 강제.
+//     제품을 표면에 두는 (B) 구도는 양손 포즈가 정상이므로 적용 안 함.
+const GRIP_NEGATIVE = [
+  "two hands visible",
+  "both hands in frame",
+  "second hand visible",
+  "hand touching face instead of holding product",
+];
+// generation_prompt가 "제품을 손에 쥐는" 묘사인지 감지하는 패턴.
+const GRIP_RE = /holding the product|fingers[^,]*wrapped around|gripping the product|raising the product|hand[^,]*holding the product/i;
 const ASPECT_TAIL = "vertical 3:4 portrait composition";
 
 export async function generatePromptFromSources({ brand, content, analyses }) {
@@ -86,7 +106,7 @@ export async function generatePromptFromSources({ brand, content, analyses }) {
 
 ## 트렌드 콘텐츠
 - trend_name: ${content.trend_name}
-- concept: ${content.concept ?? "(없음)"}
+- concept: ${content.concept ?? "(없음)"}${content.composition_hint ? `\n- **고정 구도 (필수)**: ${content.composition_hint} — 이 구도를 프롬프트 구도 어휘로 반드시 반영하고, 다른 구도로 바꾸지 말 것.` : ""}
 
 ## 매체 분석
 
@@ -109,7 +129,11 @@ ${block("Pinterest", pin)}
   if (!data) throw new Error("프롬프트 생성 실패 (LLM 응답 파싱 실패)");
 
   const base = data.generation_prompt.trim().replace(/[.,\s]+$/, "");
-  const final = `${base}, ${ASPECT_TAIL}. Avoid: ${FIXED_NEGATIVE.join(", ")}.`;
+  // 제품을 손에 쥐는 구도면 "한 손만" negative를 추가로 적용.
+  const negatives = GRIP_RE.test(base)
+    ? [...FIXED_NEGATIVE, ...GRIP_NEGATIVE]
+    : FIXED_NEGATIVE;
+  const final = `${base}, ${ASPECT_TAIL}. Avoid: ${negatives.join(", ")}.`;
 
   return {
     generation_prompt: final,

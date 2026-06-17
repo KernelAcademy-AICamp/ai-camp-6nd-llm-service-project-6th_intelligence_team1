@@ -56,6 +56,10 @@ export async function generateQueriesAndSearch({ brand, content, usedQueries = [
     ? `\n## 샷 방향\nshot_direction: **${shot_direction}** — 위 표 기준으로 이 방향에 맞는 이미지가 걸리도록 쿼리 3개를 작성하세요.`
     : "";
 
+  const compositionBlock = content.composition_hint
+    ? `\n## 구도 (필수 반영)\ncomposition: **${content.composition_hint}** — 이 구도에 맞는 레퍼런스가 걸리도록 쿼리에 구도 어휘를 반영하세요.`
+    : "";
+
   const userMessage = `브랜드와 트렌드 콘텐츠로 Pinterest 영문 쿼리 3개를 만드세요.
 
 ## 브랜드
@@ -66,7 +70,7 @@ export async function generateQueriesAndSearch({ brand, content, usedQueries = [
 
 ## 트렌드 콘텐츠
 - trend_name: ${content.trend_name}
-- concept: ${content.concept ?? "(없음)"}${content.mood ? `\n- mood: ${content.mood}` : ""}${content.key_message ? `\n- key_message: ${content.key_message}` : ""}${directionBlock}${usedBlock}
+- concept: ${content.concept ?? "(없음)"}${content.mood ? `\n- mood: ${content.mood}` : ""}${content.key_message ? `\n- key_message: ${content.key_message}` : ""}${directionBlock}${compositionBlock}${usedBlock}
 
 \`queries\` (Pinterest용) 3개 반환.`;
 

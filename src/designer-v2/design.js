@@ -58,6 +58,21 @@ const brandData = brandRaw?.data ?? {};
 const brandName = matchData.brand_name;
 
 // 매칭가 recommendations → designer contents 변환 (rank 1~3, 오름차순)
+// 슬롯별 샷 방향 고정 — "model"(인물) / "product"(제품·제형). rank별로 지정.
+const SHOT_DIRECTION_BY_RANK = {
+  1: "product", // R1 — 제품·정물샷
+  2: "model",   // R2 — 인물·모델샷
+  3: "product", // R3 — 제품·제형 매크로
+};
+const DEFAULT_SHOT_DIRECTION = "product";
+
+// 슬롯별 구도 키워드 — 같은 shot_direction이라도 구도가 겹치지 않도록 강제
+const COMPOSITION_BY_RANK = {
+  1: "top-down flat lay, overhead arrangement, neatly arranged composition", // R1 평면 배치
+  2: "upper-body portrait close-up", // R2 인물 클로즈업
+  3: "extreme macro close-up, ingredient and liquid texture detail", // R3 초근접 매크로
+};
+
 const contents = matchData.recommendations
   .slice()
   .sort((a, b) => a.rank - b.rank)
@@ -70,13 +85,13 @@ const contents = matchData.recommendations
     const reasonBullets = (rec.summary_reasons ?? []).map(
       (r) => `${r.category}: ${r.fact}${r.source ? ` (${r.source})` : ""}`
     );
-    const SHOT_DIRECTION = { 1: "model", 2: "product", 3: "lifestyle" };
     return {
       content_id: `R${rec.rank}`,
       trend_name: rec.trend_name,
       summary_bullets: summaryBullets,
       reason_bullets: reasonBullets,
-      shot_direction: SHOT_DIRECTION[rec.rank] ?? null,
+      shot_direction: SHOT_DIRECTION_BY_RANK[rec.rank] ?? DEFAULT_SHOT_DIRECTION,
+      composition_hint: COMPOSITION_BY_RANK[rec.rank] ?? null,
     };
   });
 
@@ -187,18 +202,23 @@ for (const c of contents) {
   }
 
   // 4단계: 이미지 생성 (제품 사진 SUBJECT 레퍼런스)
+  // 기본은 프롬프트만 생성(이미지 OFF). GEN_IMAGE=1일 때만 Gemini 이미지 생성.
   const outputImagePath = `shared/data/images/${brandName}/${c.content_id ?? visuals.length}.png`;
   let generatedImageUrl = null;
-  try {
-    generatedImageUrl = await generateImage({
-      prompt: generation_prompt,
-      outputPath: outputImagePath,
-      aspectRatio: "3:4",
-      referenceImagePath: productImagePath,
-    });
-    console.log(`  [4단계] 이미지 저장: ${generatedImageUrl}`);
-  } catch (err) {
-    console.error(`  ❌ [4단계] 실패: ${err.message}`);
+  if (process.env.GEN_IMAGE) {
+    try {
+      generatedImageUrl = await generateImage({
+        prompt: generation_prompt,
+        outputPath: outputImagePath,
+        aspectRatio: "3:4",
+        referenceImagePath: productImagePath,
+      });
+      console.log(`  [4단계] 이미지 저장: ${generatedImageUrl}`);
+    } catch (err) {
+      console.error(`  ❌ [4단계] 실패: ${err.message}`);
+    }
+  } else {
+    console.log(`  [4단계] 이미지 생성 건너뜀 (프롬프트만, 켜려면 GEN_IMAGE=1)`);
   }
 
   visuals.push({
