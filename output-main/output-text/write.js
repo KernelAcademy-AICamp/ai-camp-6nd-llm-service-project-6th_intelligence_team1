@@ -915,14 +915,13 @@ function buildMethodologyBullets(fitKey, result) {
   ];
 }
 
-// ─── match_fits.reason 코드 템플릿 합성 (LLM 호출 없음) ─────────────
+// ─── match_reasons.detail 코드 템플릿 합성 (LLM 호출 없음) ───────────
 // 매칭가 raw reason + 트렌드 수치(headline_metric.value + growth_rate)를
-// 대괄호 prefix로 결합. 환각 위험 0, 비용 0, 결정적.
+// 자연스러운 한국어 문장으로 결합. 환각 위험 0, 비용 0, 결정적.
 //
 // 출력 형식:
-//   "[검색량 {value} {±N%}] {매칭가 raw reason}"
-// 트렌드 수치 없으면 prefix 생략하고 raw reason 그대로.
-// 매칭가 raw reason 없으면 빈 문자열 반환 (시스템 안전).
+//   "검색량이 {N}건 이상이고 {X}% 증가하며 떠오르는 트렌드예요. {매칭가 raw reason}"
+// 트렌드 수치 없으면 raw reason만. 매칭가 raw reason 없으면 빈 문자열.
 
 // growth_rate(0.22) → "+22%" / -0.05 → "-5%". null/undefined면 null 반환.
 function formatGrowthRate(rate) {
@@ -932,25 +931,144 @@ function formatGrowthRate(rate) {
   return `${sign}${pct}%`;
 }
 
-// "[검색량 47.4 +22%]" 또는 "[검색량 47.4]" 또는 "[+22%]" 또는 null
-function buildMetricPrefix(td) {
-  const value = td?.headline_metric?.value;
-  const rate = formatGrowthRate(td?.metrics?.growth_rate);
-  const parts = [];
-  if (value) parts.push(`검색량 ${value}`);
-  if (rate) parts.push(rate);
-  return parts.length > 0 ? `[${parts.join(" ")}]` : null;
+// 트렌드 수치를 자연스러운 한국어 한 문장으로 풀어 쓴다. 옛 "[검색량 N +X%]"
+// 대괄호 표기 대체. 트렌드 분석가가 다양한 형식으로 value를 보내므로 6가지
+// 패턴으로 분기. 매칭 안 되면 null (prefix 없이 raw reason만 노출).
+//
+// 케이스 예:
+//   value="300+", rate=+0.45 → "검색량이 300건 이상이고 45% 증가하며 떠오르는 트렌드예요."
+//   value="47.4", rate=-0.15 → "검색량이 47.4건이고 15% 감소했지만 안정적으로 자리잡은 트렌드예요."
+//   value="56%↑", rate=+0.56 → "56% 증가하며 떠오르는 트렌드예요." (% 중복 회피)
+//   value="100 → 11.17", rate=-0.89 → "89% 감소했지만 안정적으로 자리잡은 트렌드예요."
+//   metric="검색 수요 지수", value="높음" → "검색 수요 지수가 높음으로 강하게 잡히고 있어요."
+//   metric="활성도", value=68 → "이 카테고리의 활성도가 68으로 활발해요."
+//   metric="제품 순위 및 수상", value="화해 1위 2년 연속" → "제품 순위 및 수상: 화해 1위 2년 연속."
+
+// 순수 검색량 숫자형(정수/소수, 끝에 "+" 허용)이면 {num, endsWithPlus} 반환.
+function parseSearchVolumeValue(value) {
+  if (value == null) return null;
+  const s = String(value).trim();
+  if (!s) return null;
+  if (/[%↑↓]/.test(s)) return null;
+  if (/[가-힣]/.test(s)) return null;
+  if (/\s/.test(s)) return null;
+  const endsWithPlus = s.endsWith("+");
+  const numPart = endsWithPlus ? s.slice(0, -1) : s;
+  if (!/^\d+(\.\d+)?$/.test(numPart)) return null;
+  return { num: numPart, endsWithPlus };
 }
 
-// 각 fit의 match_fits.reason을 합성. 코드 템플릿만 사용 (LLM 호출 X).
+// rate 단독 풀어쓰기 — 증가/감소/유지 분기.
+function formatRateSentence(rate) {
+  const pct = Math.round(rate * 100);
+  const absPct = Math.abs(pct);
+  if (pct > 0) return `${absPct}% 증가하며 떠오르는 트렌드예요.`;
+  if (pct < 0) return `${absPct}% 감소했지만 안정적으로 자리잡은 트렌드예요.`;
+  return null; // 0%는 굳이 안 표시
+}
+
+function buildMetricPrefixSentence(td) {
+  const value = td?.headline_metric?.value;
+  const metric = td?.headline_metric?.metric;
+  const rate = td?.metrics?.growth_rate;
+
+  const hasValue = value != null && String(value).trim().length > 0;
+  const hasRate = rate != null && typeof rate === "number";
+
+  if (!hasValue && !hasRate) return null;
+
+  const valueStr = hasValue ? String(value).trim() : "";
+
+  // 1) 활성/활성도 metric + 짧은 value — "이 카테고리의 활성도가 N으로 활발해요"
+  if (hasValue && typeof metric === "string" && /활성/.test(metric) && valueStr.length <= 10) {
+    return `이 카테고리의 ${metric}이 ${valueStr}으로 활발해요.`;
+  }
+
+  // 2) 순수 검색량 숫자 — 가장 정밀한 풀어쓰기
+  const parsed = hasValue ? parseSearchVolumeValue(value) : null;
+  if (parsed) {
+    if (hasRate) {
+      const pct = Math.round(rate * 100);
+      const absPct = Math.abs(pct);
+      if (pct > 0) {
+        const suffix = parsed.endsWithPlus ? "건 이상이고" : "건이고";
+        return `검색량이 ${parsed.num}${suffix} ${absPct}% 증가하며 떠오르는 트렌드예요.`;
+      }
+      if (pct < 0) {
+        const suffix = parsed.endsWithPlus ? "건 이상이지만" : "건이고";
+        return `검색량이 ${parsed.num}${suffix} ${absPct}% 감소했지만 안정적으로 자리잡은 트렌드예요.`;
+      }
+      const suffix = parsed.endsWithPlus ? "건 이상으로" : "건으로";
+      return `검색량이 ${parsed.num}${suffix} 안정적인 트렌드예요.`;
+    }
+    const suffix = parsed.endsWithPlus ? "건 이상이에요" : "건이에요";
+    return `검색량이 ${parsed.num}${suffix}.`;
+  }
+
+  // 3) % 패턴 value (56%↑, -22%) — rate와 의미 중복 → rate 우선, 없으면 value에서 추출.
+  if (hasValue && /^[+-]?\d+(\.\d+)?%[↑↓]?$/.test(valueStr)) {
+    if (hasRate) return formatRateSentence(rate);
+    const m = valueStr.match(/(\d+(\.\d+)?)/);
+    if (m) {
+      const sign = /[-↓]/.test(valueStr) ? -1 : 1;
+      return formatRateSentence((Number(m[1]) / 100) * sign);
+    }
+  }
+
+  // 4) 변화 패턴 ("100 → 11.17 (-88.8%)") — rate에 위임
+  if (hasValue && /→/.test(valueStr) && hasRate) {
+    return formatRateSentence(rate);
+  }
+
+  // 5) 정성 평가 단어 (높음/중간/낮음 등) + metric 동반
+  if (hasValue && /^(매우\s*)?(높음|높은|중간|보통|낮음|낮은)$/.test(valueStr)) {
+    const tag = metric || "트렌드 신호";
+    if (/높/.test(valueStr)) return `${tag}이 ${valueStr}으로 강하게 잡히고 있어요.`;
+    if (/중간|보통/.test(valueStr)) return `${tag}이 ${valueStr} 수준으로 관찰돼요.`;
+    return `${tag}이 ${valueStr}으로 약해진 상태예요.`;
+  }
+
+  // 6) 그 외 — rate가 있으면 rate만, 없으면 metric+value를 자연 문장으로.
+  if (hasRate) return formatRateSentence(rate);
+  if (hasValue && metric) return `${metric}: ${valueStr}.`;
+  if (hasValue) return `${valueStr}.`;
+  return null;
+}
+
+// 각 기준의 detail 문장 합성. 코드 템플릿만 사용 (LLM 호출 X).
 // 매칭가가 영문 필드명(ingred·product_features 등)을 섞어 보내면
-// naturalizeMatcherText()가 자연 한글로 치환.
+// naturalizeMatcherText()가 자연 한글로 치환. 끝에 종결부호 없으면 자동 보정.
 function buildMatchReason(fitData, td) {
   const rawReason = fitData?.reason;
   if (!rawReason) return ""; // 매칭가 데이터 없으면 빈 문자열
   const polished = naturalizeMatcherText(rawReason);
-  const prefix = buildMetricPrefix(td);
-  return prefix ? `${prefix} ${polished}` : polished;
+  const sentence = buildMetricPrefixSentence(td);
+  const merged = sentence ? `${sentence} ${polished}` : polished;
+  return /[.。!?]$/.test(merged.trim()) ? merged : `${merged}.`;
+}
+
+// ─── match_reasons 통합 구조 (LLM 없음, 결정적) ─────────────────────
+// 옛 reason_bullets(매칭이유 3줄) + match_fits.reason(매칭기준 detail)이
+// 같은 트렌드 매칭을 두 번 보여주던 중복을 1개 영역으로 통합.
+// 3개 항목 = product_fit(ingred) · tnm_fit(visual) · target_fit(life).
+// market_fit(safe)는 시장성 참고 지표라 제외 (매칭가 정의 그대로).
+const MATCH_REASON_CATEGORIES = [
+  { id: 1, fitKey: "ingred", title: "제품·제형이 트렌드와 맞는가" },
+  { id: 2, fitKey: "visual", title: "브랜드 매체·톤이 트렌드와 맞는가" },
+  { id: 3, fitKey: "life", title: "타겟 고객층이 트렌드와 맞는가" },
+];
+
+function buildMatchReasons(reasonBullets, mergedFits, td) {
+  return MATCH_REASON_CATEGORIES.map((cat, i) => {
+    const fit = mergedFits?.[cat.fitKey];
+    return {
+      id: cat.id,
+      title: cat.title,
+      summary: reasonBullets?.[i] ?? "",
+      detail: fit?.reason ?? "",
+      result: fit?.result ?? "",
+    };
+  });
 }
 
 export async function generateWriterOutput({ brand, trend, match } = {}) {
@@ -1047,43 +1165,40 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
   );
 
   // 3) raw + enrichment + usage_plan + match_reasons 머지
-  // 우선순위 (match_fits.reason): buildMatchReason(코드 합성) → enrichContent → raw matcher
+  // 우선순위 (detail reason): buildMatchReason(코드 합성) → enrichContent → raw matcher
   // usage_plan: 항상 buildUsagePlan 코드 템플릿 (LLM 미사용).
+  // 결과: match_fits 제거 — 매칭이유(reason_bullets)와 같은 트렌드 매칭을
+  // 두 영역으로 두 번 보여주던 중복을 match_reasons 한 영역으로 통합.
+  // reason_bullets는 designer-v2·web/UI_v1.html 등 다운스트림이 쓰므로 유지.
   const contents = rawContents.map((c, i) => {
     const enr = enrichments[i];
     const dedicatedReasons = matchReasons[i] ?? {};
     const pickReason = (fitKey) =>
       dedicatedReasons[fitKey] || enr?.fit_reasons?.[fitKey] || null;
 
-    const casualBullets = casualBulletsByCard[i] ?? null;
-    const mergedFit = (fitKey) => {
-      const base = c.match_fits[fitKey];
-      if (!base) return base; // 매칭가가 안 준 fit
-      const reason = pickReason(fitKey);
-      const bullets = casualBullets?.[fitKey];
-      const next = { ...base };
-      if (reason) next.reason = reason;
-      if (Array.isArray(bullets) && bullets.length > 0) {
-        next.casual_bullets = bullets;
-      }
-      return next;
-    };
+    // mergedFits — match_reasons 빌더에 넘길 임시 구조. 출력엔 안 나감.
+    const mergedFits = Object.fromEntries(
+      FIT_KEYS.map((fitKey) => {
+        const base = c.match_fits?.[fitKey];
+        if (!base) return [fitKey, null];
+        const reason = pickReason(fitKey);
+        return [fitKey, reason ? { ...base, reason } : base];
+      }),
+    );
 
-    return {
+    const td = findTrend(c.trend_name);
+    const merged = {
       ...c,
       summary_bullets:
         Array.isArray(enr?.summary_bullets) && enr.summary_bullets.length > 0
           ? enr.summary_bullets
           : c.summary_bullets,
       usage_plan: usagePlans[i] || "",
-      match_fits: {
-        ...c.match_fits,
-        ingred: mergedFit("ingred"),
-        visual: mergedFit("visual"),
-        life: mergedFit("life"),
-        safe: mergedFit("safe"),
-      },
+      match_reasons: buildMatchReasons(c.reason_bullets, mergedFits, td),
     };
+    // match_fits는 새 구조(match_reasons)로 통합 — 출력에서 제거.
+    delete merged.match_fits;
+    return merged;
   });
 
   return {
