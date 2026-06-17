@@ -21,7 +21,7 @@ const brandContext = {
 async function fetchTrendArticles(query) {
   const response = await client.search(query, {
     searchDepth: "basic",
-    maxResults: 5,
+    maxResults: 10,
     includeAnswer: false,
   });
 

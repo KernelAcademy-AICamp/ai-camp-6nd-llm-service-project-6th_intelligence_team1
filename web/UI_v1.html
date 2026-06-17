@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TrendFit | 트렌드, 감으로 찍지 마세요</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- 팀 공용 매칭 리포트 컴포넌트 (최신 리포트 수정사항이 여기에 반영됨) -->
+    <link rel="stylesheet" href="/shared/components/match-report.css">
+    <script src="/shared/components/match-report.js"></script>
     <style>
         :root {
             --bg: #fffbf9;
@@ -511,6 +513,37 @@
         .rp-ch { display:flex; justify-content:space-between; gap:8px; font-size:0.82rem; color:var(--text-secondary); padding:5px 0; border-bottom:1px solid rgba(126,107,126,0.08); }
         .rp-empty { font-size:0.85rem; color:var(--text-secondary); opacity:0.6; }
         @media (max-width: 900px) { .rp-cards { grid-template-columns:1fr; } .rp-compare-name { width:120px; } }
+
+        /* ── PDF 인쇄: 리포트(page-step4)만 전체 출력 ── */
+        @media print {
+            /* 모든 페이지 숨김 → 리포트만 표시 */
+            .page { display: none !important; }
+            #page-step4 {
+                display: block !important;
+                position: static !important;
+                height: auto !important;
+                overflow: visible !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                transform: none !important;
+                padding: 0 !important;
+            }
+            /* 인쇄에 불필요한 요소 숨김 */
+            #page-step4 .stepper,
+            #page-step4 .step-header,
+            #page-step4 .submit-row,
+            .toast,
+            header, .ambient-layer, .micro-element { display: none !important; }
+            #page-step4 .form-card { box-shadow: none !important; border: none !important; max-width: none !important; width: 100% !important; padding: 0 !important; }
+            body { background: #fff !important; }
+            /* 카드가 페이지 경계에서 잘리지 않게 */
+            .mr-trend-card, .mr-summary-card, .mr-data-card, .rp-card { break-inside: avoid; page-break-inside: avoid; }
+            /* 섹션 제목(PART I/II)이 내용과 떨어져 페이지 끝에 홀로 남지 않게 */
+            .mr-section-head { break-after: avoid; page-break-after: avoid; }
+            /* 배경색·뱃지색 유지하며 인쇄 */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            @page { margin: 12mm; }
+        }
     </style>
 </head>
 <body>
@@ -829,9 +862,12 @@
         <div class="form-group">
             <label class="form-label">주력 채널 <span class="req">*</span></label>
             <div class="pill-group" data-field="media_channels">
+                <label class="pill"><input type="checkbox" value="인스타그램"><span>인스타그램</span></label>
                 <label class="pill"><input type="checkbox" value="유튜브"><span>유튜브</span></label>
-                <label class="pill"><input type="checkbox" value="메타"><span>메타</span></label>
-                <label class="pill"><input type="checkbox" value="카카오"><span>카카오</span></label>
+                <label class="pill"><input type="checkbox" value="틱톡"><span>틱톡</span></label>
+                <label class="pill"><input type="checkbox" value="자사몰"><span>자사몰</span></label>
+                <label class="pill"><input type="checkbox" value="네이버 스토어"><span>네이버 스토어</span></label>
+                <label class="pill"><input type="checkbox" value="오프라인 스토어"><span>오프라인 스토어</span></label>
             </div>
         </div>
 
@@ -931,7 +967,34 @@
 
         <div class="submit-row">
             <button class="back-button" onclick="goToPage(3)">← 돌아가기</button>
-            <button class="cta-button" onclick="goToPage(5)">예상 시안 확인하기 →</button>
+            <button class="cta-button" onclick="showPageById('page-photo')">시안 생성하러 가기 →</button>
+        </div>
+    </div>
+</section>
+
+<!-- ============ 제품 사진 첨부 ============ -->
+<section class="step-section page hidden" id="page-photo">
+    <div class="form-card">
+        <div class="step-header">
+            <h2 class="step-title">제품 사진 첨부</h2>
+            <p class="step-desc">시안 생성에 참고할 제품 사진 1장을 올려주세요.</p>
+        </div>
+        <div class="form-group">
+            <label class="form-label">제품 사진 <span class="req">*</span></label>
+            <div id="photo-dropzone"
+                 onclick="document.getElementById('photo-input').click()"
+                 style="border:2px dashed #e3c6e3;border-radius:16px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s;background:#fdf7fd;">
+                <input type="file" id="photo-input" accept="image/*" hidden onchange="handlePhotoSelect(this.files)">
+                <div id="photo-placeholder" style="color:#9a7a9a;">
+                    <p style="margin:0 0 6px;font-weight:600;">여기로 사진을 끌어다 놓거나 클릭해서 업로드</p>
+                    <p style="margin:0;font-size:0.85rem;color:#bca0bc;">JPG·PNG · 1장</p>
+                </div>
+                <img id="photo-preview" style="display:none;max-width:100%;max-height:300px;border-radius:12px;" alt="제품 사진 미리보기">
+            </div>
+        </div>
+        <div class="submit-row">
+            <button class="back-button" onclick="goToPage(4)">← 돌아가기</button>
+            <button class="cta-button" id="to-mockup-btn" onclick="generateMockups()" disabled style="opacity:.5;">예상 시안 확인하기 →</button>
         </div>
     </div>
 </section>
@@ -962,7 +1025,7 @@
         <p class="mockup-note">* 시안은 입력 정보를 바탕으로 한 예시 미리보기입니다.</p>
 
         <div class="submit-row">
-            <button class="back-button" onclick="goToPage(4)">← 돌아가기</button>
+            <button class="back-button" onclick="showPageById('page-photo')">← 돌아가기</button>
             <div class="share-area">
                 <button class="cta-button" id="share-report-btn" onclick="toggleShareOptions()">리포트 공유하기</button>
                 <div id="share-options-row" class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
@@ -1444,6 +1507,7 @@
         { key: 'trend', msg: '🏃‍♂️‍➡️ 발바닥에 땀나도록 트렌드 수집·분석 중...' },
         { key: 'match', msg: '💘 우리 브랜드와 딱 맞는 트렌드 매칭 중...' },
         { key: 'write', msg: '👩🏻‍💻 팀장님 설득할 리포트 작성 중...' }
+        // design(시안) 단계는 여기서 빼고, 제품 사진 첨부 후 generateMockups()에서 실행한다.
     ];
 
     async function startAnalysisWithLoading() {
@@ -1479,7 +1543,7 @@
                     body: JSON.stringify(payload)
                 });
                 const out = await res.json();
-                if (!out.ok) throw new Error('[' + st.key + '] ' + (out.log || out.error || '실패').toString().slice(-280));
+                if (!out.ok) throw new Error('[' + st.key + '] ' + (out.log || out.error || '실패').toString().slice(0, 280));
 
                 // 단계 완료 → 막대 전진
                 barEl.style.width = ((i + 1) / n * 100) + '%';
@@ -1488,10 +1552,24 @@
             // 모든 단계 완료 → 실제 결과 렌더
             const wr = await fetch('/output-main/output-text/writer-output.json?ts=' + Date.now());
             const writer = await wr.json();
-            // ④ 매칭 리포트 = writer-output.json을 우리 디자인으로 네이티브 렌더
-            buildReportReal(writer.data, d);
-            // ⑤ 예상 시안 = placeholder 카드
-            buildMockupsReal(writer.data, d);
+            // 시안 단계(사진 첨부 후)에서 다시 쓰기 위해 writer 데이터와 입력값을 보관
+            window.__writerData = writer.data;
+            window.__lastInput = d;
+            // ④-b 시안가 v2 산출(design-output.json) — 있으면 실제 이미지, 없으면 placeholder 폴백
+            let design = null;
+            try {
+                const dr = await fetch('/shared/data/design-output.json?ts=' + Date.now());
+                if (dr.ok) {
+                    const dj = await dr.json();
+                    if (dj && dj.status === 'success' && dj.data) design = dj.data;
+                }
+            } catch (e) { /* 시안 없으면 placeholder 로 진행 */ }
+            // ④ 매칭 리포트 = 팀 공용 컴포넌트(renderMatchReport)로 렌더
+            //    → shared/components/match-report.js 의 최신 리포트 수정사항이 그대로 반영됨
+            document.getElementById('report_meta').innerHTML = '';
+            renderMatchReport(document.getElementById('report_body'), writer.data);
+            // ⑤ 시안 = design-output.json 실제 이미지(없으면 placeholder)
+            buildMockupsReal(writer.data, d, design);
 
             setTimeout(() => switchPage(4), 450);
         } catch (err) {
@@ -1585,8 +1663,22 @@
           + `<div class="rp-section"><div class="rp-section-title">트렌드별 상세</div><div class="rp-cards">${cardsHtml}</div></div>`;
     }
 
-    function buildMockupsReal(data, d) {
+    function buildMockupsReal(data, d, design) {
         const contents = ((data && data.contents) || []).slice().sort((a, c) => (a.rank || 9) - (c.rank || 9));
+        // 시안가 v2 산출(design-output.json)의 실제 이미지 매핑 (trend_name·content_id 기준)
+        const dvisuals = (design && Array.isArray(design.visuals)) ? design.visuals : [];
+        const imgByKey = new Map();
+        for (const v of dvisuals) {
+            if (v && v.generated_image_url) {
+                if (v.trend_name) imgByKey.set(v.trend_name, v.generated_image_url);
+                if (v.content_id) imgByKey.set(v.content_id, v.generated_image_url);
+            }
+        }
+        // generated_image_url 은 'shared/data/images/...' (루트 상대) → 서버 정적경로(/...)로 변환 + 캐시버스트
+        const imgUrlOf = (c) => {
+            const raw = imgByKey.get(c.trend_name) || imgByKey.get('R' + (c.rank || ''));
+            return raw ? '/' + String(raw).replace(/^\/+/, '') + '?ts=' + Date.now() : null;
+        };
         const tags = ['Key Visual', 'SNS Card', 'Banner'];
         const palettes = [['#ff9ec4', '#c9b6f0'], ['#b9a6f0', '#ffe1c2'], ['#ffd8a8', '#ff9ec4']];
         const brand = d.brand_name || '';
@@ -1610,7 +1702,6 @@
                 + `</svg>`;
         }
 
-        const lbItems = [];
         document.getElementById('mock_grid').innerHTML = contents.map((c, i) => {
             const kw = (c.keywords || [])[0] || (d.texture_keywords || [])[0] || '트렌드';
             const head = [`"${kw}", 지금`, `내 ${cat || '메이크업'}`, `${d.product_name || brand}`][i] || kw;
@@ -1629,10 +1720,9 @@
                 + `<div class="mockup-body">`
                 + `<div class="mockup-brand">${esc(brand)}</div>`
                 + `<h3 class="mockup-headline">${esc(c.trend_name || '')}</h3>`
-                + `<p class="mockup-caption">${esc((c.keywords || []).slice(0, 3).join(' · ') || c.verdict || '')} · 예상 시안(placeholder)</p>`
+                + `<p class="mockup-caption">${caption}</p>`
                 + `</div></div>`;
         }).join('');
-        window.__lightboxItems = lbItems;
     }
 
     function buildReport(d) {
@@ -1731,43 +1821,16 @@
         }
     }
 
-    /* 리포트(step4) 내용을 PDF로 저장 */
+    /* 리포트(step4)를 브라우저 기본 인쇄로 PDF 저장
+       → @media print CSS가 리포트만 전체 출력. 사용자는 인쇄 창에서 "PDF로 저장" 선택. */
     function downloadPDF() {
-        if (typeof html2pdf === 'undefined') {
-            showToast('PDF 라이브러리를 불러오는 중이에요, 잠시 후 다시 시도해 주세요');
+        const body = document.getElementById('report_body');
+        if (!body || !body.innerHTML.trim()) {
+            showToast('리포트가 아직 준비되지 않았어요');
             return;
         }
-        const src = document.querySelector('#page-step4 .form-card');
-        if (!src) { showToast('리포트가 아직 준비되지 않았어요'); return; }
-
-        // 인쇄용 클론 만들기 (네비/버튼은 제외)
-        const clone = src.cloneNode(true);
-        clone.querySelectorAll('.stepper, .submit-row').forEach(el => el.remove());
-
-        // 오프스크린 컨테이너에 배치 (실제 단계와 무관하게 항상 렌더 가능)
-        const wrap = document.createElement('div');
-        wrap.style.cssText = 'position: fixed; left: -10000px; top: 0; width: 1180px; background: #fffbf9; padding: 40px; font-family: Pretendard, sans-serif;';
-        wrap.appendChild(clone);
-        document.body.appendChild(wrap);
-
-        const brand = (document.getElementById('brand_name').value.trim() || 'trendfit').replace(/\s+/g, '_');
-        const opt = {
-            margin: [10, 10, 10, 10],
-            filename: brand + '_리포트.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, backgroundColor: '#fffbf9', logging: false },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-        };
-
-        showToast('PDF를 만드는 중이에요…');
-        html2pdf().set(opt).from(wrap).save().then(() => {
-            document.body.removeChild(wrap);
-            showToast('PDF 다운로드 완료');
-        }).catch(err => {
-            document.body.removeChild(wrap);
-            console.error(err);
-            showToast('PDF 저장에 실패했어요');
-        });
+        showToast('인쇄 창에서 "PDF로 저장"을 선택하세요');
+        window.print();
     }
 
     /* ===== 마우스 이펙트 ===== */
@@ -1799,6 +1862,93 @@
             }, 200 + (i * 150));
         });
     });
+
+    /* ===== 제품 사진 첨부 ===== */
+    function handlePhotoSelect(files) {
+        if (!files || !files.length) return;
+        const file = files[0];
+        if (!file.type.startsWith('image/')) { showToast('이미지 파일만 올릴 수 있어요'); return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = document.getElementById('photo-preview');
+            img.src = e.target.result;
+            img.style.display = 'block';
+            document.getElementById('photo-placeholder').style.display = 'none';
+            const btn = document.getElementById('to-mockup-btn');
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            window.productPhotoDataUrl = e.target.result; // 나중에 시안 생성에 쓸 사진 데이터
+        };
+        reader.readAsDataURL(file);
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        const dz = document.getElementById('photo-dropzone');
+        if (!dz) return;
+        ['dragover', 'dragenter'].forEach(ev => dz.addEventListener(ev, e => {
+            e.preventDefault(); dz.style.borderColor = '#d18ad1'; dz.style.background = '#faecfa';
+        }));
+        ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => {
+            e.preventDefault(); dz.style.borderColor = '#e3c6e3'; dz.style.background = '#fdf7fd';
+        }));
+        dz.addEventListener('drop', e => handlePhotoSelect(e.dataTransfer.files));
+    });
+
+    /* 사진 첨부 → 서버 저장 → 시안(design) 생성 → 시안 페이지로 이동 */
+    async function generateMockups() {
+        const dataUrl = window.productPhotoDataUrl;
+        if (!dataUrl) { showToast('제품 사진을 먼저 올려주세요'); return; }
+        const d = window.__lastInput || collect();
+        const brand = d.brand_name;
+        if (!brand) { showToast('브랜드명을 찾을 수 없어요. 1단계부터 다시 진행해 주세요'); return; }
+
+        // 로딩 화면 재사용
+        showPageById('page-loading');
+        const msgEl = document.getElementById('loading-message');
+        const barEl = document.getElementById('loading-progress-bar');
+        msgEl.textContent = '🎨 제품 사진으로 시안 생성 중...';
+        barEl.style.background = '';
+        barEl.style.width = '25%';
+
+        try {
+            // ① 사진을 서버에 저장 (inputs/product-images/<브랜드명>.<확장자>)
+            const up = await fetch('/upload-product-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ brand_name: brand, data_url: dataUrl })
+            });
+            const upj = await up.json();
+            if (!upj.ok) throw new Error(upj.error || '사진 저장 실패');
+            barEl.style.width = '50%';
+
+            // ② 시안(design) 단계 실행
+            const res = await fetch('/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stage: 'design' })
+            });
+            const out = await res.json();
+            if (!out.ok) throw new Error((out.log || out.error || '시안 생성 실패').toString().slice(0, 280));
+            barEl.style.width = '85%';
+
+            // ③ 시안 결과(design-output.json) 가져와 렌더 (없으면 placeholder 폴백)
+            let design = null;
+            try {
+                const dr = await fetch('/shared/data/design-output.json?ts=' + Date.now());
+                if (dr.ok) {
+                    const dj = await dr.json();
+                    if (dj && dj.status === 'success' && dj.data) design = dj.data;
+                }
+            } catch (e) { /* 없으면 placeholder */ }
+            buildMockupsReal(window.__writerData, d, design);
+            barEl.style.width = '100%';
+
+            // ④ 시안 페이지로 이동
+            setTimeout(() => goToPage(5), 350);
+        } catch (err) {
+            showToast('시안 생성 실패: ' + (err.message || err));
+            showPageById('page-photo');
+        }
+    }
 </script>
 
 <!-- 시안 원본 라이트박스 -->

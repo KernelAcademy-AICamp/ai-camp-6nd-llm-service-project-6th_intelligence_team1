@@ -1,32 +1,23 @@
 import dotenv from "dotenv";
 import axios from "axios";
 import fs from "fs";
-import { fileURLToPath } from "url"; // [추가] 터미널 직접 실행인지 감지용
 fs.mkdirSync("trend/data", { recursive: true });
 dotenv.config();
 
 const API_KEY = process.env.YOUTUBE_API_KEY;
 const BASE_URL = "https://www.googleapis.com/youtube/v3";
 
-// ── 캐시 설정 ─────────────────────────────────────────────────
-const CACHE_PATH = "trend/data/youtube_cache.json";
-const TODAY = new Date().toISOString().slice(0, 10); // 예: "2026-06-08"
+// 수집 결과 캐시 경로 + 새로고침 플래그
+// 평소엔 기존 youtube_raw.json을 재사용해 YouTube 일일 할당량을 아낀다.
+// 서버가 ?fresh=1 요청 시 YOUTUBE_FRESH=1을 넘겨주며, 그때만 새로 수집한다.
+const CACHE_PATH = "trend/data/youtube_raw.json";
+const FRESH = process.env.YOUTUBE_FRESH === "1";
 
-// 디스크에서 캐시 읽기 (없으면 빈 객체)
-function loadCacheFromDisk() {
-  try {
-    return JSON.parse(fs.readFileSync(CACHE_PATH, "utf-8"));
-  } catch {
-    return {};
-  }
-}
+// ── 품질 튜닝 다이얼 ──────────────────────────────
+const RECENT_DAYS = 180;   // 최근 N일 (30 → 180: 표본 확보. 더 최신만 원하면 90)
+const MAX_RESULTS = 25;    // 키워드당 영상 수 (search.list 비용은 결과수와 무관)
+// ────────────────────────────────────────────────
 
-// 실행 중 상태 (main에서 초기화)
-let cache = {};
-let unitsUsed = 0;
-// ──────────────────────────────────────────────────────────────
-
-// 브랜드 분석가가 만든 brand-analysis.json을 읽어옴
 const brandAnalysis = JSON.parse(
   fs.readFileSync("shared/data/brand-analysis.json", "utf-8")
 );
@@ -40,39 +31,27 @@ const brandContext = {
 };
 
 async function fetchTrendingVideos(query) {
-  // ── 캐시 확인 ──────────────────────────────────────────────
-  // (--fresh / fresh:true 로 실행하면 main에서 cache를 비워두므로 여기서 항상 통과)
-  const cacheKey = `${query}__${TODAY}`;
-  if (cache[cacheKey]) {
-    console.log(`  └ (캐시 사용 — units 0) "${query}"`);
-    return cache[cacheKey];
-  }
-  // ──────────────────────────────────────────────────────────
-
-  // 1단계: search.list로 영상 ID 수집 (100 units)
+  // 1단계: search.list로 영상 ID 수집 (관련도순)
   const searchResponse = await axios.get(`${BASE_URL}/search`, {
     params: {
       key: API_KEY,
       q: query,
       part: "snippet",
       type: "video",
-      order: "viewCount",
-      maxResults: 5,
+      order: "relevance",   // viewCount → relevance: 주제에 맞는 영상이 옴
+      maxResults: MAX_RESULTS,
       relevanceLanguage: "ko",
-      publishedAfter: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      regionCode: "KR",
+      publishedAfter: new Date(Date.now() - RECENT_DAYS * 24 * 60 * 60 * 1000).toISOString()
     }
   });
-  unitsUsed += 100;
 
   const items = searchResponse.data.items;
-  if (!items || items.length === 0) {
-    cache[cacheKey] = []; // 빈 결과도 캐싱 (재호출 방지)
-    return [];
-  }
+  if (!items || items.length === 0) return [];
 
   const videoIds = items.map(item => item.id.videoId).join(",");
 
-  // 2단계: videos.list로 실제 조회수 수집 (1 unit)
+  // 2단계: videos.list로 실제 조회수 수집
   const statsResponse = await axios.get(`${BASE_URL}/videos`, {
     params: {
       key: API_KEY,
@@ -80,14 +59,13 @@ async function fetchTrendingVideos(query) {
       part: "statistics"
     }
   });
-  unitsUsed += 1;
 
   const statsMap = {};
   statsResponse.data.items.forEach(item => {
     statsMap[item.id] = item.statistics;
   });
 
-  const result = items.map(item => ({
+  return items.map(item => ({
     query: query,
     source: "youtube",
     title: item.snippet.title,
@@ -96,30 +74,41 @@ async function fetchTrendingVideos(query) {
     like_count: parseInt(statsMap[item.id.videoId]?.likeCount || 0),
     url: `https://www.youtube.com/watch?v=${item.id.videoId}`
   }));
-
-  cache[cacheKey] = result; // 결과를 캐시에 저장
-  return result;
 }
 
-// [변경] main이 fresh 옵션을 받음. 백엔드에서 main({ fresh: true })로 부를 수 있음.
-async function main({ fresh = false } = {}) {
-  // ── 실행 시작 시 초기화 ────────────────────────────────────
-  unitsUsed = 0;
-  cache = fresh ? {} : loadCacheFromDisk(); // fresh면 캐시를 통째로 무시
-  if (fresh) console.log("⚡ FRESH 모드: 캐시 무시하고 새로 받습니다\n");
-  // ──────────────────────────────────────────────────────────
+async function main() {
+  // ① 캐시 재사용: FRESH가 아니고 기존 수집 파일이 있으면 API 호출 없이 그대로 사용.
+  //    (YouTube Data API 일일 할당량 절약 — 새로 받고 싶으면 ?fresh=1 로 실행)
+  if (!FRESH && fs.existsSync(CACHE_PATH)) {
+    console.log("YouTube: 기존 youtube_raw.json 재사용 (새로 받으려면 ?fresh=1 / YOUTUBE_FRESH=1).");
+    return;
+  }
 
   console.log("YouTube 트렌드 수집 시작...\n");
   console.log(`검색어 ${QUERIES.length}개를 brand-analysis.json에서 읽어왔어!\n`);
 
+  // ② 수집 시도. 할당량 초과(429) 등으로 실패하면 부분 결과로 덮어쓰지 않고
+  //    기존 캐시를 유지한 채 정상 종료(exit 0) → 파이프라인이 멈추지 않는다.
   const results = [];
-  for (const query of QUERIES) {
-    console.log(`"${query}" 검색 중...`);
-    const videos = await fetchTrendingVideos(query);
-    results.push(...videos);
+  try {
+    for (const query of QUERIES) {
+      console.log(`"${query}" 검색 중...`);
+      const videos = await fetchTrendingVideos(query);
+      console.log(`  → ${videos.length}개 수집`);
+      results.push(...videos);
+    }
+  } catch (err) {
+    const status = err?.response?.status;
+    const msg = err?.response?.data?.error?.message || err.message;
+    console.warn(`\n⚠️ YouTube 수집 실패${status ? ` (${status})` : ""}: ${msg}`);
+    if (fs.existsSync(CACHE_PATH)) {
+      console.warn("→ 기존 youtube_raw.json을 유지하고 계속 진행합니다.");
+      return;
+    }
+    console.error("→ 캐시도 없어 진행 불가. 할당량 리셋 후 재시도하거나 새 YOUTUBE_API_KEY를 사용하세요.");
+    process.exitCode = 1;
+    return;
   }
-
-  fs.writeFileSync(CACHE_PATH, JSON.stringify(cache, null, 2), "utf-8");
 
   const output = {
     collected_at: new Date().toISOString(),
@@ -135,26 +124,6 @@ async function main({ fresh = false } = {}) {
     console.log(`"${v.title.slice(0, 30)}..." 조회수: ${v.view_count.toLocaleString()}회`);
   });
   console.log("trend/data/youtube_raw.json 파일로 저장됐어!");
-
-  console.log(`\n💰 이번 실행 사용량: 약 ${unitsUsed} units (하루 한도 10,000)`);
-  if (unitsUsed === 0) {
-    console.log("   → 전부 캐시에서 가져와서 units을 하나도 안 썼어!");
-  }
-
-  return output; // [추가] 백엔드가 결과를 바로 받아 쓸 수 있게 반환
 }
 
-// ── 실행 방식 분기 ────────────────────────────────────────────
-// fresh를 켜는 두 경로 (둘 중 하나라도 있으면 캐시 무시):
-//   ① 터미널 인자:   node youtube.js --fresh
-//   ② 환경변수:      YOUTUBE_FRESH=1  ← server.js가 이 방식으로 넘김
-const isDirectRun = process.argv[1] === fileURLToPath(import.meta.url);
-if (isDirectRun) {
-  const fresh =
-    process.argv.includes("--fresh") || process.env.YOUTUBE_FRESH === "1";
-  main({ fresh });
-}
-
-// (참고) 백엔드에서 직접 import해서 쓸 수도 있게 함수도 열어둠
-export { main as collectYoutubeTrends };
-// ──────────────────────────────────────────────────────────────
+main();

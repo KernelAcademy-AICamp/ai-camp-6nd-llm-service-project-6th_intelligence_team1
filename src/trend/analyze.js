@@ -68,6 +68,7 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
       "trend_name": "트렌드 이름",
       "category": "메이크업 > 베이스",
       "keywords": ["키워드1", "키워드2"],
+      "source_search_keywords": ["검색어1", "검색어2"],
       "summary": "한 줄 요약 (50자 이내, 수치 포함 권장)",
       "headline_metric": { "metric": "검색량 지수", "value": "89", "delta": "+45% vs 전월" },
       "meaning": "트렌드의 의미 (2~3문장)",
@@ -76,7 +77,7 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
       "lifespan_estimate": "3-6개월",
       "metrics": { "score": 89, "growth_rate": 0.45, "period": "2026-04 ~ 2026-05" },
       "evidence": [
-        { "source": "YouTube", "source_type": "sns_api", "metric": "관련 영상 다수", "value": "무드 메이크업 튜토리얼 다수 관측", "period": "최근 30일", "source_ref": [12] }
+        { "source": "YouTube", "source_type": "sns_api", "metric": "관련 영상 다수", "value": "무드 메이크업 튜토리얼 다수 관측", "period": "최근 30일", "url": "https://www.youtube.com/watch?v=..." }
       ],
       "audience_distribution": {
         "primary_gender": "female",
@@ -97,18 +98,19 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
 ## 규칙 (반드시 준수)
 - **category**: "대분류 > 소분류" 형식. 대분류는 클렌징/스킨케어/메이크업 중 하나, 소분류는 하위 (예: "메이크업 > 베이스", "메이크업 > 립", "스킨케어 > 토너")
 - **keywords**: 최소 1개
+- **source_search_keywords**: 위 "브랜드 프로필"의 \`search_keywords\` 중 이 트렌드의 근거가 된 검색어만 골라 글자 그대로(verbatim) 배열에 담으세요. 한 트렌드가 여러 검색어에 걸쳐있을 수 있으니 해당되는 것 모두. 관련된 게 없으면 빈 배열([]). 이 필드는 채널 활성도·검색 수요(demand_fit) 매칭의 조인 키로 사용됩니다.
 - **summary**: 50자 이내
 - **gender_ratio**: female + male 합이 정확히 1.0
 - **age_ratio**: 모든 값 합이 정확히 1.0. 키는 "10s","20s","30s","40s","50s+"만 사용
 - **primary_gender**: female / male / all 중 하나
 - **primary_age**: "10s","20s","30s","40s","50s+" 중 비중 높은 것
 - **metrics.score**: 0~100 정수, **metrics.growth_rate**: 소수(0.45 = 45% 상승)
-- **trend_stage**: "emerging"/"peak"/"declining" 중 하나. growth_rate·검색/조회 추세로 판정 — 급상승·신규 부상이면 "emerging", 높고 안정적이면 "peak", 둔화·하락이면 "declining". (서술형 status와 별개의 라벨 필드)
+- **trend_stage**: "emerging"/"peak"/"declining" 중 하나. growth_rate·검색/조회 추세로 판정 — 급상승·신규 부상이면 "emerging", 정점 도달 후 성장 둔화·정체(둔화 임박)면 "peak", 하락·감소 추세면 "declining". (서술형 status와 별개의 라벨 필드)
 - **lifespan_estimate**: "3개월 미만"/"3-6개월"/"6개월 이상" 중 하나. 트렌드 지속성 추정 — 일시적 챌린지·시즌성은 짧게, 구조적·라이프스타일 변화는 길게
 - **audience_signal**: 핵심 소비자를 행동·라이프스타일·니즈 중심으로 1~2문장 서술. 연령·성별 수치는 audience_distribution에 있으므로 여기선 행태 묘사 위주
-- **evidence[].source_ref**: 이 근거를 뒷받침하는 raw_data 항목의 id(위 "수집된 raw 데이터"의 id) 배열을 넣으세요. 실제로 관련된 id만, 최소 1개. **url은 직접 쓰지 마세요** — 코드가 source_ref로 실제 url을 채웁니다.
 - 모든 자연어는 한국어
 - 검색·조회수 등 수치는 raw 데이터로 직접 관측되지 않으면 brand_context 기반으로 합리적 추정하되, source에 "추정" 명시
+- **evidence.url**: 각 근거가 나온 위 raw_data 항목의 \`url\` 값을 **글자 그대로(verbatim) 복사**하세요. 절대 지어내거나 변형하지 마세요. 매칭되는 raw 항목이 없거나 집계성 근거(검색량 지수 등 url 없음)면 \`url\`을 빈 문자열("")로 두세요.
 - **출력은 순수 JSON 하나만.** 코드 블록 표시나 설명 텍스트 없이 JSON만.`;
 
 // 3. 사용자 메시지 — 브랜드 프로필 + 수집 컨텍스트 + raw 데이터
@@ -119,12 +121,10 @@ const brandProfile = {
   texture_keywords: brand.texture_keywords,
   tone_and_manner: brand.tone_and_manner,
   target: brand.target,
+  search_keywords: brand.search_keywords,
 };
 const targetCategory = brand.category ?? "";
 const targetTexture = (brand.texture_keywords ?? []).join(", ");
-
-// 각 raw 항목에 id 부여 — LLM은 evidence.source_ref로 id만 참조하고, 코드가 그 id로 실제 url을 채움
-const rawForPrompt = rawData.map((r, i) => ({ id: i, ...r }));
 
 const userMessage = `다음 수집 데이터를 분석해서, 이 브랜드/제품에 맞는 트렌드를 산출하세요.
 
@@ -140,7 +140,7 @@ ${JSON.stringify(brandContext, null, 2)}
 
 ## 수집된 raw 데이터 (${rawData.length}개)
 \`\`\`json
-${JSON.stringify(rawForPrompt, null, 2)}
+${JSON.stringify(rawData, null, 2)}
 \`\`\`
 
 위 데이터에서 근거가 뚜렷하고 서로 구별되는 트렌드를 최대한 많이 정제해 출력 형식대로 JSON으로 반환하세요.${
@@ -187,14 +187,15 @@ if (!Array.isArray(parsed.trends) || parsed.trends.length === 0) {
   process.exit(1);
 }
 
-// 6.5 evidence의 url을 수집 raw의 실제 url로 결정론적으로 채움
-//     (LLM이 URL을 지어내지 않도록 source_ref(id)로 매핑)
-for (const t of parsed.trends) {
-  for (const e of (t.evidence ?? [])) {
-    const refs = Array.isArray(e.source_ref) ? e.source_ref : (e.source_ref != null ? [e.source_ref] : []);
-    const hit = refs.map((i) => rawData[i]).find((r) => r && r.url);
-    e.url = hit ? hit.url : null;           // 실제 수집 url (근거 없으면 null)
-    if (hit && !e.source) e.source = hit.source;
+// 6-1. evidence.url 안전망 — LLM이 url을 지어내거나 한 글자라도 변형하면 링크가 깨진다.
+//      실제 수집 raw_data에 존재하는 url만 신뢰하고, 그 외(환각·변형·빈값)는 null 처리.
+//      → 수집 단계의 진짜 링크만 끝까지 전달됨.
+const realUrls = new Set(rawData.map((d) => d.url).filter(Boolean));
+for (const trend of parsed.trends) {
+  if (!Array.isArray(trend.evidence)) continue;
+  for (const ev of trend.evidence) {
+    if (!ev || typeof ev !== "object") continue;
+    ev.url = ev.url && realUrls.has(ev.url) ? ev.url : null;
   }
 }
 
@@ -202,6 +203,7 @@ for (const t of parsed.trends) {
 const data = {
   source: "트렌드 분석",
   analyzed_at: new Date().toISOString(),
+  raw_count: rawData.length,
   trend_count: parsed.trends.length,
   trends: parsed.trends,
 };

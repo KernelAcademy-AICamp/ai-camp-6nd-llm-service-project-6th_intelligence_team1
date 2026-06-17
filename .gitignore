@@ -5,7 +5,9 @@
 
 # Generated agent outputs (실제 분석/매칭 결과물)
 # 예시 데이터는 shared/schemas/에 따로 있음
-shared/data/
+shared/data/*
+inputs/brand-input.json
+output-main/output-text/writer-output.json
 
 # Python
 __pycache__/
