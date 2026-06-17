@@ -16,7 +16,7 @@ const client = new ApifyClient({ token: process.env.APIFY_TOKEN });
 const CACHE_PATH = path.join(__dirname, 'trend', 'data', 'apify_cache.json');
 const ACTOR_TIKTOK = 'clockworks/tiktok-hashtag-scraper';
 const ACTOR_INSTAGRAM = 'apify/instagram-hashtag-scraper';
-const RESULTS_PER_KEYWORD = 20;
+const RESULTS_PER_KEYWORD = 10;
 
 function today() { return new Date().toISOString().slice(0, 10); }
 function loadCache() { try { return JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8')); } catch { return {}; } }
@@ -24,7 +24,8 @@ function saveCache(cache) {
   fs.mkdirSync(path.dirname(CACHE_PATH), { recursive: true });
   fs.writeFileSync(CACHE_PATH, JSON.stringify(cache, null, 2));
 }
-function cacheKey(platform, keyword) { return `${platform}__${keyword}__${today()}`; }
+function weekBucket() { return Math.floor(Date.now() / (7 * 864e5)); }
+function cacheKey(platform, keyword) { return `${platform}__${keyword}__${weekBucket()}`; }
 
 function median(nums) {
   const arr = nums.filter(n => typeof n === 'number' && !isNaN(n)).sort((a, b) => a - b);

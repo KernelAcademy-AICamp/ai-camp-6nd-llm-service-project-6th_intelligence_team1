@@ -2,7 +2,9 @@ import "dotenv/config";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { wrap } from "../../shared/envelope.js";
+import { recordUsage } from "../shared/token-log.js";
 import {
+  ALL_CATEGORY_NOUNS,
   BrandInputSchema,
   BrandKeywordsLlmSchema,
   buildProductFeatures,
@@ -32,14 +34,19 @@ const searchKeywordsPrompt = readFileSync(
 );
 
 // ─── search_keywords 후처리 (프롬프트 규칙 이중 안전망) ─────────────
-// LLM이 프롬프트 규칙(2~3 어절, 마케터 속성 표면 박기 금지)을 어기면 매칭가의
-// demand_fit이 네이버 월 검색량 0~20만 보고 와서 신호 무의미해짐. 코드에서
+// LLM이 프롬프트 규칙(1~2 어절, 마케터 속성 표면 박기 금지)을 어기면 매칭가의
+// demand_fit이 네이버 월 검색량 0~50만 보고 와서 신호 무의미해짐. 코드에서
 // 결정적으로 한 번 더 필터링.
+//
+// 임계값 변경 이력:
+//   - 초기: 4+ 어절 차단 (4단어 스택 방지 목적)
+//   - 현재: 3+ 어절 차단 — 트렌드 분석가 실측 결과 2어절 구도 INVALID_THRESHOLD(50)
+//     미만이라 1~2 어절 단일·핵심 명사 형태로 더 조임.
 
-// 어절(공백 단위) 4개 이상이면 긴 조합어로 간주.
+// 어절(공백 단위) 3개 이상이면 긴 조합어로 간주.
 function isLongCompound(keyword) {
   const tokens = String(keyword).trim().split(/\s+/).filter(Boolean);
-  return tokens.length >= 4;
+  return tokens.length >= 3;
 }
 
 // 키워드 표면에 들어가면 안 되는 마케터 입력 속성 단어 집합 구성.
@@ -62,12 +69,34 @@ function buildForbiddenAttributeWords(input) {
   //    명사" 패턴(예: "실키 파운데이션", "글로우 쿠션")이라 마지막 어절은 카테
   //    고리 명사일 가능성이 높음 — 그게 검색 키워드의 중심이라 forbidden에 넣
   //    으면 정상 키워드까지 다 막혀버림. 그래서 마지막 어절은 forbidden 제외.
-  //    어절이 1개뿐인 제품명은 그대로 forbidden 추가 (보통 자사 고유 표현).
+  //
+  //    제품명이 한 어절일 때:
+  //    - 그 어절이 input.category 안의 카테고리 명사면(예: 사용자가 "쿠션",
+  //      "아이섀도우" 같은 카테고리명을 그대로 제품명으로 적은 케이스) forbidden
+  //      에 추가하지 않음. 안 그러면 "쿠션 추천" 같은 정상 키워드도 다 차단됨.
+  //    - 카테고리에 없으면 자사 고유 표현이라 보고 forbidden 추가.
   if (input.brand_name) forbidden.add(input.brand_name);
   if (input.product_name) {
     const tokens = String(input.product_name).split(/\s+/).filter(Boolean);
+    const categoryNouns = new Set(
+      String(input.category ?? "")
+        .split(/[>·\s]+/)
+        .map((s) => s.trim())
+        .filter(Boolean),
+    );
     if (tokens.length === 1) {
-      if (tokens[0].length >= 2) forbidden.add(tokens[0]);
+      const w = tokens[0];
+      // 카테고리 명사와 부분 일치도 허용 — 사용자가 "아이섀도우" 적었는데
+      // 카테고리엔 "아이섀도"로 등록된 케이스 같은 미세 차이 흡수.
+      // 또한 ALL_CATEGORY_NOUNS(전역 카테고리 명사) 안에 있으면 forbidden 제외:
+      // 사용자가 "쿠션"이라 적었는데 카테고리는 "기초제품 > 오일"인 케이스 등,
+      // product_name이 사실상 카테고리 명사인 경우 검색 키워드가 다 막히는 걸 방지.
+      const isCategoryNoun =
+        ALL_CATEGORY_NOUNS.has(w) ||
+        [...categoryNouns].some(
+          (n) => n.length >= 2 && (n.includes(w) || w.includes(n)),
+        );
+      if (w.length >= 2 && !isCategoryNoun) forbidden.add(w);
     } else {
       for (let i = 0; i < tokens.length - 1; i++) {
         if (tokens[i].length >= 2) forbidden.add(tokens[i]);
@@ -93,7 +122,7 @@ function sanitizeSearchKeywords(keywords, input) {
   for (const kw of keywords ?? []) {
     if (typeof kw !== "string" || !kw.trim()) continue;
     if (isLongCompound(kw)) {
-      dropped.push({ keyword: kw, reason: "4+ 어절 — 너무 긴 조합 (월 검색량 0~20)" });
+      dropped.push({ keyword: kw, reason: "3+ 어절 — 1~2 어절 단일 명사로 축약 필요 (월 검색량 0~50)" });
       continue;
     }
     const violation = findAttributeViolation(kw, forbidden);
@@ -147,18 +176,41 @@ async function generateTrendKeywords(input) {
     },
   ];
 
+  // 카테고리 4단계 + 제품특징 옵션/자유 입력을 분리해 LLM에 명시.
+  // LLM이 자유 입력값의 *의미*만 참고하고 표면에 그대로 박지 않도록 프롬프트에서 강조됨.
+  const featureOptions = (input.product_features ?? []).join(", ") || "(없음)";
+  const featureCustom = (input.product_features_custom ?? []).join(", ") || "(없음)";
+
   const userMessage = `다음 브랜드·제품 정보로 트렌드 수집용 키워드 세 종류를 모두 생성하세요.
 
 ## 입력
 - 브랜드명: ${input.brand_name}
 - 제품명: ${input.product_name}
-- 카테고리: ${input.category}
-- 제형(텍스처): ${input.texture_keywords.join(", ")}
+
+### 카테고리 (4단계 구조)
+- 대분류: ${input.category_major}
+- 중분류: ${input.category_mid}
+- 소분류: ${input.category_sub || "(없음 — 메이크업이 아니면 비어 있음)"}
+
+### 제품특징
+- 옵션 선택: ${featureOptions}
+- 자유 입력: ${featureCustom}
+
+### 브랜드 톤·타겟
 - 톤앤매너: ${input.tone_and_manner.join(", ")}
 - 타겟 성별: ${input.target.gender}
 - 타겟 연령: ${input.target.age_groups.join(", ")}
 - 뷰티관여도: ${input.target.involvement}
 - 소비동기: ${input.target.motivation.join(", ")}
+
+## 자유 입력 처리 규칙 (중요)
+- "자유 입력" 값은 마케터가 자유롭게 적은 표현이라 검색되지 않는 형태일 수 있음.
+  *의미만 참고*하고 실제 검색되는 표현으로 변환해서 키워드에 반영하세요.
+  예) 자유 입력 "24시간 지속력" → search "지속력 파운데이션", "장시간 메이크업"
+  예) 자유 입력 "피지 흡수" → search "피지 컨트롤", "유분기 잡는 베이스"
+- 자유 입력이 너무 추상적이거나 검색 부적합("우리만의 시그니처 톤" 등)이면 무시.
+- 오타가 있으면 의미 파악해서 정확한 표현으로 변환.
+- 자유 입력값을 그대로 키워드 표면에 박지 말 것 (예: "24시간 지속력 파운데이션" ❌).
 
 \`keyword_pairs\`(Tavily 자연 문장 + Instagram·TikTok 해시태그 짝 5~6쌍, i번째 쌍의 search·hashtag가 같은 트렌드를 가리켜야 함), \`short_keywords\`(YouTube용 짧은 평면 배열 4~6개), \`datalab_keywords\`(Naver용 짧은 단어 그룹 2~3개) 모두 채워서 JSON으로만 반환.`;
 
@@ -281,6 +333,7 @@ if (isDirectRun) {
     console.log(
       `   토큰: 입력 ${usage.input_tokens} / 캐시 읽기 ${cacheRead} / 캐시 쓰기 ${cacheWrite} / 출력 ${usage.output_tokens}`,
     );
+    recordUsage("brand", usage, "claude-haiku-4-5");
   }
   console.log(`   저장: ${outPath}`);
 }

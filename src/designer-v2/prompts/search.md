@@ -5,12 +5,22 @@
 ## 쿼리 작성 규칙
 
 - **영문**. 핀터레스트는 영문 인덱스가 압도적으로 풍부.
-- **3-5단어 정도**. 너무 짧으면(`beauty`) 일반적, 너무 길면 결과 적음.
-- **시각 무드·스타일이 드러나는 표현** 우선.
-  - 좋음: `Y2K pink kitty beauty ad`, `minimalist clean korean skincare poster`, `summer dewy glow makeup campaign`
-  - 나쁨: `beauty product`, `cosmetic ad`, `Korean`
-- **트렌드 콘텐츠의 핵심 키워드를 1-2개 포함** (예: 트렌드 "수분 선케어"면 `hydrating sunscreen`).
+- **2-4단어**. 짧고 강렬하게.
+- **시각 무드·스타일 어휘만** — 기능·성분·루틴 단어는 제외.
+  - 좋음: `clean oil aesthetic`, `natural glow beauty campaign`, `dewy skin editorial`
+  - 나쁨: `skincare routine`, `gentle cleanser`, `oil for dry skin` (기능·성분·루틴)
+- **트렌드 콘텐츠의 핵심 키워드를 무드로 해석해 포함** (예: 트렌드 "수분 선케어"면 `dewy glow sunscreen`).
 - **3개를 서로 겹치지 않게** 다른 각도(무드/오브제/캠페인 스타일 등)로.
+
+## 샷 방향 (shot_direction) — 사용자 메시지에 명시됨
+
+쿼리 3개 모두 지정된 샷 방향에 맞는 이미지가 걸리도록 작성.
+
+| shot_direction | 수집 목표 | 쿼리 어휘 방향 |
+|---|---|---|
+| **model** | 인물·모델 중심 광고컷 | 쿼리 3개 모두 아래 **고정 템플릿** 사용: `[무드 형용사] + [beauty/skin/glow] + [model/portrait]`. 제품명·성분·카테고리 어휘 일절 금지. 무드 형용사 3개는 서로 달라야 함. 사용 가능한 무드 형용사 예시: `clean`, `dewy`, `minimal`, `luxury`, `natural`, `soft`, `luminous`, `pure`, `glowing`, `ethereal`. 예시: `clean beauty model portrait` / `dewy skin beauty portrait` / `luminous glow model editorial` |
+| **product** | 제품·텍스처 단독컷 | **`[텍스처/소재] + [aesthetic/still life/editorial] + [mood]` 구조**. 제품 자체(보틀·용기 형태)는 레퍼런스 사진이 담당하므로 쿼리에 포함 금지. 수집 목표는 텍스처·조명·구도 스타일. 예: `pure oil texture aesthetic`, `liquid texture still life minimal`, `golden oil drop editorial` |
+| **lifestyle** | 공간·리추얼·라이프스타일 | `morning ritual`, `vanity aesthetic`, `bathroom mood`, `daily routine visual` 등 공간·행위 어휘 포함 |
 
 ## ⚠️ 제품명 단어를 시각으로 **직역하지 말 것**
 
@@ -46,22 +56,11 @@
 - 위 표에 없는 단어는 **"마케팅 표현인지 시각 의미인지"** 스스로 판단. 의심스러우면 직역 X.
 - 의심스러우면 제품 카테고리에서 **실제 본질 무드**를 뽑아 쿼리에 (예: "블러 워터 틴트" → `blur lip matte velvet` / `lightweight lip tint`).
 
-## 추가로 — instagram_hashtags
-
-인스타그램에서 검색할 해시태그 **3개**를 별도로 생성.
-
-- **단일 단어**, `#` 없이, 공백 없이 (인스타 해시태그 규칙).
-- 영문 권장 (검색 결과 풍부). 한글도 OK.
-- 트렌드 콘텐츠의 핵심 키워드 활용.
-- 좋음: `sunscreen`, `cleanbeauty`, `kbeauty`, `dewyskin`.
-- 나쁨: `clean beauty hydrating sunscreen ad` (문장 X — 해시태그 안 됨).
-
 ## 출력 형식
 
 ```json
 {
-  "queries": ["...", "...", "..."],
-  "instagram_hashtags": ["...", "...", "..."]
+  "queries": ["...", "...", "..."]
 }
 ```
 

@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { wrap, wrapError } from "../../shared/envelope.js";
+import { recordUsage } from "../shared/token-log.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, "../..");
@@ -126,6 +127,11 @@ const brandProfile = {
 const targetCategory = brand.category ?? "";
 const targetTexture = (brand.texture_keywords ?? []).join(", ");
 
+// LLM에 보낼 raw 데이터에서 url 제거 — url은 LLM 호출 후 검증용(realUrls)으로만
+// 쓰이므로 모델에 보낼 필요가 없다. 입력 토큰의 ~19%를 차지해 비용 절감 효과 큼.
+// rawData 원본은 그대로 두어 이후 url 검증 로직이 정상 동작한다.
+const rawDataForLlm = rawData.map(({ url, ...rest }) => rest);
+
 const userMessage = `다음 수집 데이터를 분석해서, 이 브랜드/제품에 맞는 트렌드를 산출하세요.
 
 ## 브랜드 프로필 (이 제품 기준으로 트렌드를 정렬·선별하세요)
@@ -138,9 +144,9 @@ ${JSON.stringify(brandProfile, null, 2)}
 ${JSON.stringify(brandContext, null, 2)}
 \`\`\`
 
-## 수집된 raw 데이터 (${rawData.length}개)
+## 수집된 raw 데이터 (${rawDataForLlm.length}개)
 \`\`\`json
-${JSON.stringify(rawData, null, 2)}
+${JSON.stringify(rawDataForLlm, null, 2)}
 \`\`\`
 
 위 데이터에서 근거가 뚜렷하고 서로 구별되는 트렌드를 최대한 많이 정제해 출력 형식대로 JSON으로 반환하세요.${
@@ -203,6 +209,7 @@ for (const trend of parsed.trends) {
 const data = {
   source: "트렌드 분석",
   analyzed_at: new Date().toISOString(),
+  raw_count: rawData.length,
   trend_count: parsed.trends.length,
   trends: parsed.trends,
 };
@@ -233,6 +240,7 @@ if (usage) {
   console.log(`입력 토큰     : ${usage.input_tokens}`);
   console.log(`출력 토큰     : ${usage.output_tokens}`);
   console.log(`예상 비용     : $${cost.toFixed(6)} (≈ ${(cost * 1300).toFixed(2)}원)`);
+  recordUsage("trend", usage, response.model ?? "claude-haiku-4-5");
 }
 console.log(`결과 저장     : ${outPath}`);
 

@@ -4,6 +4,7 @@
   "status": "success",
   "data": {
     "analyzed_at": "",
+    "raw_count": 0,
     "trend_count": 0,
     "trends": [
       {

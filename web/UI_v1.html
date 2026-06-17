@@ -342,6 +342,25 @@
         .mockup-brand { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #bca0bc; margin-bottom: 8px; }
         .mockup-headline { font-size: 1.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 10px; letter-spacing: -0.02em; }
         .mockup-caption { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
+        /* 시안 원본 보기 - 카드 배지 */
+        .mockup-card.has-original { cursor: pointer; }
+        .mockup-zoom { position: absolute; top: 14px; right: 14px; z-index: 3; display: inline-flex; align-items: center; gap: 5px; background: rgba(31,27,46,0.78); color: #fff; padding: 6px 12px; border-radius: 100px; font-size: 0.72rem; font-weight: 700; backdrop-filter: blur(4px); }
+        .mockup-card.has-original:hover .mockup-zoom { background: rgba(31,27,46,0.95); }
+        /* 시안 원본 보기 - 라이트박스 */
+        .lightbox-overlay { position: fixed; inset: 0; background: rgba(10,8,18,0.82); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 40px; }
+        .lightbox-overlay.open { display: flex; }
+        .lightbox-content { position: relative; max-width: 90vw; max-height: 88vh; display: flex; flex-direction: column; align-items: center; }
+        .lightbox-img { max-width: 90vw; max-height: 78vh; object-fit: contain; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); background: #000; }
+        .lightbox-cap { color: #fff; text-align: center; margin-top: 16px; font-size: 0.95rem; }
+        .lightbox-cap .lb-title { font-weight: 800; display: block; margin-bottom: 4px; }
+        .lightbox-cap .lb-sub { color: #b8b2c8; font-size: 0.82rem; }
+        .lightbox-close { position: absolute; top: -46px; right: 0; width: 40px; height: 40px; border: none; background: rgba(255,255,255,0.12); color: #fff; font-size: 1.5rem; border-radius: 50%; cursor: pointer; line-height: 1; }
+        .lightbox-close:hover { background: rgba(255,255,255,0.25); }
+        .lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border: none; background: rgba(255,255,255,0.12); color: #fff; font-size: 1.8rem; border-radius: 50%; cursor: pointer; line-height: 1; }
+        .lightbox-nav:hover { background: rgba(255,255,255,0.25); }
+        .lightbox-prev { left: -64px; }
+        .lightbox-next { right: -64px; }
+        @media (max-width: 768px) { .lightbox-prev { left: 8px; } .lightbox-next { right: 8px; } .lightbox-close { top: 8px; right: 8px; } }
         .mockup-note { font-size: 0.85rem; color: var(--text-secondary); font-style: italic; text-align: center; margin-bottom: 8px; opacity: 0.8; }
 
         /* ── Confirm card page ── */
@@ -691,7 +710,8 @@
             <div class="cascade-level" id="level-major">
                 <div class="pill-group">
                     <label class="pill"><input type="radio" name="major" value="cleansing" data-label="클렌징" onchange="selectMajor('cleansing')"><span>클렌징</span></label>
-                    <label class="pill"><input type="radio" name="major" value="skincare" data-label="스킨케어" onchange="selectMajor('skincare')"><span>스킨케어</span></label>
+                    <label class="pill"><input type="radio" name="major" value="skincare" data-label="기초제품" onchange="selectMajor('skincare')"><span>기초제품</span></label>
+                    <label class="pill"><input type="radio" name="major" value="suncare" data-label="선케어" onchange="selectMajor('suncare')"><span>선케어</span></label>
                     <label class="pill"><input type="radio" name="major" value="makeup" data-label="메이크업" onchange="selectMajor('makeup')"><span>메이크업</span></label>
                 </div>
             </div>
@@ -702,16 +722,24 @@
                     <label class="pill"><input type="radio" name="sub" value="cleansingbalm" data-label="클렌징밤" onchange="selectSub('cleansingbalm')"><span>클렌징밤</span></label>
                     <label class="pill"><input type="radio" name="sub" value="cleansingmilk" data-label="클렌징밀크" onchange="selectSub('cleansingmilk')"><span>클렌징밀크</span></label>
                     <label class="pill"><input type="radio" name="sub" value="cleansingwater" data-label="클렌징워터" onchange="selectSub('cleansingwater')"><span>클렌징워터</span></label>
+                    <label class="pill"><input type="radio" name="sub" value="cleansingtissue" data-label="클렌징티슈" onchange="selectSub('cleansingtissue')"><span>클렌징티슈</span></label>
                 </div>
             </div>
             <div class="cascade-level hidden" id="level-sub-skincare">
                 <div class="pill-group">
-                    <label class="pill"><input type="radio" name="sub" value="sunscreen" data-label="선크림" onchange="selectSub('sunscreen')"><span>선크림</span></label>
                     <label class="pill"><input type="radio" name="sub" value="toner" data-label="토너" onchange="selectSub('toner')"><span>토너</span></label>
                     <label class="pill"><input type="radio" name="sub" value="essence" data-label="에센스" onchange="selectSub('essence')"><span>에센스</span></label>
                     <label class="pill"><input type="radio" name="sub" value="serum" data-label="세럼" onchange="selectSub('serum')"><span>세럼</span></label>
                     <label class="pill"><input type="radio" name="sub" value="oil" data-label="오일" onchange="selectSub('oil')"><span>오일</span></label>
                     <label class="pill"><input type="radio" name="sub" value="cream" data-label="크림" onchange="selectSub('cream')"><span>크림</span></label>
+                </div>
+            </div>
+            <div class="cascade-level hidden" id="level-sub-suncare">
+                <div class="pill-group" id="suncare-sub-group">
+                    <label class="pill"><input type="radio" name="sub" value="suncream" data-label="선크림" onchange="selectSub('suncream')"><span>선크림</span></label>
+                    <label class="pill"><input type="radio" name="sub" value="sunstick" data-label="선스틱" onchange="selectSub('sunstick')"><span>선스틱</span></label>
+                    <label class="pill"><input type="radio" name="sub" value="suncushion" data-label="선쿠션" onchange="selectSub('suncushion')"><span>선쿠션</span></label>
+                    <button type="button" class="pill sub-add-btn" onclick="showSubInput(this)" style="border:none;background:none;padding:0;cursor:pointer;font-family:'Pretendard',sans-serif;"><span style="border-style:dashed;color:#9a8a9a;">＋ 직접 입력</span></button>
                 </div>
             </div>
             <div class="cascade-level hidden" id="level-sub-makeup">
@@ -735,18 +763,25 @@
                     <label class="pill"><input type="radio" name="detail" value="foundation" data-label="파운데이션" onchange="selectDetail('foundation')"><span>파운데이션</span></label>
                     <label class="pill"><input type="radio" name="detail" value="cushion" data-label="쿠션" onchange="selectDetail('cushion')"><span>쿠션</span></label>
                     <label class="pill"><input type="radio" name="detail" value="concealer" data-label="컨실러" onchange="selectDetail('concealer')"><span>컨실러</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="primer" data-label="프라이머" onchange="selectDetail('primer')"><span>프라이머</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="powder" data-label="파우더" onchange="selectDetail('powder')"><span>파우더</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="highlighter" data-label="하이라이터" onchange="selectDetail('highlighter')"><span>하이라이터</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="shading" data-label="쉐딩" onchange="selectDetail('shading')"><span>쉐딩</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="blusher" data-label="블러셔" onchange="selectDetail('blusher')"><span>블러셔</span></label>
                 </div>
             </div>
             <div class="cascade-level hidden" id="level-detail-eye">
                 <div class="pill-group">
-                    <label class="pill"><input type="radio" name="detail" value="shadow" data-label="아이섀도" onchange="selectDetail('shadow')"><span>아이섀도</span></label>
+                    <label class="pill"><input type="radio" name="detail" value="shadow" data-label="섀도우" onchange="selectDetail('shadow')"><span>섀도우</span></label>
                     <label class="pill"><input type="radio" name="detail" value="liner" data-label="아이라이너" onchange="selectDetail('liner')"><span>아이라이너</span></label>
                     <label class="pill"><input type="radio" name="detail" value="mascara" data-label="마스카라" onchange="selectDetail('mascara')"><span>마스카라</span></label>
                     <label class="pill"><input type="radio" name="detail" value="brow" data-label="아이브로우" onchange="selectDetail('brow')"><span>아이브로우</span></label>
                 </div>
             </div>
             <div class="cascade-level hidden" id="level-features">
+                <label class="form-label" style="margin-top: 24px;">제품 특징 <span style="font-size:0.85rem;font-weight:400;color:#bca0bc;">선택 · 최대 3개</span></label>
                 <div class="pill-group" id="feature-chips" data-field="texture_keywords"></div>
+                <p class="feature-hint" style="font-size:0.82rem;color:#bca0bc;margin-top:12px;line-height:1.5;">💡 우리 제품을 한마디로 하면? 없는 특징은 <b style="color:#9a8a9a;">＋ 직접 입력</b>으로 추가할 수 있어요. 잘 모르겠으면 비워두고 넘어가도 AI가 카테고리 기준으로 채워줘요.</p>
             </div>
         </div>
 
@@ -932,7 +967,34 @@
 
         <div class="submit-row">
             <button class="back-button" onclick="goToPage(3)">← 돌아가기</button>
-            <button class="cta-button" onclick="goToPage(5)">예상 시안 확인하기 →</button>
+            <button class="cta-button" onclick="showPageById('page-photo')">시안 생성하러 가기 →</button>
+        </div>
+    </div>
+</section>
+
+<!-- ============ 제품 사진 첨부 ============ -->
+<section class="step-section page hidden" id="page-photo">
+    <div class="form-card">
+        <div class="step-header">
+            <h2 class="step-title">제품 사진 첨부</h2>
+            <p class="step-desc">시안 생성에 참고할 제품 사진 1장을 올려주세요.</p>
+        </div>
+        <div class="form-group">
+            <label class="form-label">제품 사진 <span class="req">*</span></label>
+            <div id="photo-dropzone"
+                 onclick="document.getElementById('photo-input').click()"
+                 style="border:2px dashed #e3c6e3;border-radius:16px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s;background:#fdf7fd;">
+                <input type="file" id="photo-input" accept="image/*" hidden onchange="handlePhotoSelect(this.files)">
+                <div id="photo-placeholder" style="color:#9a7a9a;">
+                    <p style="margin:0 0 6px;font-weight:600;">여기로 사진을 끌어다 놓거나 클릭해서 업로드</p>
+                    <p style="margin:0;font-size:0.85rem;color:#bca0bc;">JPG·PNG · 1장</p>
+                </div>
+                <img id="photo-preview" style="display:none;max-width:100%;max-height:300px;border-radius:12px;" alt="제품 사진 미리보기">
+            </div>
+        </div>
+        <div class="submit-row">
+            <button class="back-button" onclick="goToPage(4)">← 돌아가기</button>
+            <button class="cta-button" id="to-mockup-btn" onclick="generateMockups()" disabled style="opacity:.5;">예상 시안 확인하기 →</button>
         </div>
     </div>
 </section>
@@ -963,10 +1025,13 @@
         <p class="mockup-note">* 시안은 입력 정보를 바탕으로 한 예시 미리보기입니다.</p>
 
         <div class="submit-row">
-            <button class="back-button" onclick="goToPage(4)">← 돌아가기</button>
+            <button class="back-button" onclick="showPageById('page-photo')">← 돌아가기</button>
             <div class="share-area">
                 <button class="cta-button" id="share-report-btn" onclick="toggleShareOptions()">리포트 공유하기</button>
-                <div id="share-options-row" class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
+                <div id="share-options-row" class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end;">
+                    <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-secondary);cursor:pointer;white-space:nowrap;">
+                        <input type="checkbox" id="include-visuals"> 시안 포함하기
+                    </label>
                     <button class="share-btn-channel" onclick="shareTo('PDF')">📄 PDF</button>
                     <button class="share-btn-channel" onclick="shareTo('Notion')">📝 Notion</button>
                     <button class="share-btn-channel" onclick="shareTo('Slack')">💬 Slack</button>
@@ -981,30 +1046,46 @@
 
 <script>
     /* ===== 카테고리/특징 매핑 ===== */
+    // 브랜드분석가 schemas.js의 PRODUCT_FEATURES_BY_CATEGORY와 동기화 (키 = 라디오 value)
+    // 빈 배열 = 옵션 없음(자유 입력만). 값 변경 시 스키마와 양쪽 같이 갱신.
     const featureMap = {
-        cleansingfoam: ['약산성', '민감', '알칼리성', '저자극', '진정'],
-        cleansingoil: ['딥클렌징', '약산성', '촉촉', '저자극', '보습'],
-        cleansingbalm: ['딥클렌징', '저자극', '각질', '모공', '보습'],
-        cleansingmilk: ['민감', '저자극', '약산성', '촉촉', '모공'],
-        cleansingwater: ['산뜻한', '수분', '약산성', '보습', '트러블'],
-        sunscreen: ['민감', '산뜻한', '세라마이드', '촉촉', '수분'],
-        toner: ['수분', '보습', '진정', '톤업', '촉촉'],
-        essence: ['수분', '보습', '진정', '촉촉', '탄력'],
-        serum: ['안티에이징', '탄력', '수분', '주름', '레티놀'],
-        oil: ['보습', '수분', 'PDRN', '재생', '탄력'],
-        cream: ['보습', '수분', '레티놀', '각질', '히알루론산'],
-        tint: ['글로우', '촉촉', '글로시', '벨벳', '누드'],
-        lipstick: ['벨벳', '매트', '글로우', '누드', '글로시'],
-        lipgloss: ['글로시', '촉촉', '매트', '글로우', '누드'],
-        lipbalm: ['글로우', '촉촉', '글로시', '볼륨', '누드'],
-        lipliner: ['매트', '글로시', '누드', '글로우', '촉촉'],
-        foundation: ['매트', '글로우', '촉촉', '지속력', '밀착'],
-        cushion: ['매트', '커버력', '세미매트', '촉촉', '밀착'],
-        concealer: ['글로우', '촉촉', '톤업', '매트', '커버력'],
-        shadow: ['매트', '글로우', '누드', '글리터', '시어'],
-        liner: ['글리터', '지속력', '매트', '펄', '촉촉'],
-        mascara: ['볼륨', '매트'],
-        brow: ['매트', '지속력', '픽싱']
+        // 클렌징
+        cleansingfoam: ['약산성', '민감성', '알칼리성'],
+        cleansingoil: ['딥클렌징', '약산성', '민감성', '보습'],
+        cleansingbalm: ['딥클렌징', '민감성', '모공', '보습'],
+        cleansingmilk: ['민감성', '약산성', '보습'],
+        cleansingwater: ['산뜻한', '수분', '약산성'],
+        cleansingtissue: [],
+        // 기초제품
+        toner: ['수분', '보습', '진정', '각질', '모공', '미백'],
+        essence: ['수분', '보습', '광채', '미백', '진정', '주름'],
+        serum: ['수분', '보습', '진정', '미백', '탄력', '주름'],
+        oil: ['보습', '영양', '윤광', '장벽'],
+        cream: ['수분', '보습', '장벽', '진정', '탄력', '미백', '영양'],
+        // 선케어
+        suncream: ['무기자차', '유기자차', '혼합자차'],
+        sunstick: ['무기자차', '유기자차', '혼합자차'],
+        suncushion: ['무기자차', '유기자차', '혼합자차'],
+        // 메이크업 > 립
+        tint: ['워터', '잉크', '글로우', '벨벳'],
+        lipstick: ['벨벳', '매트', '글로우', '누드'],
+        lipgloss: ['글로시', '시머', '글리터', '플럼핑'],
+        lipbalm: [],
+        lipliner: [],
+        // 메이크업 > 베이스
+        foundation: ['매트', '글로우', '촉촉', '커버력'],
+        cushion: ['촉촉', '매트', '밀착', '수부지', '톤업'],
+        concealer: [],
+        primer: ['매트', '톤업', '젤', '크림', '밤', '스틱'],
+        powder: ['루스', '프레스드', '베이크드'],
+        highlighter: ['프레스드', '젤리', '리퀴드', '베이크드', '스틱', '피그먼트'],
+        shading: ['프레스드', '스틱', '크림'],
+        blusher: ['프레스드', '베이크드', '크림', '스틱', '리퀴드', '쿠션', '밤'],
+        // 메이크업 > 아이
+        shadow: ['매트', '글로우', '누드', '글리터', '시어', '팔레트'],
+        liner: ['펜슬', '리퀴드', '젤'],
+        mascara: ['컬링', '볼륨', '롱래쉬', '픽서'],
+        brow: ['펜슬', '파우더', '젤', '펜', '타투']
     };
 
     /* ===== 카테고리 캐스케이드 ===== */
@@ -1013,10 +1094,11 @@
     function clearRadios(name) { document.querySelectorAll(`input[name="${name}"]`).forEach(r => r.checked = false); }
 
     function selectMajor(major) {
-        hideAll(['level-sub-cleansing', 'level-sub-skincare', 'level-sub-makeup', 'level-detail-lip', 'level-detail-base', 'level-detail-eye', 'level-features']);
+        hideAll(['level-sub-cleansing', 'level-sub-skincare', 'level-sub-suncare', 'level-sub-makeup', 'level-detail-lip', 'level-detail-base', 'level-detail-eye', 'level-features']);
         clearRadios('sub'); clearRadios('detail');
         if (major === 'cleansing') show('level-sub-cleansing');
         if (major === 'skincare') show('level-sub-skincare');
+        if (major === 'suncare') show('level-sub-suncare');
         if (major === 'makeup') show('level-sub-makeup');
     }
     function selectSub(sub) {
@@ -1031,13 +1113,157 @@
         hideAll(['level-features']);
         showFeatures(detail);
     }
+
+    /* ===== 선케어 한정: 중분류 직접 입력 =====
+       - 중분류는 단일 선택 유지(라디오) → 직접 입력 값이 기존 선택을 대체
+       - 직접 입력으로 고른 커스텀 중분류는 featureMap에 없으므로 제품 특징 단계가 뜨지 않음 */
+    function showSubInput(btn) {
+        const wrap = document.createElement('span');
+        wrap.className = 'sub-input-wrap';
+        wrap.style.cssText = 'display:inline-flex;align-items:center;';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.placeholder = '입력 후 Enter';
+        inp.style.cssText = "border:1.5px dashed #c9b6f0;border-radius:100px;padding:11px 18px;font-family:'Pretendard',sans-serif;font-size:0.9rem;color:#7e6b7e;outline:none;background:transparent;width:140px;";
+        wrap.appendChild(inp);
+        btn.parentNode.insertBefore(wrap, btn);
+        inp.focus();
+        let composing = false;
+        inp.addEventListener('compositionstart', function () { composing = true; });
+        inp.addEventListener('compositionend', function () { composing = false; });
+        inp.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') return;
+            if (composing || e.isComposing || e.keyCode === 229) return;
+            e.preventDefault();
+            addCustomSub(inp.value, wrap);
+        });
+        inp.addEventListener('blur', function () { if (!inp.value.trim()) wrap.remove(); });
+    }
+    function addCustomSub(val, wrap) {
+        val = (val || '').trim();
+        const inp = wrap.querySelector('input');
+        if (!val) { wrap.remove(); return; }
+        const group = document.getElementById('suncare-sub-group');
+        // 중복 검사 → 안내만 띄우고 입력창 유지
+        const exists = Array.from(group.querySelectorAll('input[name="sub"]'))
+            .some(i => i.value === val || (i.dataset.label || '') === val);
+        if (exists) {
+            showToast('이미 있는 중분류예요: ' + val);
+            if (inp) { inp.value = ''; inp.focus(); }
+            return;
+        }
+        // 직접 입력 중분류는 1개만 유지 (이전 커스텀 칩 제거)
+        group.querySelectorAll('.sub-custom').forEach(el => el.remove());
+        const label = document.createElement('label');
+        label.className = 'pill sub-custom';
+        const rb = document.createElement('input');
+        rb.type = 'radio'; rb.name = 'sub'; rb.value = val; rb.checked = true;
+        rb.setAttribute('data-label', val);
+        rb.addEventListener('change', function () { selectSub(val); });
+        const span = document.createElement('span');
+        span.style.borderStyle = 'dashed';
+        span.textContent = val;
+        const x = document.createElement('span');
+        x.textContent = '×';
+        x.style.cssText = 'padding:0;border:none;background:none;border-radius:0;display:inline;font-size:0.85em;line-height:1;opacity:0.5;cursor:pointer;margin-left:7px;vertical-align:baseline;';
+        x.addEventListener('click', function (e) {
+            e.preventDefault(); e.stopPropagation();
+            label.remove();
+            hideAll(['level-features']); // 커스텀 중분류 삭제 시 특징 단계도 숨김
+        });
+        span.appendChild(x);
+        label.appendChild(rb);
+        label.appendChild(span);
+        group.insertBefore(label, wrap); // 입력창이 있던 자리에 칩
+        wrap.remove();
+        // 단일 선택 보장 + 제품 특징 단계 생략 (featureMap에 없는 값이라 showFeatures 미호출)
+        selectSub(val);
+    }
+    const FEATURE_CAP = 3;
     function showFeatures(key) {
         const container = document.getElementById('feature-chips');
         const features = featureMap[key] || [];
         container.innerHTML = features.map(f =>
-            `<label class="pill"><input type="radio" name="feature" value="${f}"><span>${f}</span></label>`
-        ).join('');
+            `<label class="pill"><input type="checkbox" name="feature" value="${f}" onchange="onFeatureToggle(this)"><span>${f}</span></label>`
+        ).join('')
+        + `<button type="button" class="pill feature-add-btn" onclick="showFeatureInput(this)" style="border:none;background:none;padding:0;cursor:pointer;font-family:'Pretendard',sans-serif;"><span style="border-style:dashed;color:#9a8a9a;">＋ 직접 입력</span></button>`;
         show('level-features');
+    }
+    /* 특징: 복수 선택(최대 3) — cap 초과 시 방금 누른 항목 해제 */
+    function countFeatures() {
+        return document.querySelectorAll('#feature-chips input[name="feature"]:checked').length;
+    }
+    function onFeatureToggle(input) {
+        if (input.checked && countFeatures() > FEATURE_CAP) {
+            input.checked = false;
+            showToast('특징은 최대 ' + FEATURE_CAP + '개까지 선택할 수 있어요');
+        }
+    }
+    /* ＋직접 입력: 클릭하면 입력창 → Enter 시 칩으로 추가(칩 선택분과 함께 누적) */
+    function showFeatureInput(btn) {
+        if (countFeatures() >= FEATURE_CAP) {
+            showToast('특징은 최대 ' + FEATURE_CAP + '개까지 선택할 수 있어요');
+            return;
+        }
+        const wrap = document.createElement('span');
+        wrap.className = 'feature-input-wrap';
+        wrap.style.cssText = 'display:inline-flex;align-items:center;';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.placeholder = '입력 후 Enter';
+        inp.style.cssText = "border:1.5px dashed #c9b6f0;border-radius:100px;padding:11px 18px;font-family:'Pretendard',sans-serif;font-size:0.9rem;color:#7e6b7e;outline:none;background:transparent;width:140px;";
+        wrap.appendChild(inp);
+        btn.parentNode.insertBefore(wrap, btn);
+        inp.focus();
+        // 한글 IME 조합 중에는 Enter를 무시 (조합 끝난 완성 값으로만 칩 생성)
+        let composing = false;
+        inp.addEventListener('compositionstart', function () { composing = true; });
+        inp.addEventListener('compositionend', function () { composing = false; });
+        inp.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') return;
+            if (composing || e.isComposing || e.keyCode === 229) return;
+            e.preventDefault();
+            addCustomFeature(inp.value, wrap);
+        });
+        inp.addEventListener('blur', function () { if (!inp.value.trim()) wrap.remove(); });
+    }
+    function addCustomFeature(val, wrap) {
+        val = (val || '').trim();
+        const inp = wrap.querySelector('input');
+        if (!val) { wrap.remove(); return; }
+        // 중복 검사 → 칩 추가 대신 안내만 띄우고 입력창은 비워 유지
+        const all = Array.from(document.querySelectorAll('#feature-chips input[name="feature"]'));
+        const dup = all.find(i => i.value === val);
+        if (dup) {
+            showToast('이미 추가된 특징이에요: ' + val);
+            if (inp) { inp.value = ''; inp.focus(); }
+            return;
+        }
+        if (countFeatures() >= FEATURE_CAP) {
+            showToast('특징은 최대 ' + FEATURE_CAP + '개까지 선택할 수 있어요');
+            wrap.remove();
+            return;
+        }
+        const label = document.createElement('label');
+        label.className = 'pill';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.name = 'feature'; cb.value = val; cb.checked = true;
+        cb.dataset.custom = '1'; // 자유 입력 칩 표식 (product_features_custom 분리용)
+        cb.addEventListener('change', function () { onFeatureToggle(cb); });
+        const span = document.createElement('span');
+        span.style.borderStyle = 'dashed';
+        span.textContent = val;
+        const x = document.createElement('span');
+        x.textContent = '×';
+        // .pill span 상속(알약 패딩/테두리)을 무력화해 일반 칩과 같은 크기로
+        x.style.cssText = 'padding:0;border:none;background:none;border-radius:0;display:inline;font-size:0.85em;line-height:1;opacity:0.5;cursor:pointer;margin-left:7px;vertical-align:baseline;';
+        x.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); label.remove(); });
+        span.appendChild(x);
+        label.appendChild(cb);
+        label.appendChild(span);
+        // 입력창이 있던 '그 자리'에 칩을 끼워 넣고 입력창 제거
+        wrap.parentNode.insertBefore(label, wrap);
+        wrap.remove();
     }
 
     /* ===== 동적 입력 행 ===== */
@@ -1093,7 +1319,6 @@
         } else if (step === 2) {
             if (!document.getElementById('product_name').value.trim()) errs.push('제품명');
             if (!getCategoryPath()) errs.push('카테고리');
-            if (!getFeature()) errs.push('제품 특징');
             if (!getOne('involvement')) errs.push('뷰티 관여도');
             if (getCheckedValues('motivation').length === 0) errs.push('소비 동기');
         }
@@ -1140,6 +1365,28 @@
         if (detail) path.push(detail.dataset.label);
         return path.join(' > ');
     }
+    /* 카테고리 4단계 분리 (브랜드분석가 BrandInputSchema v2)
+       - sub 라디오 = 중분류(비메이크업: 클렌징폼·토너·선크림 / 메이크업: 립·베이스·아이)
+       - detail 라디오 = 소분류(메이크업 전용: 틴트·블러셔 등) */
+    function getCategoryFields() {
+        const major = document.querySelector('input[name="major"]:checked');
+        const mid = document.querySelector('input[name="sub"]:checked');
+        const sub = document.querySelector('input[name="detail"]:checked');
+        return {
+            category_major: major ? major.dataset.label : '',
+            category_mid: mid ? mid.dataset.label : '',
+            category_sub: sub ? sub.dataset.label : ''
+        };
+    }
+    /* 제품특징: 옵션 선택(product_features) vs 자유 입력(product_features_custom) 분리 */
+    function getProductFeatures() {
+        return Array.from(document.querySelectorAll('#feature-chips input[name="feature"]:checked'))
+            .filter(i => !i.dataset.custom).map(i => i.value);
+    }
+    function getProductFeaturesCustom() {
+        return Array.from(document.querySelectorAll('#feature-chips input[name="feature"]:checked'))
+            .filter(i => i.dataset.custom).map(i => i.value);
+    }
     function getFeature() {
         const f = document.querySelector('input[name="feature"]:checked');
         return f ? f.value : '';
@@ -1150,8 +1397,13 @@
             current_channels: getCheckedValues('current_channels'),
             brand_channel_url: Array.from(document.querySelectorAll('.channel-url')).map(i => i.value.trim()).filter(Boolean),
             product_name: document.getElementById('product_name').value.trim(),
+            // 카테고리 4단계 + 제품특징 옵션/자유입력 분리 (스키마 v2 입력 형식)
+            ...getCategoryFields(),
+            product_features: getProductFeatures(),
+            product_features_custom: getProductFeaturesCustom(),
+            // 내부 미리보기(validate·리포트 렌더) 호환용 파생 필드 — 서버는 위 필드만 사용
             category: getCategoryPath(),
-            texture_keywords: getFeature() ? [getFeature()] : [],
+            texture_keywords: getCheckedValues('texture_keywords'),
             tone_and_manner: getCheckedValues('tone_and_manner'),
             target: {
                 gender: getOne('gender'),
@@ -1175,7 +1427,8 @@
         if (d.tone_and_manner.length === 0) e.push('톤앤매너');
         if (!d.product_name) e.push('제품명');
         if (!d.category) e.push('카테고리');
-        if (d.texture_keywords.length === 0) e.push('제품 특징');
+        const hasFeatureOptions = document.querySelectorAll('#feature-chips input[name="feature"]').length > 0;
+        if (hasFeatureOptions && d.texture_keywords.length === 0) e.push('제품 특징');
         if (!d.target.involvement) e.push('뷰티 관여도');
         if (d.target.motivation.length === 0) e.push('소비 동기');
         if (!d.campaign_kpi) e.push('캠페인 KPI');
@@ -1257,6 +1510,7 @@
         { key: 'trend', msg: '🏃‍♂️‍➡️ 발바닥에 땀나도록 트렌드 수집·분석 중...' },
         { key: 'match', msg: '💘 우리 브랜드와 딱 맞는 트렌드 매칭 중...' },
         { key: 'write', msg: '👩🏻‍💻 팀장님 설득할 리포트 작성 중...' }
+        // design(시안) 단계는 여기서 빼고, 제품 사진 첨부 후 generateMockups()에서 실행한다.
     ];
 
     async function startAnalysisWithLoading() {
@@ -1292,7 +1546,7 @@
                     body: JSON.stringify(payload)
                 });
                 const out = await res.json();
-                if (!out.ok) throw new Error('[' + st.key + '] ' + (out.log || out.error || '실패').toString().slice(-280));
+                if (!out.ok) throw new Error('[' + st.key + '] ' + (out.log || out.error || '실패').toString().slice(0, 280));
 
                 // 단계 완료 → 막대 전진
                 barEl.style.width = ((i + 1) / n * 100) + '%';
@@ -1301,12 +1555,24 @@
             // 모든 단계 완료 → 실제 결과 렌더
             const wr = await fetch('/output-main/output-text/writer-output.json?ts=' + Date.now());
             const writer = await wr.json();
+            // 시안 단계(사진 첨부 후)에서 다시 쓰기 위해 writer 데이터와 입력값을 보관
+            window.__writerData = writer.data;
+            window.__lastInput = d;
+            // ④-b 시안가 v2 산출(design-output.json) — 있으면 실제 이미지, 없으면 placeholder 폴백
+            let design = null;
+            try {
+                const dr = await fetch('/shared/data/design-output.json?ts=' + Date.now());
+                if (dr.ok) {
+                    const dj = await dr.json();
+                    if (dj && dj.status === 'success' && dj.data) design = dj.data;
+                }
+            } catch (e) { /* 시안 없으면 placeholder 로 진행 */ }
             // ④ 매칭 리포트 = 팀 공용 컴포넌트(renderMatchReport)로 렌더
             //    → shared/components/match-report.js 의 최신 리포트 수정사항이 그대로 반영됨
             document.getElementById('report_meta').innerHTML = '';
             renderMatchReport(document.getElementById('report_body'), writer.data);
-            // ⑤ 예상 시안 = placeholder 카드
-            buildMockupsReal(writer.data, d);
+            // ⑤ 시안 = design-output.json 실제 이미지(없으면 placeholder)
+            buildMockupsReal(writer.data, d, design);
 
             setTimeout(() => switchPage(4), 450);
         } catch (err) {
@@ -1400,8 +1666,25 @@
           + `<div class="rp-section"><div class="rp-section-title">트렌드별 상세</div><div class="rp-cards">${cardsHtml}</div></div>`;
     }
 
-    function buildMockupsReal(data, d) {
+    // 공유(슬랙·노션)용 시안 이미지 공개 URL 베이스 — 공개 저장소 trendfit-assets의 raw
+    // 새 시안 생성 시 R1·R2·R3.png를 이 저장소에 다시 업로드하면 자동 반영됨
+    const SHARE_IMAGE_BASE = 'https://raw.githubusercontent.com/ga-jisu/trendfit-assets/main/';
+    function buildMockupsReal(data, d, design) {
         const contents = ((data && data.contents) || []).slice().sort((a, c) => (a.rank || 9) - (c.rank || 9));
+        // 시안가 v2 산출(design-output.json)의 실제 이미지 매핑 (trend_name·content_id 기준)
+        const dvisuals = (design && Array.isArray(design.visuals)) ? design.visuals : [];
+        const imgByKey = new Map();
+        for (const v of dvisuals) {
+            if (v && v.generated_image_url) {
+                if (v.trend_name) imgByKey.set(v.trend_name, v.generated_image_url);
+                if (v.content_id) imgByKey.set(v.content_id, v.generated_image_url);
+            }
+        }
+        // generated_image_url 은 'shared/data/images/...' (루트 상대) → 서버 정적경로(/...)로 변환 + 캐시버스트
+        const imgUrlOf = (c) => {
+            const raw = imgByKey.get(c.trend_name) || imgByKey.get('R' + (c.rank || ''));
+            return raw ? '/' + String(raw).replace(/^\/+/, '') + '?ts=' + Date.now() : null;
+        };
         const tags = ['Key Visual', 'SNS Card', 'Banner'];
         const palettes = [['#ff9ec4', '#c9b6f0'], ['#b9a6f0', '#ffe1c2'], ['#ffd8a8', '#ff9ec4']];
         const brand = d.brand_name || '';
@@ -1425,17 +1708,37 @@
                 + `</svg>`;
         }
 
+        const lbItems = [];
+        const shareVisuals = [];
         document.getElementById('mock_grid').innerHTML = contents.map((c, i) => {
             const kw = (c.keywords || [])[0] || (d.texture_keywords || [])[0] || '트렌드';
             const head = [`"${kw}", 지금`, `내 ${cat || '메이크업'}`, `${d.product_name || brand}`][i] || kw;
+            const imgUrl = imgUrlOf(c);
+            // placeholder SVG를 항상 깔고, 실제 시안 이미지가 있으면 그 위에 <img>를 얹음.
+            // 이미지 로드 실패(onerror) 시 img만 제거 → 뒤의 SVG placeholder가 그대로 노출.
+            const imgTag = imgUrl
+                ? `<img src="${esc(imgUrl)}" alt="${esc(c.trend_name || '')} 시안" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.remove()">`
+                : '';
+            const visualInner = creative(i, head) + imgTag;
+            const caption = esc((c.keywords || []).slice(0, 3).join(' · ') || c.verdict || '');
+            // 라이트박스(원본 보기): 실제 시안 이미지가 있으면 그걸, 없으면 SVG placeholder를 data-URI로
+            const lbUrl = imgUrl || ('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(creative(i, head)));
+            lbItems.push({ url: lbUrl, title: c.trend_name || '', caption: caption });
+            // 공유(시안 포함)용: 슬랙·노션이 접근 가능한 공개 raw URL로 매핑 (파일명 R1.png 등)
+            if (imgUrl) {
+                const file = imgUrl.split('?')[0].split('/').pop();
+                shareVisuals.push({ url: SHARE_IMAGE_BASE + file, title: c.trend_name || '' });
+            }
             return `<div class="mockup-card">`
-                + `<div class="mockup-visual">${creative(i, head)}<div class="mockup-tag" style="position:relative;z-index:2">${tags[i] || 'Visual'} · 시안</div></div>`
+                + `<div class="mockup-visual" style="cursor:zoom-in" onclick="openLightbox(${i})" title="원본 보기">${visualInner}</div>`
                 + `<div class="mockup-body">`
                 + `<div class="mockup-brand">${esc(brand)}</div>`
                 + `<h3 class="mockup-headline">${esc(c.trend_name || '')}</h3>`
-                + `<p class="mockup-caption">${esc((c.keywords || []).slice(0, 3).join(' · ') || c.verdict || '')} · 예상 시안(placeholder)</p>`
+                + `<p class="mockup-caption">${caption}</p>`
                 + `</div></div>`;
         }).join('');
+        window.__lightboxItems = lbItems;
+        window.__visualUrls = shareVisuals;
     }
 
     function buildReport(d) {
@@ -1494,7 +1797,7 @@
 
         document.getElementById('mock_grid').innerHTML = cards.map(c =>
             '<div class="mockup-card">'
-            + '<div class="mockup-visual ' + c.cls + '"><div class="mockup-tag">' + c.tag + '</div></div>'
+            + '<div class="mockup-visual ' + c.cls + '"></div>'
             + '<div class="mockup-body">'
             + '<div class="mockup-brand">' + c.brand + '</div>'
             + '<h3 class="mockup-headline">' + c.head + '</h3>'
@@ -1515,6 +1818,19 @@
         const row = document.getElementById('share-options-row');
         row.style.display = 'flex';
         row.classList.add('show');
+        // 공유 영역 밖을 클릭하면 다시 [리포트 공유하기] 버튼으로 복원
+        setTimeout(() => document.addEventListener('click', onOutsideShareClick), 0);
+    }
+    function hideShareOptions() {
+        const row = document.getElementById('share-options-row');
+        row.style.display = 'none';
+        row.classList.remove('show');
+        document.getElementById('share-report-btn').style.display = '';
+        document.removeEventListener('click', onOutsideShareClick);
+    }
+    function onOutsideShareClick(e) {
+        const area = document.querySelector('.share-area');
+        if (area && !area.contains(e.target)) hideShareOptions();
     }
     /* 외부 서비스 URL */
     const SHARE_URLS = {
@@ -1523,15 +1839,140 @@
         'Google Drive': 'https://drive.google.com'
     };
     function shareTo(channel) {
-        if (channel === 'PDF') {
-            downloadPDF();
-            return;
+        if (channel === 'PDF') { downloadPDF(); return; }
+        if (channel === 'Notion') { shareToNotion(); return; }
+        if (channel === 'Slack') { shareToSlack(); return; }
+        if (channel === 'Google Drive') { shareToDrive(); return; }
+    }
+
+    /* [시안 포함하기] 체크 여부 */
+    function includeVisuals() {
+        const cb = document.getElementById('include-visuals');
+        return !!(cb && cb.checked);
+    }
+
+    /* 리포트 데이터(window.__writerData) → 마크다운 문자열 */
+    function reportToMarkdown(wd) {
+        const b = wd.brand || {};
+        const cam = b.campaign || {};
+        let md = `# TrendFit 트렌드 매칭 리포트\n\n`;
+        md += `**브랜드**: ${b.name || ''}${b.product_name ? ' / ' + b.product_name : ''}\n`;
+        if (b.category) md += `**카테고리**: ${b.category}\n`;
+        if (b.target_display) md += `**타겟**: ${b.target_display}\n`;
+        if (cam.kpi || cam.period || cam.budget) md += `**캠페인**: ${[cam.kpi, cam.period, cam.budget].filter(Boolean).join(' · ')}\n`;
+        const contents = wd.contents || [];
+        md += `\n## 추천 트렌드 ${contents.length}선\n`;
+        contents.forEach(ct => {
+            md += `\n### ${ct.verdict || (ct.rank + '순위')}. ${ct.trend_name || ''}`;
+            if (ct.matching_grade) md += ` (매칭 ${ct.matching_grade})`;
+            md += `\n`;
+            if (ct.keywords && ct.keywords.length) md += `\n${ct.keywords.map(k => '`' + k + '`').join(' ')}\n`;
+            const hm = ct.headline_metric;
+            if (hm && (hm.value || hm.metric)) md += `\n- **${hm.metric || '핵심지표'}**: ${hm.value || ''}${hm.delta ? ' (' + hm.delta + ')' : ''}\n`;
+            if (ct.summary_bullets && ct.summary_bullets.length) { md += `\n**유행현황**\n`; ct.summary_bullets.forEach(s => md += `- ${s}\n`); }
+            if (ct.reason_bullets && ct.reason_bullets.length) { md += `\n**매칭이유**\n`; ct.reason_bullets.forEach(s => md += `- ${s}\n`); }
+            if (ct.evidence && ct.evidence.length) {
+                md += `\n**근거**\n`;
+                ct.evidence.forEach(e => { md += e.url ? `- [${e.label || e.source || '출처'}](${e.url}) — ${e.description || ''}\n` : `- ${e.label || e.source || ''} — ${e.description || ''}\n`; });
+            }
+        });
+        return md;
+    }
+
+    /* 노션: 리포트를 마크다운으로 클립보드 복사 */
+    async function shareToNotion() {
+        const wd = window.__writerData;
+        if (!wd) { showToast('리포트가 아직 준비되지 않았어요'); return; }
+        let md = reportToMarkdown(wd);
+        if (includeVisuals()) {
+            const vis = window.__visualUrls || [];
+            if (vis.length) { md += `\n## 예상 시안\n`; vis.forEach(v => { md += `\n![${v.title || '시안'}](${v.url})\n`; }); }
         }
-        const url = SHARE_URLS[channel];
-        if (url) {
-            window.open(url, '_blank', 'noopener,noreferrer');
-            showToast(channel + ' 페이지를 새 탭에서 열었어요');
+        try {
+            await navigator.clipboard.writeText(md);
+            showToast('마크다운으로 복사했어요! 노션에 붙여넣으세요 (Cmd+V)');
+        } catch (e) {
+            const ta = document.createElement('textarea');
+            ta.value = md; ta.style.cssText = 'position:fixed;left:-9999px';
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); showToast('마크다운으로 복사했어요! 노션에 붙여넣으세요'); }
+            catch (_) { showToast('복사 실패 — 직접 선택해 복사해주세요'); }
+            ta.remove();
         }
+    }
+
+    /* 슬랙: 리포트 요약을 서버(/share/slack) 통해 웹훅으로 채널 게시 */
+    function reportToSlackBlocks(wd) {
+        const b = wd.brand || {};
+        const cam = b.campaign || {};
+        const cut = (s) => String(s).slice(0, 2900); // Slack section 텍스트 3000자 제한 방어
+        const blocks = [];
+        blocks.push({ type: 'header', text: { type: 'plain_text', text: '📊 TrendFit 트렌드 매칭 리포트', emoji: true } });
+        let meta = `*${b.name || ''}*${b.product_name ? ' / ' + b.product_name : ''}`;
+        if (b.category) meta += `\n${b.category}`;
+        if (b.target_display) meta += `\n🎯 ${b.target_display}`;
+        if (cam.kpi || cam.period || cam.budget) meta += `\n📅 ${[cam.kpi, cam.period, cam.budget].filter(Boolean).join(' · ')}`;
+        blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut(meta) } });
+        blocks.push({ type: 'divider' });
+        (wd.contents || []).forEach(ct => {
+            let head = `*${ct.verdict || (ct.rank + '순위')}. ${ct.trend_name || ''}*`;
+            if (ct.matching_grade) head += ` _(매칭 ${ct.matching_grade})_`;
+            if (ct.keywords && ct.keywords.length) head += `\n${ct.keywords.map(k => '`' + k + '`').join(' ')}`;
+            const hm = ct.headline_metric;
+            if (hm && hm.value) head += `\n📈 ${hm.metric || '지표'}: *${hm.value}*${hm.delta ? ' (' + hm.delta + ')' : ''}`;
+            blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut(head) } });
+            if (ct.summary_bullets && ct.summary_bullets.length)
+                blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut('*📊 유행현황*\n' + ct.summary_bullets.map(s => '• ' + s).join('\n')) } });
+            if (ct.reason_bullets && ct.reason_bullets.length)
+                blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut('*💘 매칭이유*\n' + ct.reason_bullets.map(s => '• ' + s).join('\n')) } });
+            if (ct.evidence && ct.evidence.length) {
+                const ev = ct.evidence.map(e => e.url ? `• <${e.url}|${e.label || e.source || '출처'}> — ${e.description || ''}` : `• ${e.label || e.source || ''} — ${e.description || ''}`).join('\n');
+                blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut('*📚 근거*\n' + ev) } });
+            }
+            blocks.push({ type: 'divider' });
+        });
+        const fallback = `TrendFit 트렌드 매칭 리포트 — ${b.name || ''}${b.product_name ? ' / ' + b.product_name : ''}`;
+        return { blocks: blocks.slice(0, 50), text: fallback }; // Slack 블록 최대 50개
+    }
+    async function shareToSlack() {
+        const wd = window.__writerData;
+        if (!wd) { showToast('리포트가 아직 준비되지 않았어요'); return; }
+        showToast('슬랙으로 전송 중...');
+        try {
+            const { blocks, text } = reportToSlackBlocks(wd);
+            if (includeVisuals()) {
+                (window.__visualUrls || []).forEach(v => {
+                    blocks.push({ type: 'image', image_url: v.url, alt_text: v.title || '시안' });
+                });
+            }
+            const res = await fetch('/share/slack', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, blocks: blocks.slice(0, 50) })
+            });
+            const out = await res.json();
+            if (out.ok) showToast('슬랙 채널에 리포트를 게시했어요! 💬');
+            else showToast('슬랙 전송 실패: ' + (out.error || ''));
+        } catch (e) { showToast('슬랙 전송 오류: ' + e.message); }
+    }
+
+    /* 구글 드라이브: 인쇄 창(PDF 저장) 후 드라이브로 이동 버튼 노출 */
+    function shareToDrive() {
+        const body = document.getElementById('report_body');
+        if (!body || !body.innerHTML.trim()) { showToast('리포트가 아직 준비되지 않았어요'); return; }
+        showToast('인쇄 창에서 "PDF로 저장" 후, 드라이브로 이동하세요');
+        window.print();
+        showDriveButton();
+    }
+    function showDriveButton() {
+        if (document.getElementById('drive-go-btn')) return;
+        const btn = document.createElement('button');
+        btn.id = 'drive-go-btn';
+        btn.textContent = '📁 구글 드라이브로 이동';
+        btn.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:1200;padding:13px 22px;border:none;border-radius:100px;background:#1a73e8;color:#fff;font-family:Pretendard,sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(26,115,232,0.4)';
+        btn.onclick = () => { window.open('https://drive.google.com/drive/my-drive', '_blank', 'noopener,noreferrer'); btn.remove(); };
+        document.body.appendChild(btn);
+        setTimeout(() => { const b = document.getElementById('drive-go-btn'); if (b) b.remove(); }, 30000);
     }
 
     /* 리포트(step4)를 브라우저 기본 인쇄로 PDF 저장
@@ -1574,6 +2015,144 @@
                 el.style.transform = el.classList && el.classList.contains('micro-element') ? '' : 'translateY(0)';
             }, 200 + (i * 150));
         });
+    });
+
+    /* ===== 제품 사진 첨부 ===== */
+    function handlePhotoSelect(files) {
+        if (!files || !files.length) return;
+        const file = files[0];
+        if (!file.type.startsWith('image/')) { showToast('이미지 파일만 올릴 수 있어요'); return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = document.getElementById('photo-preview');
+            img.src = e.target.result;
+            img.style.display = 'block';
+            document.getElementById('photo-placeholder').style.display = 'none';
+            const btn = document.getElementById('to-mockup-btn');
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            window.productPhotoDataUrl = e.target.result; // 나중에 시안 생성에 쓸 사진 데이터
+        };
+        reader.readAsDataURL(file);
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        const dz = document.getElementById('photo-dropzone');
+        if (!dz) return;
+        ['dragover', 'dragenter'].forEach(ev => dz.addEventListener(ev, e => {
+            e.preventDefault(); dz.style.borderColor = '#d18ad1'; dz.style.background = '#faecfa';
+        }));
+        ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => {
+            e.preventDefault(); dz.style.borderColor = '#e3c6e3'; dz.style.background = '#fdf7fd';
+        }));
+        dz.addEventListener('drop', e => handlePhotoSelect(e.dataTransfer.files));
+    });
+
+    /* 사진 첨부 → 서버 저장 → 시안(design) 생성 → 시안 페이지로 이동 */
+    async function generateMockups() {
+        const dataUrl = window.productPhotoDataUrl;
+        if (!dataUrl) { showToast('제품 사진을 먼저 올려주세요'); return; }
+        const d = window.__lastInput || collect();
+        const brand = d.brand_name;
+        if (!brand) { showToast('브랜드명을 찾을 수 없어요. 1단계부터 다시 진행해 주세요'); return; }
+
+        // 로딩 화면 재사용
+        showPageById('page-loading');
+        const msgEl = document.getElementById('loading-message');
+        const barEl = document.getElementById('loading-progress-bar');
+        msgEl.textContent = '🎨 제품 사진으로 시안 생성 중...';
+        barEl.style.background = '';
+        barEl.style.width = '25%';
+
+        try {
+            // ① 사진을 서버에 저장 (inputs/product-images/<브랜드명>.<확장자>)
+            const up = await fetch('/upload-product-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ brand_name: brand, data_url: dataUrl })
+            });
+            const upj = await up.json();
+            if (!upj.ok) throw new Error(upj.error || '사진 저장 실패');
+            barEl.style.width = '50%';
+
+            // ② 시안(design) 단계 실행
+            const res = await fetch('/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stage: 'design' })
+            });
+            const out = await res.json();
+            if (!out.ok) throw new Error((out.log || out.error || '시안 생성 실패').toString().slice(0, 280));
+            barEl.style.width = '85%';
+
+            // ③ 시안 결과(design-output.json) 가져와 렌더 (없으면 placeholder 폴백)
+            let design = null;
+            try {
+                const dr = await fetch('/shared/data/design-output.json?ts=' + Date.now());
+                if (dr.ok) {
+                    const dj = await dr.json();
+                    if (dj && dj.status === 'success' && dj.data) design = dj.data;
+                }
+            } catch (e) { /* 없으면 placeholder */ }
+            buildMockupsReal(window.__writerData, d, design);
+            barEl.style.width = '100%';
+
+            // ④ 시안 페이지로 이동
+            setTimeout(() => goToPage(5), 350);
+        } catch (err) {
+            showToast('시안 생성 실패: ' + (err.message || err));
+            showPageById('page-photo');
+        }
+    }
+</script>
+
+<!-- 시안 원본 라이트박스 -->
+<div class="lightbox-overlay" id="lightbox" onclick="if(event.target===this)closeLightbox()">
+    <div class="lightbox-content">
+        <button class="lightbox-close" onclick="closeLightbox()" aria-label="닫기">×</button>
+        <button class="lightbox-nav lightbox-prev" onclick="lightboxStep(-1)" aria-label="이전">‹</button>
+        <img class="lightbox-img" id="lightbox-img" src="" alt="시안 원본">
+        <button class="lightbox-nav lightbox-next" onclick="lightboxStep(1)" aria-label="다음">›</button>
+        <div class="lightbox-cap">
+            <span class="lb-title" id="lightbox-title"></span>
+            <span class="lb-sub" id="lightbox-sub"></span>
+        </div>
+    </div>
+</div>
+<script>
+    let __lbIndex = 0;
+    function openLightbox(index) {
+        const items = window.__lightboxItems || [];
+        if (!items.length) return;
+        __lbIndex = index;
+        renderLightbox();
+        document.getElementById('lightbox').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    function lightboxStep(dir) {
+        const items = window.__lightboxItems || [];
+        if (!items.length) return;
+        __lbIndex = (__lbIndex + dir + items.length) % items.length;
+        renderLightbox();
+    }
+    function renderLightbox() {
+        const items = window.__lightboxItems || [];
+        const it = items[__lbIndex];
+        if (!it) return;
+        document.getElementById('lightbox-img').src = it.url;
+        document.getElementById('lightbox-title').textContent = it.title || '';
+        document.getElementById('lightbox-sub').textContent =
+            (it.caption || '') + '  ·  ' + (__lbIndex + 1) + ' / ' + items.length;
+    }
+    document.addEventListener('keydown', (e) => {
+        const lb = document.getElementById('lightbox');
+        if (!lb || !lb.classList.contains('open')) return;
+        if (e.key === 'Escape') closeLightbox();
+        else if (e.key === 'ArrowLeft') lightboxStep(-1);
+        else if (e.key === 'ArrowRight') lightboxStep(1);
     });
 </script>
 </body>

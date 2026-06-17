@@ -14,14 +14,6 @@ const analyzeSystemPrompt = readFileSync(
   "utf-8",
 );
 
-// ─── 2단계: 매체별 선별 + 분석 ────────────────────────────────────────
-// 입력: 매체별 references (Pinterest·Instagram·Mintoiro 각각 ~10장)
-// 출력: 매체별 분석 결과 (best_reference + shot_type·mood·composition·color·objects·source_specific)
-//
-// 매체별로 LLM 호출 1번씩 — 총 3 호출 (병렬). 각 호출에서:
-//   - 매체 강점 안내 (analyze.md + 사용자 메시지에 매체명 명시)
-//   - N장 비전 분석 → 선별 1장 인덱스 + 분석
-
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const USER_AGENT =
@@ -63,6 +55,12 @@ export async function analyzeOneSource({ brand, content, source, references }) {
       shot_type: "(레퍼런스 없음)",
       mood: "",
       composition: "",
+      lighting: "",
+      pose: "",
+      texture: "",
+      hair: "",
+      makeup: "",
+      styling: "",
       color_palette: [],
       key_objects: [],
       background: "",
@@ -73,7 +71,7 @@ export async function analyzeOneSource({ brand, content, source, references }) {
 
   // 이미지 다운로드 (실패한 건 skip)
   const downloaded = [];
-  const survivedRefs = []; // 다운로드 성공한 ref들 (best_index와 매칭)
+  const survivedRefs = [];
   for (const ref of references) {
     try {
       const blob = await fetchImageAsBase64(ref.image_url);
@@ -91,6 +89,12 @@ export async function analyzeOneSource({ brand, content, source, references }) {
       shot_type: "(이미지 다운로드 실패)",
       mood: "",
       composition: "",
+      lighting: "",
+      pose: "",
+      texture: "",
+      hair: "",
+      makeup: "",
+      styling: "",
       color_palette: [],
       key_objects: [],
       background: "",
@@ -123,7 +127,7 @@ ${sourceLabel(source)}의 강점(${sourceStrength(source)})에 가장 잘 부합
 
   const response = await anthropic.messages.parse({
     model: "claude-haiku-4-5",
-    max_tokens: 1024,
+    max_tokens: 2048,
     temperature: 0,
     system: [
       { type: "text", text: analyzeSystemPrompt, cache_control: { type: "ephemeral" } },
@@ -144,6 +148,12 @@ ${sourceLabel(source)}의 강점(${sourceStrength(source)})에 가장 잘 부합
     composition: data.composition,
     color_palette: data.color_palette ?? [],
     key_objects: data.key_objects ?? [],
+    lighting: data.lighting ?? "",
+    pose: data.pose ?? "",
+    texture: data.texture ?? "",
+    hair: data.hair ?? "",
+    makeup: data.makeup ?? "",
+    styling: data.styling ?? "",
     background: data.background ?? "",
     source_specific: data.source_specific,
     usage: response.usage,

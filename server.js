@@ -10,8 +10,9 @@
 //   PORT      기본 3000
 //   RUN_CMD   기본 "npm run pipeline" (테스트 시 가벼운 명령으로 바꿔치기 가능)
 
+import "dotenv/config"; // .env 로드 (SLACK_WEBHOOK_URL 등)
 import http from "node:http";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, mkdir, unlink } from "node:fs/promises";
 import { exec } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join, extname, normalize } from "node:path";
@@ -26,7 +27,8 @@ const STAGE_CMDS = {
   brand: "npm run brand",
   trend: "npm run trend",
   match: "npm run match",
-  write: "npm run write"
+  write: "npm run write",
+  design: "npm run design-v2"
 };
 // 테스트용: 설정하면 모든 단계를 이 명령으로 대체 (실제 API 호출 없이 배관만 점검)
 const STAGE_OVERRIDE = process.env.STAGE_CMD_OVERRIDE || "";
@@ -65,11 +67,16 @@ function buildBrandInput(f) {
   return {
     brand_name: f.brand_name || "",
     current_channels: toArray(f.current_channels),
-    // collect()는 배열로 보냄 → 첫 URL만 사용 (스키마는 문자열)
-    brand_channel_url: Array.isArray(f.brand_channel_url) ? (f.brand_channel_url[0] || "") : (f.brand_channel_url || ""),
+    // collect()는 배열로 보냄 → 스키마도 배열(z.array)이므로 배열 그대로 보관 (빈 값 제거)
+    brand_channel_url: Array.isArray(f.brand_channel_url) ? f.brand_channel_url.filter(Boolean) : (f.brand_channel_url ? [f.brand_channel_url] : []),
     product_name: f.product_name || "",
-    category: f.category || "",
-    texture_keywords: toArray(f.texture_keywords),
+    // 카테고리 4단계 분리 (브랜드분석가 BrandInputSchema v2)
+    category_major: f.category_major || "",
+    category_mid: f.category_mid || "",
+    category_sub: f.category_sub || "",
+    // 제품특징: 옵션 선택 + 자유 입력 (각 최대 3개)
+    product_features: toArray(f.product_features),
+    product_features_custom: toArray(f.product_features_custom),
     tone_and_manner: toArray(f.tone_and_manner),
     target: {
       gender: t.gender || "",
@@ -95,12 +102,28 @@ function runCmd(cmd, extraEnv = {}) {
       cwd: ROOT,
       maxBuffer: 1024 * 1024 * 50,
       timeout: 15 * 60 * 1000,
-      env: { ...process.env, ...extraEnv } // 기존 환경변수 + 이번에 추가할 것(YOUTUBE_FRESH 등)
+      // npm 업데이트 안내문(npm notice)·fund 광고를 끔 → 에러 로그가 안내문에 묻히지 않게
+      env: { ...process.env, NO_UPDATE_NOTIFIER: "1", NPM_CONFIG_UPDATE_NOTIFIER: "false", NPM_CONFIG_FUND: "false", ...extraEnv } // + 이번에 추가할 것(YOUTUBE_FRESH 등)
     },
       (err, stdout, stderr) => {
         res({ ok: !err, code: err?.code ?? 0, stdout, stderr: stderr || (err?.message ?? "") });
       });
   });
+}
+
+// 실행 로그에서 '진짜 에러'를 앞으로 뽑아냄.
+// npm 안내문(notice/warn/fund) 같은 잡음을 걷어내고, 'Error'·'Cannot find' 등
+// 실제 오류 줄부터 보여준다. (로그를 끝에서 자르면 npm notice만 보이던 문제 해결)
+function focusError(stdout, stderr) {
+  const clean = ((stdout || "") + "\n" + (stderr || ""))
+    .split("\n")
+    .filter((l) => !/^\s*npm (notice|warn|fund|WARN)/i.test(l))
+    .join("\n")
+    .trim();
+  const lines = clean.split("\n");
+  const idx = lines.findIndex((l) => /(Error|Cannot find|ERR_[A-Z_]+|throw |✖|❌)/.test(l));
+  const focused = idx >= 0 ? lines.slice(idx).join("\n") : clean;
+  return focused.slice(0, 1500); // 앞부분(=진짜 에러)부터
 }
 
 // 정적 파일 서빙 (repo 밖 접근 차단)
@@ -128,6 +151,40 @@ async function serveStatic(req, res, urlPath) {
 const server = http.createServer(async (req, res) => {
   // CORS (같은 출처라 사실 불필요하지만 안전하게)
   res.setHeader("Access-Control-Allow-Origin", "*");
+
+  // 제품 사진 업로드: UI가 보낸 base64 이미지를 inputs/product-images/<브랜드명>.<확장자> 로 저장
+  // → design(시안가) 단계가 이 파일을 찾아 시안을 생성한다.
+  if (req.method === "POST" && req.url === "/upload-product-image") {
+    try {
+      const body = await readBody(req);
+      const form = body ? JSON.parse(body) : {};
+      const brand = (form.brand_name || "").trim();
+      const dataUrl = form.data_url || "";
+      const m = /^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/i.exec(dataUrl);
+      if (!brand || !m) {
+        res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: false, error: "브랜드명 또는 이미지 형식 오류 (jpg/png/webp만)" }));
+        return;
+      }
+      let ext = m[1].toLowerCase();
+      if (ext === "jpeg") ext = "jpg";
+      const buf = Buffer.from(m[2], "base64");
+      const dir = resolve(ROOT, "inputs/product-images");
+      await mkdir(dir, { recursive: true });
+      // 같은 브랜드의 기존 사진(다른 확장자 포함) 제거 → 옛 사진이 남아 잘못 잡히는 것 방지
+      for (const e of ["jpg", "jpeg", "png", "webp"]) {
+        try { await unlink(resolve(dir, `${brand}.${e}`)); } catch { /* 없으면 무시 */ }
+      }
+      await writeFile(resolve(dir, `${brand}.${ext}`), buf);
+      console.log(`[upload] 제품 사진 저장: inputs/product-images/${brand}.${ext} (${buf.length} bytes)`);
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: true, path: `inputs/product-images/${brand}.${ext}` }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: false, error: String(e) }));
+    }
+    return;
+  }
 
   if (req.method === "POST" && req.url === "/run") {
     try {
@@ -161,8 +218,51 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({
         ok: result.ok,
         stage,
-        log: (result.stdout + "\n" + result.stderr).slice(-4000)
+        log: result.ok
+          ? (result.stdout + "\n" + result.stderr).slice(-4000) // 성공 로그는 기존대로(꼬리)
+          : focusError(result.stdout, result.stderr)             // 실패 로그는 진짜 에러를 앞으로
       }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: false, error: String(e) }));
+    }
+    return;
+  }
+
+  // Slack 공유: UI가 보낸 텍스트 요약을 .env의 웹훅으로 게시 (웹훅 URL은 서버에만 보관)
+  if (req.method === "POST" && req.url === "/share/slack") {
+    try {
+      const webhook = process.env.SLACK_WEBHOOK_URL;
+      if (!webhook) {
+        res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: false, error: "SLACK_WEBHOOK_URL 미설정 (.env 확인 후 서버 재시작)" }));
+        return;
+      }
+      const body = await readBody(req);
+      const payload = body ? JSON.parse(body) : {};
+      const text = (payload.text || "").toString().trim();
+      const blocks = Array.isArray(payload.blocks) ? payload.blocks : null;
+      if (!text && !blocks) {
+        res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: false, error: "보낼 내용이 비어 있어요" }));
+        return;
+      }
+      // blocks가 있으면 이미지 포함 게시, text는 알림/폴백용으로 함께 전달
+      const slackPayload = blocks ? { text: text || "TrendFit 제안서", blocks } : { text };
+      const slackRes = await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(slackPayload)
+      });
+      const respText = await slackRes.text();
+      if (!slackRes.ok) {
+        res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: false, error: `Slack 응답 ${slackRes.status}: ${respText}` }));
+        return;
+      }
+      console.log("[share/slack] 게시 완료");
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: true }));
     } catch (e) {
       res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ ok: false, error: String(e) }));
