@@ -59,9 +59,9 @@ const brandName = matchData.brand_name;
 // 매칭가 recommendations → designer contents 변환 (rank 1~3, 오름차순)
 // 슬롯별 샷 방향 고정 — "model"(인물) / "product"(제품·제형). rank별로 지정.
 const SHOT_DIRECTION_BY_RANK = {
-  1: "product", // R1
-  2: "product", // R2
-  3: "product", // R3
+  1: "product", // R1 — 제품·정물샷
+  2: "model",   // R2 — 인물·모델샷
+  3: "product", // R3 — 제품·제형 매크로
 };
 const DEFAULT_SHOT_DIRECTION = "product";
 
