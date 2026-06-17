@@ -57,6 +57,14 @@ const brandData = brandRaw?.data ?? {};
 const brandName = matchData.brand_name;
 
 // 매칭가 recommendations → designer contents 변환 (rank 1~3, 오름차순)
+// 슬롯별 샷 방향 고정 — "model"(인물) / "product"(제품·제형). rank별로 지정.
+const SHOT_DIRECTION_BY_RANK = {
+  1: "product", // R1
+  2: "product", // R2
+  3: "product", // R3
+};
+const DEFAULT_SHOT_DIRECTION = "product";
+
 const contents = matchData.recommendations
   .slice()
   .sort((a, b) => a.rank - b.rank)
@@ -74,7 +82,7 @@ const contents = matchData.recommendations
       trend_name: rec.trend_name,
       summary_bullets: summaryBullets,
       reason_bullets: reasonBullets,
-      shot_direction: "model", // 시안가 출력물을 모델샷으로 고정 (rank 무관)
+      shot_direction: SHOT_DIRECTION_BY_RANK[rec.rank] ?? DEFAULT_SHOT_DIRECTION,
     };
   });
 
