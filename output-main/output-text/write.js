@@ -187,8 +187,12 @@ function naturalizeMatcherText(text) {
   result = result.replace(/\s\+\s/g, " 와 ");
   result = result.replace(/\s*↔\s*/g, " 와 ");
 
-  // 8) 한국어 조사 자동 교정 (받침 기반) — 마지막 단계. 위 6·7단계에서
-  //    "와" 등을 삽입했을 수 있어 조사 보정은 가장 끝에서 수행.
+  // 8) "N+" → "N건 이상" 풀어쓰기 — 매칭가 reason에도 evidence value의
+  //    "30+", "50+" 같은 표기가 들어올 수 있어 텍스트 단위로 통합 변환.
+  result = expandNPlus(result);
+
+  // 9) 한국어 조사 자동 교정 (받침 기반) — 마지막 단계. 위 단계들에서
+  //    "와"·"N건 이상" 등을 삽입했을 수 있어 조사 보정은 가장 끝에서 수행.
   result = fixKoreanParticles(result);
 
   return result;
@@ -523,15 +527,17 @@ function buildSummaryBullets(td) {
 
 // evidence: 분석가가 만든 원본을 v2 enum 형식으로 정규화
 // Instagram 등 EXCLUDED_SOURCES는 트렌드 측이 보내와도 작성가가 출력에서 제외.
+// value의 "N+" 표기는 expandNPlus로 "N건 이상" 자연 한국어로 풀어 씀.
 function buildEvidence(td) {
   return (td?.evidence ?? [])
     .filter((e) => !isExcluded(e.source))
     .map((e) => {
       const src = normalizeSource(e.source);
+      const value = expandNPlus(e.value);
       return {
         source: src,
         label: SOURCE_LABEL[src] ?? e.source,
-        description: [e.metric, e.period ? `(${e.period})` : null, e.value]
+        description: [e.metric, e.period ? `(${e.period})` : null, value]
           .filter(Boolean)
           .join(" "),
         url: e.url ?? sourceUrl(e.source) ?? null,
@@ -587,7 +593,7 @@ function getEffectiveMarketerChannels(brand) {
 }
 
 // 한글 단어가 3개 이상이거나 4어절 이상이면 서술형 value로 간주. 정량 지표가
-// 아니라 수상·이벤트·라벨 등이라 metricPhrase에 그대로 박으면 어색.
+// 아니라 수상·이벤트·라벨 등이라 그대로 박으면 어색.
 function isDescriptiveMetricValue(value) {
   if (!value) return false;
   const tokens = String(value).split(/\s+/).filter(Boolean);
@@ -603,22 +609,74 @@ function cleanDelta(delta) {
   if (!delta) return "";
   let s = String(delta).trim();
   if (!s) return "";
-  // 외곽 괄호 벗기기: "(+22%)" → "+22%"
   s = s.replace(/^\(+|\)+$/g, "").trim();
-  // 내부 첫 괄호 앞까지만: "+56% (5월 관찰)" → "+56%"
   const parenIdx = s.indexOf("(");
   if (parenIdx > 0) s = s.slice(0, parenIdx).trim();
   return s;
 }
 
-// headline_metric → metricPhrase 합성. 서술형 value/중첩 괄호 방어.
-function buildMetricPhrase(hm) {
-  const value = String(hm?.value ?? "").trim();
-  if (!value) return null;
-  if (isDescriptiveMetricValue(value)) return null;
-  const label = String(hm?.metric ?? "").trim() || "검색량";
-  const delta = cleanDelta(hm?.delta);
-  return delta ? `${label} ${value} (${delta})` : `${label} ${value}`;
+// ─── 수치 라벨 분리 (트렌드 분석가 7종 수치 데이터 정리) ─────────────
+// 트렌드 분석가가 보내는 수치는 의미가 다른데 옛 코드는 한 라벨("검색량")로
+// 뭉뚱그려서 노출하던 문제. 다음 셋으로 분리:
+//
+//   1. 검색 추이 지수 (0~100 상대값) ← metrics.score + growth_rate
+//      "검색 추이 지수 82 (+25%)"
+//   2. 월간 검색량 (절대 건수)        ← demand_fit.monthly_searches
+//      "월간 검색량 1,890건"
+//   3. 헤드라인 서술 (수상·이벤트 등)  ← headline_metric (서술형 value)
+//      "신제품 출시 사례: 수야 서울 센트 오일 컬렉션"
+//
+// 셋 다 카드마다 다를 수 있어 별도 라벨로 노출. invalid_keyword 시 월간 검색량
+// 스킵 (트렌드 분석가가 검색어 부적합 표시).
+
+// 검색 추이 지수 — metrics.score(0~100) + growth_rate로 합성. score가 숫자가
+// 아니면 null. 증감률이 0이거나 없으면 단독 표시.
+function buildIndexPhrase(td) {
+  const score = td?.metrics?.score;
+  if (typeof score !== "number") return null;
+  const rate = td?.metrics?.growth_rate;
+  if (typeof rate === "number" && Math.round(rate * 100) !== 0) {
+    const pct = Math.round(rate * 100);
+    const sign = pct > 0 ? "+" : "";
+    return `검색 추이 지수 ${score} (${sign}${pct}%)`;
+  }
+  return `검색 추이 지수 ${score}`;
+}
+
+// 월간 검색량 — demand_fit.monthly_searches(절대 건수). invalid_keyword 트루
+// 또는 0 이하면 스킵. 천 단위 구분자(ko-KR locale) 적용해 가독성 ↑.
+function buildSearchVolumePhrase(td) {
+  const df = td?.demand_fit;
+  if (!df || df.invalid_keyword === true) return null;
+  const ms = df.monthly_searches;
+  if (typeof ms !== "number" || ms <= 0) return null;
+  return `월간 검색량 ${ms.toLocaleString("ko-KR")}건`;
+}
+
+// 헤드라인 서술 — headline_metric.value가 서술형(수상·이벤트·신제품 등)일
+// 때만 노출. 숫자 인덱스는 buildIndexPhrase가 담당하므로 여기서는 제외.
+// "{metric}: {value}" 형식 (예: "신제품 출시 사례: 수야 서울 센트 오일 컬렉션").
+// "N+" 표기는 expandNPlus로 풀어 씀.
+function buildHeadlineDescriptionPhrase(td) {
+  const hm = td?.headline_metric ?? {};
+  const raw = String(hm?.value ?? "").trim();
+  if (!raw) return null;
+  if (!isDescriptiveMetricValue(raw)) return null;
+  const value = expandNPlus(raw);
+  const label = String(hm?.metric ?? "").trim();
+  return label ? `${label}: ${value}` : value;
+}
+
+// "30+", "30+ 개" → "30건 이상" 변환. evidence value, 매칭가 reason, usage_plan
+// 어느 자리에서든 깔끔히 풀어쓰도록 텍스트 단위 헬퍼.
+// "(+22%)" 같은 패턴은 회피 (숫자 앞에 + 위치).
+function expandNPlus(text) {
+  if (!text) return text;
+  // "30+ 개" / "30+개" — "개" 흡수해서 "건 이상"으로 통일
+  let result = String(text).replace(/(\d+)\+\s*개(?=\s|$|[,.!?…·)\]가-힣])/g, "$1건 이상");
+  // 일반 "30+" — 한글·공백·구두점이 따라올 때만 (영문/숫자 다음은 안 건드림)
+  result = result.replace(/(\d+)\+(?=\s|$|[,.!?…·)\]가-힣])/g, "$1건 이상");
+  return result;
 }
 
 // ─── usage_plan 코드 템플릿 (LLM 호출 없음) ─────────────────────────
@@ -712,15 +770,17 @@ function getKpiContentByRank(kpi, rank) {
 }
 
 // 카드별 evidence 한 줄 — td.evidence[]의 첫 항목에서 "{출처}에서 {value/metric}"
-// 형식으로 단문 합성. Instagram 등 EXCLUDED_SOURCES는 제외. 데이터 없으면 null.
+// 형식으로 단문 합성. Instagram 등 EXCLUDED_SOURCES는 제외. "N+" 표기는
+// expandNPlus로 "N건 이상" 풀어 씀. 데이터 없으면 null.
 function buildEvidenceSnippet(td) {
   const list = (td?.evidence ?? []).filter((e) => !isExcluded(e?.source));
   if (list.length === 0) return null;
   const first = list[0];
   const src = normalizeSource(first.source);
   const label = SOURCE_LABEL[src] ?? first.source ?? null;
-  // value 우선 (구체적 내용), 없으면 metric (지표명)
-  const body = (first.value || first.metric || "").toString().trim();
+  const body = expandNPlus(
+    (first.value || first.metric || "").toString().trim(),
+  );
   if (!body) return null;
   if (!label) return body;
   return `${label}에서 ${body}`;
@@ -867,31 +927,26 @@ function buildUsagePlan(brand, td, opts = {}) {
   // 카드별 evidence 한 줄 — sentence 1에 들어가 카드마다 첫 줄이 다르게.
   const evidenceSnippet = buildEvidenceSnippet(td);
 
-  // 검색량·증가율 — headline_metric에서 추출 (있을 때만 노출).
-  // 예: "월별 검색지수 32.4 (-67.6%)" / value만 있으면 "월별 검색지수 32.4"
-  //
-  // 트렌드 분석가가 value에 다양한 형식(짧은 수치 / 서술형 / 수상 라벨 등)을
-  // 섞어 보낼 수 있어 방어:
-  //   - value가 길거나 서술형(한글 단어 다수)이면 metricPhrase 생략
-  //     → 활용 방안 문장 1은 channelEvidence·lifespanPhrase만 살림
-  //   - delta가 괄호 포함하면 외곽 괄호 벗기고 내부 첫 괄호 앞까지만 사용
-  //     → "(+56% (5월 관찰))" 같은 중첩 괄호 방지
-  const hm = td?.headline_metric ?? {};
-  const metricPhrase = buildMetricPhrase(hm);
+  // 수치 라벨 분리 — 검색 추이 지수·월간 검색량·헤드라인 서술 셋으로 노출.
+  // 옛 buildMetricPhrase(headline_metric 단일)에서 분리 (라벨 분리 작업).
+  const indexPhrase = buildIndexPhrase(td);          // "검색 추이 지수 75 (+56%)"
+  const volumePhrase = buildSearchVolumePhrase(td);  // "월간 검색량 1,890건"
+  const headlineDesc = buildHeadlineDescriptionPhrase(td); // "신제품 출시 사례: ..."
 
   // ─ 문장 1: 트렌드 현황 ──────────────────────────────────────────
-  // "[채널 활성] {카드별 evidence | 채널 evidence}, {검색량/증가율}, {수명}"
+  // "[채널 활성] {카드별 evidence | 채널 evidence}, {지수}, {월간 검색량},
+  //  {헤드라인 서술}, {수명}"
   // evidenceSnippet(td.evidence[0])이 있으면 카드별 차별화 키 — 우선 사용.
-  // 없으면 channelEvidence(채널 레벨)로 폴백.
+  // 없으면 channelEvidence(채널 레벨)로 폴백. 수치 셋은 의미가 다르므로
+  // 각자 라벨 붙은 채로 콤마 join.
   let sentence1 = null;
   const opener = evidenceSnippet ?? channelEvidence;
+  const sentence1Parts = [opener, indexPhrase, volumePhrase, headlineDesc, lifespanPhrase];
   if (channelTag) {
-    const tail = [opener, metricPhrase, lifespanPhrase]
-      .filter(Boolean)
-      .join(", ");
+    const tail = sentence1Parts.filter(Boolean).join(", ");
     sentence1 = tail ? `${channelTag} ${tail}` : channelTag;
   } else {
-    const parts = [opener, metricPhrase, lifespanPhrase].filter(Boolean);
+    const parts = sentence1Parts.filter(Boolean);
     if (parts.length > 0) sentence1 = parts.join(", ");
   }
 
@@ -1045,32 +1100,16 @@ function formatGrowthRate(rate) {
   return `${sign}${pct}%`;
 }
 
-// 트렌드 수치를 자연스러운 한국어 한 문장으로 풀어 쓴다. 옛 "[검색량 N +X%]"
-// 대괄호 표기 대체. 트렌드 분석가가 다양한 형식으로 value를 보내므로 6가지
-// 패턴으로 분기. 매칭 안 되면 null (prefix 없이 raw reason만 노출).
+// 트렌드 수치를 자연스러운 한국어 문장으로 풀어 쓴다. match_reasons.detail의
+// prefix로 쓰임. 라벨 분리 작업 이후 우선순위:
+//   1순위: metrics.score(검색 추이 지수, 0~100) + growth_rate → "검색 추이 지수가
+//          82이고 25% 증가하며 떠오르는 트렌드예요."
+//   2순위: demand_fit.monthly_searches → "네이버 월간 검색량 1,890건 수준이에요."
+//          (1순위 문장과 함께 나올 수 있음 — 둘 다 있으면 두 문장 join)
+//   3순위 폴백: headline_metric.value (서술형·정성)
 //
-// 케이스 예:
-//   value="300+", rate=+0.45 → "검색량이 300건 이상이고 45% 증가하며 떠오르는 트렌드예요."
-//   value="47.4", rate=-0.15 → "검색량이 47.4건이고 15% 감소했지만 안정적으로 자리잡은 트렌드예요."
-//   value="56%↑", rate=+0.56 → "56% 증가하며 떠오르는 트렌드예요." (% 중복 회피)
-//   value="100 → 11.17", rate=-0.89 → "89% 감소했지만 안정적으로 자리잡은 트렌드예요."
-//   metric="검색 수요 지수", value="높음" → "검색 수요 지수가 높음으로 강하게 잡히고 있어요."
-//   metric="활성도", value=68 → "이 카테고리의 활성도가 68으로 활발해요."
-//   metric="제품 순위 및 수상", value="화해 1위 2년 연속" → "제품 순위 및 수상: 화해 1위 2년 연속."
-
-// 순수 검색량 숫자형(정수/소수, 끝에 "+" 허용)이면 {num, endsWithPlus} 반환.
-function parseSearchVolumeValue(value) {
-  if (value == null) return null;
-  const s = String(value).trim();
-  if (!s) return null;
-  if (/[%↑↓]/.test(s)) return null;
-  if (/[가-힣]/.test(s)) return null;
-  if (/\s/.test(s)) return null;
-  const endsWithPlus = s.endsWith("+");
-  const numPart = endsWithPlus ? s.slice(0, -1) : s;
-  if (!/^\d+(\.\d+)?$/.test(numPart)) return null;
-  return { num: numPart, endsWithPlus };
-}
+// 옛 parseSearchVolumeValue/headline_metric.value 파싱은 폐기 — metrics.score가
+// 항상 numeric 0~100으로 일관되어 더 안정적.
 
 // rate 단독 풀어쓰기 — 증가/감소/유지 분기.
 function formatRateSentence(rate) {
@@ -1081,72 +1120,72 @@ function formatRateSentence(rate) {
   return null; // 0%는 굳이 안 표시
 }
 
-function buildMetricPrefixSentence(td) {
-  const value = td?.headline_metric?.value;
-  const metric = td?.headline_metric?.metric;
+// 검색 추이 지수 한 문장 — metrics.score + 선택적 growth_rate.
+function buildIndexSentence(td) {
+  const score = td?.metrics?.score;
+  if (typeof score !== "number") return null;
   const rate = td?.metrics?.growth_rate;
-
-  const hasValue = value != null && String(value).trim().length > 0;
-  const hasRate = rate != null && typeof rate === "number";
-
-  if (!hasValue && !hasRate) return null;
-
-  const valueStr = hasValue ? String(value).trim() : "";
-
-  // 1) 활성/활성도 metric + 짧은 value — "이 카테고리의 활성도가 N으로 활발해요"
-  if (hasValue && typeof metric === "string" && /활성/.test(metric) && valueStr.length <= 10) {
-    return `이 카테고리의 ${metric}이 ${valueStr}으로 활발해요.`;
+  if (typeof rate === "number" && Math.round(rate * 100) !== 0) {
+    const pct = Math.round(rate * 100);
+    const absPct = Math.abs(pct);
+    if (pct > 0) return `검색 추이 지수가 ${score}이고 ${absPct}% 증가하며 떠오르는 트렌드예요.`;
+    return `검색 추이 지수가 ${score}이고 ${absPct}% 감소했지만 안정적으로 자리잡은 트렌드예요.`;
   }
+  return `검색 추이 지수가 ${score}이에요.`;
+}
 
-  // 2) 순수 검색량 숫자 — 가장 정밀한 풀어쓰기
-  const parsed = hasValue ? parseSearchVolumeValue(value) : null;
-  if (parsed) {
-    if (hasRate) {
-      const pct = Math.round(rate * 100);
-      const absPct = Math.abs(pct);
-      if (pct > 0) {
-        const suffix = parsed.endsWithPlus ? "건 이상이고" : "건이고";
-        return `검색량이 ${parsed.num}${suffix} ${absPct}% 증가하며 떠오르는 트렌드예요.`;
-      }
-      if (pct < 0) {
-        const suffix = parsed.endsWithPlus ? "건 이상이지만" : "건이고";
-        return `검색량이 ${parsed.num}${suffix} ${absPct}% 감소했지만 안정적으로 자리잡은 트렌드예요.`;
-      }
-      const suffix = parsed.endsWithPlus ? "건 이상으로" : "건으로";
-      return `검색량이 ${parsed.num}${suffix} 안정적인 트렌드예요.`;
-    }
-    const suffix = parsed.endsWithPlus ? "건 이상이에요" : "건이에요";
-    return `검색량이 ${parsed.num}${suffix}.`;
-  }
+// 네이버 월간 검색량 한 문장 — demand_fit.monthly_searches.
+// invalid_keyword 트루면 스킵 (트렌드 분석가가 검색어 부적합 표시).
+function buildVolumeSentence(td) {
+  const df = td?.demand_fit;
+  if (!df || df.invalid_keyword === true) return null;
+  const ms = df.monthly_searches;
+  if (typeof ms !== "number" || ms <= 0) return null;
+  return `네이버 월간 검색량 ${ms.toLocaleString("ko-KR")}건 수준이에요.`;
+}
 
-  // 3) % 패턴 value (56%↑, -22%) — rate와 의미 중복 → rate 우선, 없으면 value에서 추출.
-  if (hasValue && /^[+-]?\d+(\.\d+)?%[↑↓]?$/.test(valueStr)) {
-    if (hasRate) return formatRateSentence(rate);
-    const m = valueStr.match(/(\d+(\.\d+)?)/);
-    if (m) {
-      const sign = /[-↓]/.test(valueStr) ? -1 : 1;
-      return formatRateSentence((Number(m[1]) / 100) * sign);
+function buildMetricPrefixSentence(td) {
+  const sentences = [];
+
+  // 1) 검색 추이 지수 — metrics.score 우선
+  const indexSent = buildIndexSentence(td);
+  if (indexSent) {
+    sentences.push(indexSent);
+  } else {
+    // score 없으면 growth_rate 단독 시도
+    const rate = td?.metrics?.growth_rate;
+    if (typeof rate === "number") {
+      const r = formatRateSentence(rate);
+      if (r) sentences.push(r);
     }
   }
 
-  // 4) 변화 패턴 ("100 → 11.17 (-88.8%)") — rate에 위임
-  if (hasValue && /→/.test(valueStr) && hasRate) {
-    return formatRateSentence(rate);
+  // 2) 네이버 월간 검색량 — 따로 노출 (의미 다르므로)
+  const volumeSent = buildVolumeSentence(td);
+  if (volumeSent) sentences.push(volumeSent);
+
+  // 1·2 둘 다 못 만들면 headline_metric 서술 폴백
+  if (sentences.length === 0) {
+    const value = td?.headline_metric?.value;
+    const metric = td?.headline_metric?.metric;
+    const hasValue = value != null && String(value).trim().length > 0;
+    if (!hasValue) return null;
+    const valueStr = String(value).trim();
+    if (typeof metric === "string" && /활성/.test(metric) && valueStr.length <= 10) {
+      sentences.push(`이 카테고리의 ${metric}이 ${valueStr}으로 활발해요.`);
+    } else if (/^(매우\s*)?(높음|높은|중간|보통|낮음|낮은)$/.test(valueStr)) {
+      const tag = metric || "트렌드 신호";
+      if (/높/.test(valueStr)) sentences.push(`${tag}이 ${valueStr}으로 강하게 잡히고 있어요.`);
+      else if (/중간|보통/.test(valueStr)) sentences.push(`${tag}이 ${valueStr} 수준으로 관찰돼요.`);
+      else sentences.push(`${tag}이 ${valueStr}으로 약해진 상태예요.`);
+    } else if (metric) {
+      sentences.push(`${metric}: ${valueStr}.`);
+    } else {
+      sentences.push(`${valueStr}.`);
+    }
   }
 
-  // 5) 정성 평가 단어 (높음/중간/낮음 등) + metric 동반
-  if (hasValue && /^(매우\s*)?(높음|높은|중간|보통|낮음|낮은)$/.test(valueStr)) {
-    const tag = metric || "트렌드 신호";
-    if (/높/.test(valueStr)) return `${tag}이 ${valueStr}으로 강하게 잡히고 있어요.`;
-    if (/중간|보통/.test(valueStr)) return `${tag}이 ${valueStr} 수준으로 관찰돼요.`;
-    return `${tag}이 ${valueStr}으로 약해진 상태예요.`;
-  }
-
-  // 6) 그 외 — rate가 있으면 rate만, 없으면 metric+value를 자연 문장으로.
-  if (hasRate) return formatRateSentence(rate);
-  if (hasValue && metric) return `${metric}: ${valueStr}.`;
-  if (hasValue) return `${valueStr}.`;
-  return null;
+  return sentences.length > 0 ? sentences.join(" ") : null;
 }
 
 // 각 기준의 detail 문장 합성. 코드 템플릿만 사용 (LLM 호출 X).
