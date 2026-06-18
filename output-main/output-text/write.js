@@ -333,7 +333,6 @@ export function generateReport({ brand, trend, match } = {}) {
   top.forEach((r, i) => {
     const td = findTrend(r.trend_name);
     const letter = String.fromCharCode(65 + i);
-    const rankSuffix = r.rank === 3 ? ` ⚠️ *${r.rank}순위 — 보완 활용 권장*` : "";
 
     lines.push(`### [${letter}] ${r.trend_name} (${r.rank}순위)`);
     lines.push("");
@@ -381,7 +380,7 @@ export function generateReport({ brand, trend, match } = {}) {
     }
     lines.push("");
 
-    lines.push(`**🎯 매칭이유 (오주연)**${rankSuffix}`);
+    lines.push(`**🎯 매칭이유 (오주연)**`);
     (r.summary_reasons ?? []).forEach((s) => lines.push(`- ${formatReason(s)}`));
     lines.push("");
 
@@ -463,10 +462,6 @@ function targetDisplay(b) {
   const tone = (b.tone_and_manner ?? []).join("·");
   const demo = [ages.join("·"), gender].filter(Boolean).join(" ");
   return [demo, tone].filter(Boolean).join(" · ");
-}
-
-function deriveVariant(rank) {
-  return rank === 3 ? "supplementary" : "primary";
 }
 
 // 매칭가 v0.3 matching_grade(상/중/하/제외) → UI strength enum
@@ -800,6 +795,35 @@ function mapPeriodBudget(period, budget) {
   return null;
 }
 
+// 시의성 멘트 — trend_stage·growth_rate 기반 카드별 한 줄 단서. 매칭 적합도와
+// 별개인 "트렌드 수명/추세" 신호로 마케터에게 집행 타이밍 힌트 제공.
+//
+// 우선순위 (위에서부터 매칭):
+//   1. growth_rate < -0.5 (-50% 미만 급락) → 짧은 캠페인 권장 — stage보다 강한 신호
+//   2. trend_stage === "declining"        → 보완 활용 권장
+//   3. trend_stage === "peak"              → 빠른 집행 권장
+//   4. trend_stage === "emerging"/"growing" → 안정적 진입 가능
+//   5. 그 외(데이터 없음·기타) → null (멘트 생략)
+//
+// "emerging"·"growing" 둘 다 받음 — 트렌드 분석가가 둘 중 어느 표기로 보내든 흡수.
+function buildTimingNote(td) {
+  const rate = td?.metrics?.growth_rate;
+  const stage = td?.trend_stage;
+  if (typeof rate === "number" && rate < -0.5) {
+    return "급격한 하락세라 짧은 캠페인 권장";
+  }
+  if (stage === "declining") {
+    return "쇠퇴기에 접어드는 중이라 보완해서 활용 권장";
+  }
+  if (stage === "peak") {
+    return "피크를 찍는 중이라 빠르게 집행 권장";
+  }
+  if (stage === "emerging" || stage === "growing") {
+    return "성장세 흐름이라 안정적 진입 가능";
+  }
+  return null;
+}
+
 // 트렌드 수명 한 줄 — stage 라벨 + lifespan_estimate 조합. 한쪽만 있어도 출력.
 function buildLifespanPhrase(td) {
   const stage = STAGE_LABEL[td?.trend_stage] ?? null;
@@ -926,16 +950,20 @@ function buildUsagePlan(brand, td, opts = {}) {
   const indexPhrase = suppressIndex ? null : buildIndexPhrase(td);
   const volumePhrase = buildSearchVolumePhrase(td);  // "월간 검색량 1,890건"
   const headlineDesc = buildHeadlineDescriptionPhrase(td); // "신제품 출시 사례: ..."
+  // 시의성 멘트 — trend_stage·growth_rate 기반 집행 타이밍 힌트. lifespan
+  // 바로 옆에 자연스럽게 녹이기 위해 sentence 1 마지막에 배치.
+  const timingNote = buildTimingNote(td);
 
   // ─ 문장 1: 트렌드 현황 ──────────────────────────────────────────
   // "[채널 활성] {카드별 evidence | 채널 evidence}, {지수}, {월간 검색량},
-  //  {헤드라인 서술}, {수명}"
+  //  {헤드라인 서술}, {수명}, {시의성 멘트}"
   // evidenceSnippet(td.evidence[0])이 있으면 카드별 차별화 키 — 우선 사용.
   // 없으면 channelEvidence(채널 레벨)로 폴백. 수치 셋은 의미가 다르므로
-  // 각자 라벨 붙은 채로 콤마 join.
+  // 각자 라벨 붙은 채로 콤마 join. 시의성 멘트는 가장 뒤에 — 트렌드 현황
+  // 다 보고 마지막에 "그래서 어떻게 집행하면 좋은가" 신호로 마무리.
   let sentence1 = null;
   const opener = evidenceSnippet ?? channelEvidence;
-  const sentence1Parts = [opener, indexPhrase, volumePhrase, headlineDesc, lifespanPhrase];
+  const sentence1Parts = [opener, indexPhrase, volumePhrase, headlineDesc, lifespanPhrase, timingNote];
   if (channelTag) {
     const tail = sentence1Parts.filter(Boolean).join(", ");
     sentence1 = tail ? `${channelTag} ${tail}` : channelTag;
@@ -1246,10 +1274,15 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
       rank: r.rank,
       verdict: `${r.rank}순위`, // recommendations에 들어왔으면 N순위 (제외 트렌드는 애초에 없음)
       matching_grade: ev?.matching_grade ?? "중", // 매칭가 v0.3 절대 등급
-      display_variant: deriveVariant(r.rank),
+      // rank-based 배지 결정(display_variant) 제거 — "보완 활용 권장" 같은 배지는
+      // 공용 렌더러(match-report.js) 영역. 작성가는 raw 데이터만 노출.
+      // 렌더러는 trend_stage·growth_rate 신호로 자체 판단.
       keywords: normalizeKeywords(td?.keywords).slice(0, 5),
       headline_metric: td?.headline_metric ?? { metric: "", value: "", delta: "" },
       metrics: td?.metrics ?? { score: 0, growth_rate: 0, period: "" },
+      // 렌더러가 배지 판단에 쓰는 raw 신호 — 작성가는 노출만 함.
+      trend_stage: td?.trend_stage ?? null,
+      growth_rate: td?.metrics?.growth_rate ?? null,
       summary_bullets: buildSummaryBullets(td),
       reason_bullets: (r.summary_reasons ?? []).map(reasonText).filter(Boolean),
       evidence: buildEvidence(td),
