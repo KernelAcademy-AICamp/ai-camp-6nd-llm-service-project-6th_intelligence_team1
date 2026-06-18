@@ -109,29 +109,33 @@ const SAFE_PARTICLE_PAIRS = [
 function fixKoreanParticles(text) {
   if (!text) return text;
   let result = text;
+  // 조사 앞에 한글 2자(받침 검사 대상은 마지막 1자). 짧은 명사 "증가"·"고가"·
+  // "추가" 같은 1자 어간+1자 패턴이 잘못 보정되지 않도록 prefix 2자 강제.
   for (const { jong, noJong } of SAFE_PARTICLE_PAIRS) {
     const pattern = new RegExp(
-      `([가-힣])(?:${jong}|${noJong})(?=\\s|$|[,.!?…·)\\]])`,
+      `([가-힣][가-힣])(?:${jong}|${noJong})(?=\\s|$|[,.!?…·)\\]])`,
       "g",
     );
-    result = result.replace(pattern, (_, ch) => {
-      const right = getJongseong(ch) !== 0 ? jong : noJong;
-      return `${ch}${right}`;
+    result = result.replace(pattern, (_, prefix) => {
+      const lastCh = prefix[prefix.length - 1];
+      const right = getJongseong(lastCh) !== 0 ? jong : noJong;
+      return `${prefix}${right}`;
     });
   }
-  // 와/과 — 명사 보호 위해 한글 + 공백 + 조사 패턴만 (공백 없으면 명사 가능성).
-  // "20-30대 과 부합" 같은 케이스만 보정, "사과 먹다"는 안 건드림.
+  // 와/과 — 한글 + 공백 + 조사 패턴만 (명사 "사과"·"치과" 보호).
   result = result.replace(
     /([가-힣])\s+(?:와|과)(?=\s|$|[,.!?…·)\]])/g,
     (_, ch) => `${ch}${getJongseong(ch) !== 0 ? "과" : "와"}`,
   );
-  // (으)로 — 받침 ㄹ(8)은 예외적으로 "로" 사용.
+  // (으)로 — 동일하게 prefix 2자 요구 ("결과로" 등 짧은 명사 보호).
+  // 받침 ㄹ(8)은 예외적으로 "로" 사용.
   result = result.replace(
-    /([가-힣])\s*(?:으로|로)(?=\s|$|[,.!?…·)\]])/g,
-    (_, ch) => {
-      const j = getJongseong(ch);
+    /([가-힣][가-힣])\s*(?:으로|로)(?=\s|$|[,.!?…·)\]])/g,
+    (_, prefix) => {
+      const lastCh = prefix[prefix.length - 1];
+      const j = getJongseong(lastCh);
       const right = j === 0 || j === 8 ? "로" : "으로";
-      return `${ch}${right}`;
+      return `${prefix}${right}`;
     },
   );
   return result;
@@ -658,12 +662,69 @@ function normalizeChannelItem(item) {
   };
 }
 
-// KPI별 콘텐츠 형식 — 문장 합성용 명사구 (조사 "로/으로"는 buildUsagePlan에서)
+// KPI별 콘텐츠 형식 — 문장 합성용 명사구 (조사 "로/으로"는 buildUsagePlan에서).
+// rank 미지정/순위 0 같은 폴백 케이스에서 사용.
 const KPI_CONTENT = {
   "신제품 런칭": "30초 숏폼 언박싱과 첫 사용 후기 콘텐츠",
   "시즌 프로모션": "시즌 루틴·한정 할인 메시지",
   "재구매 유도": "공병 후기·데일리 루틴 콘텐츠",
 };
+
+// rank별 활용 강도 라벨 — 카드 1·2·3순위에 맞춰 액션 톤 차별화.
+//   1순위 → 핵심 캠페인 (주력 집행)
+//   2순위 → 보조 콘텐츠 (보강 활용)
+//   3순위 → 테스트 콘텐츠 (가벼운 시도)
+const RANK_TIER_LABEL = {
+  1: "핵심 캠페인",
+  2: "보조 콘텐츠",
+  3: "테스트 콘텐츠",
+};
+
+// KPI × rank → 카드별 콘텐츠 형식. 카드마다 활용 방안 두 번째 문장의 액션
+// 표현이 달라지도록. 미매칭 케이스는 KPI_CONTENT 폴백.
+const KPI_CONTENT_BY_RANK = {
+  "신제품 런칭": {
+    1: "30초 숏폼 언박싱·첫 사용 후기 중심 콘텐츠",
+    2: "첫 사용 후기 카루셀로 함께 활용",
+    3: "숏폼 한 편 가볍게 활용",
+  },
+  "시즌 프로모션": {
+    1: "시즌 루틴·한정 할인 메시지 중심 콘텐츠",
+    2: "시즌 루틴 카루셀 보강",
+    3: "가볍게 시즌 메시지 활용",
+  },
+  "재구매 유도": {
+    1: "공병 후기·데일리 루틴 콘텐츠 중심",
+    2: "데일리 루틴 콘텐츠 보강",
+    3: "가볍게 공병 후기 한 편 활용",
+  },
+};
+
+// 카드 순위·KPI에 맞는 tier 라벨과 콘텐츠 명사구 반환.
+// 순위 정보 없거나 1·2·3 외 값이면 2순위(중간 액션)로 폴백.
+// KPI가 KPI_CONTENT_BY_RANK에 없으면 KPI_CONTENT 일반 매핑으로 폴백.
+function getKpiContentByRank(kpi, rank) {
+  const r = rank === 1 || rank === 2 || rank === 3 ? rank : 2;
+  const tier = RANK_TIER_LABEL[r];
+  const tableContent = KPI_CONTENT_BY_RANK[kpi]?.[r] ?? null;
+  const content = tableContent ?? KPI_CONTENT[kpi] ?? null;
+  return { tier, content };
+}
+
+// 카드별 evidence 한 줄 — td.evidence[]의 첫 항목에서 "{출처}에서 {value/metric}"
+// 형식으로 단문 합성. Instagram 등 EXCLUDED_SOURCES는 제외. 데이터 없으면 null.
+function buildEvidenceSnippet(td) {
+  const list = (td?.evidence ?? []).filter((e) => !isExcluded(e?.source));
+  if (list.length === 0) return null;
+  const first = list[0];
+  const src = normalizeSource(first.source);
+  const label = SOURCE_LABEL[src] ?? first.source ?? null;
+  // value 우선 (구체적 내용), 없으면 metric (지표명)
+  const body = (first.value || first.metric || "").toString().trim();
+  if (!body) return null;
+  if (!label) return body;
+  return `${label}에서 ${body}`;
+}
 
 // 트렌드 단계(trend_stage) → 자연 한국어 라벨
 const STAGE_LABEL = {
@@ -709,20 +770,26 @@ function buildKeywordPhrase(td, n = 3) {
   return kws.map((k) => `'${k}'`).join(", ");
 }
 
-// usage_plan 한 단락 합성. 다섯 정보를 세 문장으로 자연스럽게 결합:
-//   문장 1) 트렌드 현황 — [채널 활성] + evidence + 트렌드 수명
-//   문장 2) 행동 제안   — KPI 톤 + 키워드 강조 + KPI 콘텐츠 형식 + 채널 비교
+// usage_plan 한 단락 합성. 다섯 정보를 세 문장으로 자연스럽게 결합. 카드별
+// 차별화를 위해 evidence 한 줄과 rank별 액션 톤을 함께 받음:
+//   문장 1) 트렌드 현황 — [채널 활성] + 카드별 evidence + 트렌드 수명 + 검색량
+//   문장 2) 행동 제안   — rank tier + KPI 톤 + 키워드 강조 + KPI 콘텐츠 + 채널 비교
 //   문장 3) 기간/예산   — 마케터 기간·예산 → 트렌드 활용 성격
+//
+// rank별 차별화:
+//   - 같은 KPI라도 1순위=핵심 캠페인 / 2순위=보조 콘텐츠 / 3순위=테스트 콘텐츠
+//   - 카드별 evidence(td.evidence[0])가 sentence 1에 들어가 카드마다 첫 줄이 다름
 //
 // 데이터가 비면 해당 부분/문장 생략 (시스템 안전, 어색한 빈 자리 X).
 //
 // 결과 예:
-//   "[유튜브 활성] 세미매트 쿠션 추천 영상 다수, 정점이며 6개월 이상 흐름.
-//    시즌 프로모션에 맞춰 '세미매트', '쿠션' 키워드 중심의 시즌 루틴·한정
-//    할인 메시지로 인스타그램 외 유튜브 확장 추천.
+//   "[유튜브 활성] Naver News에서 매트 쿠션 비교 영상 22% 증가, 정점이며 6개월 이상 흐름.
+//    핵심 캠페인으로 시즌 프로모션에 맞춰 '세미매트', '쿠션' 키워드 중심의 시즌 루틴·한정
+//    할인 메시지 중심 콘텐츠, 인스타그램 외 유튜브 확장 추천.
 //    한달 + 200만원 미만 예산이라 단기 효율형 트렌드로 활용 가능."
-function buildUsagePlan(brand, td) {
+function buildUsagePlan(brand, td, opts = {}) {
   if (!td?.trend_name) return "";
+  const rank = opts?.rank;
 
   // ─ 채널 비교 ────────────────────────────────────────────────────
   const marketer = getEffectiveMarketerChannels(brand);
@@ -793,8 +860,12 @@ function buildUsagePlan(brand, td) {
   const lifespanPhrase = buildLifespanPhrase(td); // "정점이며 6개월 이상 흐름"
   const keywordPhrase = buildKeywordPhrase(td);   // "'세미매트', '쿠션'"
   const kpiTone = brand?.campaign_kpi ?? null;    // "시즌 프로모션"
-  const kpiContent = KPI_CONTENT[kpiTone] ?? null; // "시즌 루틴·한정 할인 메시지"
+  // rank별 tier 라벨 + 콘텐츠 명사구 (1순위=핵심, 2=보조, 3=테스트). KPI 미매칭은
+  // KPI_CONTENT 일반 매핑으로 폴백, 순위 미지정은 2순위(중간) 폴백.
+  const { tier: rankTier, content: kpiContent } = getKpiContentByRank(kpiTone, rank);
   const pbLabel = mapPeriodBudget(brand?.campaign_period, brand?.campaign_budget); // "단기 효율형 트렌드"
+  // 카드별 evidence 한 줄 — sentence 1에 들어가 카드마다 첫 줄이 다르게.
+  const evidenceSnippet = buildEvidenceSnippet(td);
 
   // 검색량·증가율 — headline_metric에서 추출 (있을 때만 노출).
   // 예: "월별 검색지수 32.4 (-67.6%)" / value만 있으면 "월별 검색지수 32.4"
@@ -809,28 +880,39 @@ function buildUsagePlan(brand, td) {
   const metricPhrase = buildMetricPhrase(hm);
 
   // ─ 문장 1: 트렌드 현황 ──────────────────────────────────────────
-  // "[채널 활성] {evidence}, {검색량/증가율}, {수명}"
+  // "[채널 활성] {카드별 evidence | 채널 evidence}, {검색량/증가율}, {수명}"
+  // evidenceSnippet(td.evidence[0])이 있으면 카드별 차별화 키 — 우선 사용.
+  // 없으면 channelEvidence(채널 레벨)로 폴백.
   let sentence1 = null;
+  const opener = evidenceSnippet ?? channelEvidence;
   if (channelTag) {
-    const tail = [channelEvidence, metricPhrase, lifespanPhrase]
+    const tail = [opener, metricPhrase, lifespanPhrase]
       .filter(Boolean)
       .join(", ");
     sentence1 = tail ? `${channelTag} ${tail}` : channelTag;
   } else {
-    // 채널 정보 없어도 검색량·수명만으로 문장 1 합성
-    const parts = [metricPhrase, lifespanPhrase].filter(Boolean);
+    const parts = [opener, metricPhrase, lifespanPhrase].filter(Boolean);
     if (parts.length > 0) sentence1 = parts.join(", ");
   }
 
-  // ─ 문장 2: 행동 제안 ───────────────────────────────────────────
-  // "{KPI 톤}에 맞춰 {키워드 강조} {KPI 콘텐츠}로 {채널 비교} 추천"
+  // ─ 문장 2: 행동 제안 (rank 차별화) ───────────────────────────────
+  // "{tier}로 {KPI 톤}에 맞춰 {키워드 강조} {KPI 콘텐츠}, {채널 비교}"
+  // channelAction이 이미 "추천"으로 끝나면 그대로, 없으면 끝에 " 추천" 추가.
   let sentence2 = null;
-  if (kpiTone || kpiContent || channelAction) {
-    const head = kpiTone ? `${kpiTone}에 맞춰` : null;
+  if (rankTier || kpiTone || kpiContent || channelAction) {
+    const tierPart = rankTier ? `${rankTier}로` : null;
+    const kpiPart = kpiTone ? `${kpiTone}에 맞춰` : null;
     const kwPart = keywordPhrase ? `${keywordPhrase} 키워드 중심의` : null;
-    const body = kpiContent ? `${kpiContent}로` : null;
-    const tail = channelAction ?? null;
-    sentence2 = [head, kwPart, body, tail].filter(Boolean).join(" ");
+    const contentPart = kpiContent ?? null;
+    const head = [tierPart, kpiPart, kwPart, contentPart].filter(Boolean).join(" ");
+    if (head && channelAction) {
+      // 두 의미 다 살리되 중복 "추천" 방지 — head 뒤에 콤마로 channelAction 붙임.
+      sentence2 = `${head}, ${channelAction}`;
+    } else if (head) {
+      sentence2 = head.endsWith("추천") ? head : `${head} 추천`;
+    } else if (channelAction) {
+      sentence2 = channelAction;
+    }
   }
 
   // ─ 문장 3: 기간/예산 ───────────────────────────────────────────
@@ -848,9 +930,10 @@ function buildUsagePlan(brand, td) {
 
   // 세 문장을 줄바꿈으로 분리해 출력 (최대 3줄). 데이터 비어 있는 문장은 자동 생략.
   // 한 줄에 한 문장씩 들어가게 ".\n"으로 join — 마지막 문장도 마침표 한 번씩.
+  // 받침 기반 조사 보정 마지막 적용 — "캠페인로" → "캠페인으로" 등 교정.
   const sentences = [sentence1, sentence2, sentence3].filter(Boolean);
   if (sentences.length === 0) return "";
-  return sentences.map((s) => `${s}.`).join("\n");
+  return sentences.map((s) => fixKoreanParticles(`${s}.`)).join("\n");
 }
 
 // ─── LLM 카드 풍부화 (디자인 담당 합의) ────────────────────────────
@@ -1173,7 +1256,7 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
   //      브랜드 채널·KPI를 결정적으로 합성. 트렌드가 evidence를 채워서 보내고
   //      마케터가 채널·KPI를 주므로 작성가는 두 데이터를 결합만 하면 됨.
   const usagePlans = rawContents.map((c) =>
-    buildUsagePlan(b, findTrend(c.trend_name)),
+    buildUsagePlan(b, findTrend(c.trend_name), { rank: c.rank }),
   );
 
   // 2-2) match_fits.reason 코드 합성 (LLM 호출 X).
