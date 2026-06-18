@@ -208,7 +208,8 @@ const server = http.createServer(async (req, res) => {
 
       // [변경] fresh가 켜져 있으면 YouTube 수집이 캐시를 무시하도록 환경변수로 전달
       // (form.fresh 는 UI가 fetch body에 실어 보냄. true일 때만 YOUTUBE_FRESH=1)
-      const extraEnv = form.fresh ? { YOUTUBE_FRESH: "1" } : {};
+      // GEN_IMAGE=1 상시 ON — UI 실행 시 design-v2가 시안 이미지까지 생성하도록 (기본은 프롬프트만)
+      const extraEnv = { GEN_IMAGE: "1", ...(form.fresh ? { YOUTUBE_FRESH: "1" } : {}) };
       console.log(`[run] stage=${stage || "(full)"} → ${cmd}${form.fresh ? "  ⚡FRESH" : ""}`);
 
       const result = await runCmd(cmd, extraEnv);

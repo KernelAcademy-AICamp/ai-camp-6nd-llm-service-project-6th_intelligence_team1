@@ -201,24 +201,19 @@ for (const c of contents) {
     continue;
   }
 
-  // 4단계: 이미지 생성 (제품 사진 SUBJECT 레퍼런스)
-  // 기본은 프롬프트만 생성(이미지 OFF). GEN_IMAGE=1일 때만 Gemini 이미지 생성.
+  // 4단계: 이미지 생성 (제품 사진 SUBJECT 레퍼런스) — 항상 실행
   const outputImagePath = `shared/data/images/${brandName}/${c.content_id ?? visuals.length}.png`;
   let generatedImageUrl = null;
-  if (process.env.GEN_IMAGE) {
-    try {
-      generatedImageUrl = await generateImage({
-        prompt: generation_prompt,
-        outputPath: outputImagePath,
-        aspectRatio: "3:4",
-        referenceImagePath: productImagePath,
-      });
-      console.log(`  [4단계] 이미지 저장: ${generatedImageUrl}`);
-    } catch (err) {
-      console.error(`  ❌ [4단계] 실패: ${err.message}`);
-    }
-  } else {
-    console.log(`  [4단계] 이미지 생성 건너뜀 (프롬프트만, 켜려면 GEN_IMAGE=1)`);
+  try {
+    generatedImageUrl = await generateImage({
+      prompt: generation_prompt,
+      outputPath: outputImagePath,
+      aspectRatio: "3:4",
+      referenceImagePath: productImagePath,
+    });
+    console.log(`  [4단계] 이미지 저장: ${generatedImageUrl}`);
+  } catch (err) {
+    console.error(`  ❌ [4단계] 실패: ${err.message}`);
   }
 
   visuals.push({
