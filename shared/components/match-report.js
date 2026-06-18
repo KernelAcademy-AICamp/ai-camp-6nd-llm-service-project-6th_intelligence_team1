@@ -252,7 +252,11 @@
 
   function card(c) {
     var rankCls = " mr-c" + (c.rank || 1); // 순위별 카드 색 구분 (mr-c1/c2/c3)
-    var warnNote = c.rank === 3 ? '<span class="mr-warn-note">⚠️ 보완 활용 권장</span>' : "";
+    // "보완 활용 권장" 배지 — 매칭 기준(q1/q2 passes·rank)과 별개. Safe-Fit 신호에만 연동.
+    // Safe-Fit = 트렌드 수명·추세 위험: 쇠퇴기(declining) OR 마이너스 성장(growth_rate < 0).
+    var gr = typeof c.growth_rate === "number" ? c.growth_rate : null;
+    var isRisky = c.trend_stage === "declining" || (gr != null && gr < 0);
+    var warnNote = isRisky ? '<span class="mr-warn-note">⚠️ 보완 활용 권장</span>' : "";
     var stage = c.trend_stage && TREND_STAGE[c.trend_stage];
     var stageChip = stage ? '<span class="mr-stage-chip">' + stage + "</span>" : "";
     var conf = confidenceOf(c);
