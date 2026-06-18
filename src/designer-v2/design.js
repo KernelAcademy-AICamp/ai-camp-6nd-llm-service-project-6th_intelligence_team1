@@ -70,7 +70,7 @@ const DEFAULT_SHOT_DIRECTION = "product";
 const COMPOSITION_BY_RANK = {
   1: "top-down flat lay, overhead arrangement, neatly arranged composition", // R1 평면 배치
   2: "upper-body portrait close-up", // R2 인물 클로즈업
-  3: "extreme macro close-up, ingredient and liquid texture detail", // R3 초근접 매크로
+  3: "extreme macro close-up, product texture and finish detail", // R3 초근접 매크로 (제형 종류는 제품에 맞게 — 액상 vs 고체)
 };
 
 const contents = matchData.recommendations
