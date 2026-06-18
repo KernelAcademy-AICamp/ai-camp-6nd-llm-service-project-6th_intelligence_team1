@@ -199,18 +199,18 @@
       '<div class="mr-mp-sub">' + esc(sub) + "</div>"
     );
   }
-  // 4기준 상세 (어떻게 평가했나요) — match_fits 바인딩
-  var FIT_LABELS = { ingred: "성분 적합성", visual: "비주얼 적합성", life: "라이프스타일 적합성", safe: "브랜드 안전성" };
-  function fitsDetails(fits) {
-    if (!fits) return "";
-    var groups = ["ingred", "visual", "life", "safe"]
-      .filter(function (k) { return fits[k]; })
-      .map(function (k) {
-        var f = fits[k];
+  // 매칭 분석 상세 (어떻게 평가했나요) — c.match_reasons 바인딩.
+  // 옛 match_fits 4기준 + reason_bullets 분리 영역을 한 곳으로 통합한 구조.
+  function reasonsDetails(reasons) {
+    if (!Array.isArray(reasons) || reasons.length === 0) return "";
+    var groups = reasons
+      .map(function (r) {
+        var resultPrefix = r.result ? esc(r.result) + " " : "";
         return (
           '<div class="mr-ed-group">' +
-            '<div class="mr-ed-group-title">' + esc(f.result || "") + " " + esc(FIT_LABELS[k]) + "</div>" +
-            '<div class="mr-ed-reason">' + esc(f.reason || "") + "</div>" +
+            '<div class="mr-ed-group-title">' + resultPrefix + esc(r.title || "") + "</div>" +
+            (r.summary ? '<div class="mr-ed-summary">' + esc(r.summary) + "</div>" : "") +
+            '<div class="mr-ed-reason">' + esc(r.detail || "") + "</div>" +
           "</div>"
         );
       })
@@ -222,7 +222,7 @@
       "</details>"
     );
   }
-  // 매칭 결과 — 통과 합계 바 + q1/q2 행 + 4기준 상세 (mockup 'Match Passes' 이식)
+  // 매칭 결과 — 통과 합계 바 + q1/q2 행 + 상세 (mockup 'Match Passes' 이식)
   function passesBlock(c) {
     var mp = c.match_passes;
     if (!mp) return '<div class="mr-empty">—</div>';
@@ -235,7 +235,7 @@
       "</div>" +
       passesRow("브랜드 적합성", "톤·키워드가 트렌드와 맞는지", mp.q1 || 0, 2) +
       passesRow("타겟 적합성", "우리 고객층·라이프스타일이 트렌드와 맞는지", mp.q2 || 0, 2) +
-      fitsDetails(c.match_fits)
+      reasonsDetails(c.match_reasons)
     );
   }
 
@@ -293,12 +293,8 @@
             evidenceList(c.evidence) +
           "</details>" +
           '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">≡</span> 매칭이유</div>' +
-            numberedList(c.reason_bullets) +
-          "</div>" +
-          '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">≡</span> 매칭 기준</div>' +
-            matchExplain(c.match_fits) +
+            '<div class="mr-block-label"><span class="mr-ico">≡</span> 매칭 분석</div>' +
+            matchExplain(c.match_reasons) +
           "</div>" +
         "</div>" +
         // 활용 방안 — 카드 하단 전체 폭
@@ -350,19 +346,12 @@
   // growth_rate(소수 0.22) → 정수 퍼센트(22). 부호 유지, 숫자 아니면 null.
   // trend_stage → 한국어 라벨 (없으면 미표시)
   var TREND_STAGE = { emerging: "📈 상승 중", peak: "🔥 정점", declining: "📉 하락" };
-  // 매칭가 4기준 → 일반어 이름
-  var FIT_FRIENDLY = {
-    ingred: "제품·제형이 트렌드와 맞는가",
-    visual: "브랜드 매체·톤이 트렌드와 맞는가",
-    life: "타겟 고객층이 트렌드와 맞는가",
-    safe: "트렌드가 브랜드 이미지에 안전한가",
-  };
-  // 각 기준이 '무엇을 보는지' 보조 설명
-  var FIT_DESC = {
-    ingred: "제품 성분·제형 ↔ 트렌드 핵심",
-    visual: "브랜드 채널·톤앤매너 ↔ 트렌드 표현 방식",
-    life: "타겟 연령·라이프스타일·니즈 ↔ 트렌드 소비층",
-    safe: "트렌드 수명·이미지 ↔ 브랜드 격 보호",
+  // 각 매칭 기준이 '무엇을 보는지' 보조 설명 — match_reasons[].id로 매핑.
+  // 1: 제품·제형, 2: 매체·톤, 3: 타겟. 시장성(옛 safe)은 통합 매칭 분석에서 제외.
+  var REASON_DESC = {
+    1: "제품 성분·제형 ↔ 트렌드 핵심",
+    2: "브랜드 채널·톤앤매너 ↔ 트렌드 표현 방식",
+    3: "타겟 연령·라이프스타일·니즈 ↔ 트렌드 소비층",
   };
   // 판정 → 태그(라벨·색)
   var FIT_RESULT = {
@@ -388,27 +377,31 @@
     return rows || '<div class="mr-empty">—</div>';
   }
 
-  // 매칭 설명 — 매칭가 4기준(판정 + 이유). 이유 문구는 output-text가 다듬어 채움(슬롯).
-  function matchExplain(fits) {
-    if (!fits) return '<div class="mr-empty">—</div>';
-    var rows = ["ingred", "visual", "life", "safe"]
-      .filter(function (k) { return fits[k]; })
-      .map(function (k) {
-        var f = fits[k];
-        var r = FIT_RESULT[f.result] || { tag: "", cls: "" };
-        var tag = r.tag
-          ? '<span class="mr-fit-tag ' + r.cls + '">' + esc(f.result || "") + " " + r.tag + "</span>"
+  // 매칭 설명 — match_reasons 3항목(제품·제형 / 매체·톤 / 타겟) 통합 렌더링.
+  // 옛 reason_bullets(요약) + match_fits(상세)가 같은 트렌드 매칭을 두 영역으로
+  // 두 번 보여주던 중복을 한 영역으로 통합한 구조. summary 한 줄 + detail 한 단락.
+  function matchExplain(reasons) {
+    if (!Array.isArray(reasons) || reasons.length === 0) {
+      return '<div class="mr-empty">—</div>';
+    }
+    var rows = reasons
+      .map(function (r) {
+        var resTag = FIT_RESULT[r.result] || { tag: "", cls: "" };
+        var tag = resTag.tag
+          ? '<span class="mr-fit-tag ' + resTag.cls + '">' + esc(r.result || "") + " " + resTag.tag + "</span>"
           : "";
-        // 이유 문장은 output-text가 매칭가 reason을 받아 다듬어 채우는 슬롯.
-        // 아직 없으면 placeholder 표시.
-        var reason = f.reason
-          ? '<div class="mr-fit-reason">' + esc(f.reason) + "</div>"
+        var summary = r.summary
+          ? '<div class="mr-fit-summary">' + esc(r.summary) + "</div>"
+          : "";
+        var detail = r.detail
+          ? '<div class="mr-fit-reason">' + esc(r.detail) + "</div>"
           : '<div class="mr-fit-reason mr-fit-placeholder">여기에 어떤 기준으로 매칭했는지 작성</div>';
         return (
           '<div class="mr-fit-row">' +
-            '<div class="mr-fit-head"><span class="mr-fit-name">' + esc(FIT_FRIENDLY[k]) + "</span>" + tag + "</div>" +
-            '<div class="mr-fit-desc">' + esc(FIT_DESC[k] || "") + "</div>" +
-            reason +
+            '<div class="mr-fit-head"><span class="mr-fit-name">' + esc(r.title || "") + "</span>" + tag + "</div>" +
+            '<div class="mr-fit-desc">' + esc(REASON_DESC[r.id] || "") + "</div>" +
+            summary +
+            detail +
           "</div>"
         );
       })
@@ -431,8 +424,8 @@
           trendMetrics(c) +
         "</div>" +
         '<div class="mr-data-block">' +
-          '<div class="mr-db-label">매칭 기준</div>' +
-          matchExplain(c.match_fits) +
+          '<div class="mr-db-label">매칭 분석</div>' +
+          matchExplain(c.match_reasons) +
         "</div>" +
       "</div>"
     );
