@@ -52,8 +52,6 @@ const TECHNICAL_TERM_MAP = [
   ["product_fit", "제품 적합도"],
   ["target_fit", "타겟 적합도"],
   ["tnm_fit", "톤·매너 적합도"],
-  ["market_fit", "수요 시급성"],
-  ["safe_fit", "수요 시급성"],
   ["ingred_fit", "성분 적합도"],
   ["visual_fit", "비주얼 적합도"],
   ["life_fit", "라이프스타일 적합도"],
@@ -478,15 +476,9 @@ function deriveStrength(grade) {
   return "weak";
 }
 
-// 4기준 fit 객체에서 result·reason만 발췌. 매칭가가 gap/solution을 더 이상
-// 출력하지 않더라도 같은 처리 — 작성가는 둘 다 안 씀.
-function slimFit(f) {
-  if (!f) return null;
-  return { result: f.result, reason: f.reason };
-}
-
 // 매칭가가 기준명을 옛(ingred·visual·life) ↔ 신(product·tnm·target) 둘 중
-// 어느 쪽으로 보내든 폴백으로 정규화. UI엔 옛 이름(ingred·visual·life·safe)으로 노출.
+// 어느 쪽으로 보내든 폴백으로 정규화. 매칭가 v0.4부터 safe-fit(=market_fit)은
+// 생성 안 함 — 작성가도 더 이상 받지 않으니 정규화에서 제외.
 function pickFit(fits, ...keys) {
   for (const k of keys) if (fits?.[k]) return fits[k];
   return null;
@@ -496,22 +488,19 @@ function normalizeFits(fits) {
     ingred: pickFit(fits, "ingred_fit", "product_fit"),
     visual: pickFit(fits, "visual_fit", "tnm_fit"),
     life: pickFit(fits, "life_fit", "target_fit"),
-    // v0.4: safe_fit → market_fit (트렌드 단계 × 수요 규모 = 시급성 지표).
-    // 옛(safe_fit)·신(market_fit) 둘 다 폴백 수용. UI 키는 그대로 safe 유지.
-    safe: pickFit(fits, "safe_fit", "market_fit"),
   };
 }
 
-// 4기준 result → 옛 question_1/question_2 passes 호환 매핑.
-// q1=브랜드 적합성(ingred+visual), q2=타겟·격 적합성(life+safe). 4점 만점에서 0/1/2로 압축.
+// 3기준 result → 옛 question_1/question_2 passes 호환 매핑.
+// q1=브랜드 적합성(ingred+visual, max 4 → 0/1/2 압축), q2=타겟 적합성(life 단일,
+// FIT_POINT 그대로 0/1/2). safe(market_fit) 제거 후 q2는 단일 fit 직접 매핑.
 const FIT_POINT = { "✅": 2, "⚠️": 1, "❌": 0 };
 function legacyPasses(fits) {
   const n = normalizeFits(fits);
   const q1Raw = (FIT_POINT[n.ingred?.result] ?? 0) + (FIT_POINT[n.visual?.result] ?? 0);
-  const q2Raw = (FIT_POINT[n.life?.result] ?? 0) + (FIT_POINT[n.safe?.result] ?? 0);
   const compress = (s) => (s >= 4 ? 2 : s >= 2 ? 1 : 0);
   const q1 = compress(q1Raw);
-  const q2 = compress(q2Raw);
+  const q2 = FIT_POINT[n.life?.result] ?? 0;
   return { q1, q2, total: q1 + q2 };
 }
 
@@ -850,6 +839,10 @@ function buildKeywordPhrase(td, n = 3) {
 function buildUsagePlan(brand, td, opts = {}) {
   if (!td?.trend_name) return "";
   const rank = opts?.rank;
+  // suppressIndex: 같은 metrics.score+growth_rate가 앞 카드에 이미 나왔으면
+  // 두 번째 이상 카드에서 검색 추이 지수 라벨 생략 (같은 키워드 그룹의 중복
+  // 노출 방지). 호출자에서 카드 순서대로 dedup 키 누적해 전달.
+  const suppressIndex = opts?.suppressIndex === true;
 
   // ─ 채널 비교 ────────────────────────────────────────────────────
   const marketer = getEffectiveMarketerChannels(brand);
@@ -929,7 +922,8 @@ function buildUsagePlan(brand, td, opts = {}) {
 
   // 수치 라벨 분리 — 검색 추이 지수·월간 검색량·헤드라인 서술 셋으로 노출.
   // 옛 buildMetricPhrase(headline_metric 단일)에서 분리 (라벨 분리 작업).
-  const indexPhrase = buildIndexPhrase(td);          // "검색 추이 지수 75 (+56%)"
+  // suppressIndex 시 indexPhrase 생략 — 앞 카드에 이미 같은 지수 노출됨.
+  const indexPhrase = suppressIndex ? null : buildIndexPhrase(td);
   const volumePhrase = buildSearchVolumePhrase(td);  // "월간 검색량 1,890건"
   const headlineDesc = buildHeadlineDescriptionPhrase(td); // "신제품 출시 사례: ..."
 
@@ -1004,7 +998,6 @@ const ContentEnrichmentSchema = z.object({
     ingred: z.string(),
     visual: z.string(),
     life: z.string(),
-    safe: z.string(),
   }),
   usage_plan: z.string(),
   summary_bullets: z.array(z.string()).min(1).max(5),
@@ -1015,7 +1008,7 @@ const ENRICH_SYSTEM_PROMPT = `당신은 마케팅 리포트 카드의 카피를 
 
 3가지 작업:
 
-1. fit_reasons.{ingred,visual,life,safe} — 각 4기준의 매칭가 raw reason과 트렌드 수치(headline_metric·growth_rate)를 합쳐 정량적으로 설득되는 한 줄로 다듬기.
+1. fit_reasons.{ingred,visual,life} — 매칭가 3기준의 raw reason과 트렌드 수치(headline_metric·growth_rate)를 합쳐 정량적으로 설득되는 한 줄로 다듬기.
    예: "검색량 47.4(+22%)로 떠오른 매트 트렌드가 브랜드 매트 제형과 직결돼 적합도가 높습니다."
 
 2. usage_plan — 트렌드 + 마케터 매체(current_channels)·타겟·KPI를 보고 구체적 행동 제안 한 줄.
@@ -1033,17 +1026,16 @@ async function enrichContent({ rawContent, td, brand, matchEval, client }) {
   if (!client) return null;
   const fits = matchEval?.evaluation ?? {};
   const n = normalizeFits(fits);
-  if (!n.ingred && !n.visual && !n.life && !n.safe) {
+  if (!n.ingred && !n.visual && !n.life) {
     return null; // 매칭 데이터 없으면 LLM 건너뜀
   }
 
   const hm = td?.headline_metric ?? {};
-  const userMessage = `## 매칭가 4-Fit 판정 (raw)
+  const userMessage = `## 매칭가 3-Fit 판정 (raw)
 - Ingred: ${n.ingred?.result ?? "-"} — ${n.ingred?.reason ?? "(없음)"}
 - Visual: ${n.visual?.result ?? "-"} — ${n.visual?.reason ?? "(없음)"}
 - Life: ${n.life?.result ?? "-"} — ${n.life?.reason ?? "(없음)"}
-- Safe: ${n.safe?.result ?? "-"} — ${n.safe?.reason ?? "(없음)"}
-- 매칭 점수: ${matchEval?.score ?? "-"}/8
+- 매칭 점수: ${matchEval?.score ?? "-"}/6
 - 매칭 등급: ${matchEval?.matching_grade ?? "-"}
 
 ## 트렌드 정보
@@ -1262,21 +1254,12 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
       reason_bullets: (r.summary_reasons ?? []).map(reasonText).filter(Boolean),
       evidence: buildEvidence(td),
       channels: buildChannels(td),
-      // 옛 UI 호환: 4기준을 2질문(passes 0/1/2)으로 압축
+      // 옛 UI 호환: 3기준을 2질문(passes 0/1/2)으로 압축
       match_passes: legacyPasses(fits),
       match_strength: deriveStrength(ev?.matching_grade),
-      // 신 UI용: 4기준 result + reason만 노출. 매칭가의 옛(ingred_fit)·신(product_fit)
-      // 두 이름 모두 폴백으로 수용. UI엔 옛 이름(ingred·visual·life·safe)으로 유지.
-      match_fits: (() => {
-        const n = normalizeFits(fits);
-        return {
-          ingred: slimFit(n.ingred),
-          visual: slimFit(n.visual),
-          life: slimFit(n.life),
-          safe: slimFit(n.safe),
-          score: ev?.score ?? 0, // 0-8
-        };
-      })(),
+      // raw 3기준 fit (normalizeFits로 정규화) — match_reasons 빌더 입력용.
+      // 옛 match_fits 출력 필드는 새 match_reasons 구조로 통합되어 제거됨.
+      raw_fits: normalizeFits(fits),
       usage_plan: "", // 풍부화 단계에서 채움 (실패 시 빈 문자열 유지)
     };
   });
@@ -1292,38 +1275,45 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
   );
 
   // 2-1) usage_plan — 코드 템플릿(LLM 호출 X). 트렌드의 media_channel_status +
-  //      브랜드 채널·KPI를 결정적으로 합성. 트렌드가 evidence를 채워서 보내고
-  //      마케터가 채널·KPI를 주므로 작성가는 두 데이터를 결합만 하면 됨.
-  const usagePlans = rawContents.map((c) =>
-    buildUsagePlan(b, findTrend(c.trend_name), { rank: c.rank }),
-  );
+  //      브랜드 채널·KPI를 결정적으로 합성. 같은 metrics.score+growth_rate가
+  //      여러 카드에 반복되면 두 번째부터 검색 추이 지수 노출 생략 (dedup).
+  const seenIndexKeys = new Set();
+  const usagePlans = rawContents.map((c) => {
+    const td = findTrend(c.trend_name);
+    const score = td?.metrics?.score;
+    const rate = td?.metrics?.growth_rate;
+    const indexKey =
+      typeof score === "number" ? `${score}|${rate ?? ""}` : null;
+    const suppressIndex = indexKey != null && seenIndexKeys.has(indexKey);
+    if (indexKey != null) seenIndexKeys.add(indexKey);
+    return buildUsagePlan(b, td, { rank: c.rank, suppressIndex });
+  });
 
-  // 2-2) match_fits.reason 코드 합성 (LLM 호출 X).
-  //      매칭가 raw reason + 트렌드 수치 prefix 결합 — 결정적·비용 0.
-  const FIT_KEYS = ["ingred", "visual", "life", "safe"];
-  const matchReasons = rawContents.map((c) => {
+  // 2-2) match_reasons.detail 코드 합성 (LLM 호출 X).
+  //      raw_fits에 매칭가 reason + 트렌드 수치 prefix 결합 후 mergedFits 빌드.
+  const FIT_KEYS = ["ingred", "visual", "life"];
+  const dedicatedReasons = rawContents.map((c) => {
     const td = findTrend(c.trend_name);
     return Object.fromEntries(
-      FIT_KEYS.map((key) => [key, buildMatchReason(c.match_fits?.[key], td)]),
+      FIT_KEYS.map((key) => [key, buildMatchReason(c.raw_fits?.[key], td)]),
     );
   });
 
   // 3) raw + enrichment + usage_plan + match_reasons 머지
   // 우선순위 (detail reason): buildMatchReason(코드 합성) → enrichContent → raw matcher
   // usage_plan: 항상 buildUsagePlan 코드 템플릿 (LLM 미사용).
-  // 결과: match_fits 제거 — 매칭이유(reason_bullets)와 같은 트렌드 매칭을
-  // 두 영역으로 두 번 보여주던 중복을 match_reasons 한 영역으로 통합.
+  // 결과: 옛 match_fits 영역 완전 제거. 출력은 match_reasons로만 노출.
   // reason_bullets는 designer-v2·web/UI_v1.html 등 다운스트림이 쓰므로 유지.
   const contents = rawContents.map((c, i) => {
     const enr = enrichments[i];
-    const dedicatedReasons = matchReasons[i] ?? {};
+    const dedicated = dedicatedReasons[i] ?? {};
     const pickReason = (fitKey) =>
-      dedicatedReasons[fitKey] || enr?.fit_reasons?.[fitKey] || null;
+      dedicated[fitKey] || enr?.fit_reasons?.[fitKey] || null;
 
     // mergedFits — match_reasons 빌더에 넘길 임시 구조. 출력엔 안 나감.
     const mergedFits = Object.fromEntries(
       FIT_KEYS.map((fitKey) => {
-        const base = c.match_fits?.[fitKey];
+        const base = c.raw_fits?.[fitKey];
         if (!base) return [fitKey, null];
         const reason = pickReason(fitKey);
         return [fitKey, reason ? { ...base, reason } : base];
@@ -1331,8 +1321,9 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
     );
 
     const td = findTrend(c.trend_name);
-    const merged = {
-      ...c,
+    const { raw_fits, ...rest } = c; // raw_fits는 내부용이라 출력에서 제외
+    return {
+      ...rest,
       summary_bullets:
         Array.isArray(enr?.summary_bullets) && enr.summary_bullets.length > 0
           ? enr.summary_bullets
@@ -1340,9 +1331,6 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
       usage_plan: usagePlans[i] || "",
       match_reasons: buildMatchReasons(c.reason_bullets, mergedFits, td),
     };
-    // match_fits는 새 구조(match_reasons)로 통합 — 출력에서 제거.
-    delete merged.match_fits;
-    return merged;
   });
 
   return {
