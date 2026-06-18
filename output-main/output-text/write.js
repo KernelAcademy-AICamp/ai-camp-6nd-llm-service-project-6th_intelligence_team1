@@ -328,13 +328,21 @@ export function generateReport({ brand, trend, match } = {}) {
   lines.push("");
 
   // Part II — 트렌드 카드
+  // 차별점 — 카드끼리 다른 키워드를 표면화 (같은 결의 트렌드가 추천되어도
+  // 마케터가 선택지를 식별할 수 있게). generateWriterOutput과 같은 로직.
   lines.push("## 📌 Part II — 트렌드 카드");
   lines.push("");
+  const allKeywordArrays = top.map((r) => {
+    const td = findTrend(r.trend_name);
+    return normalizeKeywords(td?.keywords).slice(0, 5);
+  });
   top.forEach((r, i) => {
     const td = findTrend(r.trend_name);
     const letter = String.fromCharCode(65 + i);
+    const distinction = buildDistinction(allKeywordArrays, i);
+    const distSuffix = distinction ? ` — ${distinction}` : "";
 
-    lines.push(`### [${letter}] ${r.trend_name} (${r.rank}순위)`);
+    lines.push(`### [${letter}] ${r.trend_name} (${r.rank}순위)${distSuffix}`);
     lines.push("");
 
     // 키워드 칩 (HTML keyword-tags 등가)
@@ -843,6 +851,34 @@ function buildKeywordPhrase(td, n = 3) {
   return kws.map((k) => `'${k}'`).join(", ");
 }
 
+// 카드별 차별점 한 줄 — 같은 결의 트렌드가 여러 카드에 함께 추천될 때
+// "비슷해 보임" 문제를 차이를 드러내 해소. 매칭가는 브랜드 적합성으로
+// 정확하게 골랐고(같은 계열이 위로 오는 게 정상), 작성가가 카드끼리 다른
+// 키워드를 표면화해 마케터가 선택지를 식별할 수 있게 해줌.
+//
+// 로직: 각 카드의 keywords 배열에서 *다른 카드들엔 없는 첫 키워드*를 추출.
+//       fallback: 모든 키워드가 다른 카드와 겹치면 null (진짜 분리 신호 없음 —
+//       억지 라벨링 회피).
+// 출력 형식: "{고유 키워드} 중심"  예) "립오일 중심", "럭셔리 오일 중심"
+function buildDistinction(allKeywordArrays, myIndex) {
+  const myKws = (allKeywordArrays[myIndex] ?? []).filter(
+    (k) => typeof k === "string" && k.trim().length > 0,
+  );
+  if (myKws.length === 0) return null;
+  if (allKeywordArrays.length <= 1) {
+    return myKws[0] ? `${myKws[0]} 중심` : null;
+  }
+  const others = new Set();
+  for (let i = 0; i < allKeywordArrays.length; i++) {
+    if (i === myIndex) continue;
+    for (const k of allKeywordArrays[i] ?? []) {
+      if (typeof k === "string") others.add(k.toLowerCase());
+    }
+  }
+  const unique = myKws.find((kw) => !others.has(kw.toLowerCase()));
+  return unique ? `${unique} 중심` : null;
+}
+
 // usage_plan 한 단락 합성. 다섯 정보를 세 문장으로 자연스럽게 결합. 카드별
 // 차별화를 위해 evidence 한 줄과 rank별 액션 톤을 함께 받음:
 //   문장 1) 트렌드 현황 — [채널 활성] + 카드별 evidence + 트렌드 수명 + 검색량
@@ -1332,7 +1368,12 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
     );
   });
 
-  // 3) raw + enrichment + usage_plan + match_reasons 머지
+  // 2-4) 카드별 차별점 — 다른 카드에 없는 첫 키워드를 "{X} 중심" 형태로.
+  //      매칭가는 브랜드 적합성으로 같은 결의 트렌드를 위로 올리는 게 정상.
+  //      작성가가 카드끼리 다른 키워드를 표면화해 마케터가 식별 가능하게.
+  const allKeywordArrays = rawContents.map((c) => c.keywords ?? []);
+
+  // 3) raw + enrichment + usage_plan + match_reasons + distinction 머지
   // 우선순위 (detail reason): buildMatchReason(코드 합성) → enrichContent → raw matcher
   // usage_plan: 항상 buildUsagePlan 코드 템플릿 (LLM 미사용).
   // 결과: 옛 match_fits 영역 완전 제거. 출력은 match_reasons로만 노출.
@@ -1357,6 +1398,7 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
     const { raw_fits, ...rest } = c; // raw_fits는 내부용이라 출력에서 제외
     return {
       ...rest,
+      distinction: buildDistinction(allKeywordArrays, i),
       summary_bullets:
         Array.isArray(enr?.summary_bullets) && enr.summary_bullets.length > 0
           ? enr.summary_bullets
