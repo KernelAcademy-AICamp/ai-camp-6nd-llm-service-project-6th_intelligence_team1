@@ -24,6 +24,19 @@ const brandAnalysis = JSON.parse(
 
 const QUERIES = brandAnalysis.data.search_keywords;
 
+// 키워드 목록을 순서와 무관하게 비교하기 위한 지문(fingerprint)
+function keywordFingerprint(keywords) {
+  return JSON.stringify([...(keywords ?? [])].sort());
+}
+
+// 기존 캐시 파일이 "지금 입력 키워드"로 수집된 것인지 확인
+function cachedKeywordsMatch() {
+  try {
+    const cached = JSON.parse(fs.readFileSync(CACHE_PATH, "utf-8"));
+    return keywordFingerprint(cached.search_keywords) === keywordFingerprint(QUERIES);
+  } catch { return false; }
+}
+
 const brandContext = {
   target_gender: brandAnalysis.data.target.gender,
   target_age: brandAnalysis.data.target.age_groups.join(", "),
@@ -77,10 +90,14 @@ async function fetchTrendingVideos(query) {
 }
 
 async function main() {
-  // ① 캐시 재사용: FRESH가 아니고 기존 수집 파일이 있으면 API 호출 없이 그대로 사용.
-  //    (YouTube Data API 일일 할당량 절약 — 새로 받고 싶으면 ?fresh=1 로 실행)
-  if (!FRESH && fs.existsSync(CACHE_PATH)) {
-    console.log("YouTube: 기존 youtube_raw.json 재사용 (새로 받으려면 ?fresh=1 / YOUTUBE_FRESH=1).");
+  // ① 캐시 재사용: FRESH가 아니고 + 기존 파일이 + 지금 입력 키워드로 수집된 것이면 그대로 사용.
+  //    (YouTube Data API 일일 할당량 절약. 입력 키워드가 바뀌면 캐시가 안 맞아 자동으로 새로 수집.
+  //     강제로 새로 받고 싶으면 ?fresh=1 로 실행)
+  if (!FRESH && fs.existsSync(CACHE_PATH) && cachedKeywordsMatch()) {
+    // 캐시를 쓰더라도 로딩 피드에 키워드가 보이도록 한 줄씩 찍어준다 (API 재호출 없음).
+    console.log("YouTube 트렌드 수집 시작 (캐시 재사용)...");
+    for (const query of QUERIES) console.log(`"${query}" 검색 중... (캐시)`);
+    console.log("YouTube: 동일 키워드 캐시(youtube_raw.json) 재사용 (새로 받으려면 ?fresh=1 / YOUTUBE_FRESH=1).");
     return;
   }
 
@@ -112,6 +129,7 @@ async function main() {
 
   const output = {
     collected_at: new Date().toISOString(),
+    search_keywords: QUERIES,   // 캐시 재사용 판단용 — 다음 실행 때 입력 키워드와 비교
     brand_context: brandContext,
     raw_data: results
   };

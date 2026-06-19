@@ -34,23 +34,35 @@ async function fetchTrendArticles(query) {
   }));
 }
 
-// ── 7일 캐시: tavily_raw.json이 7일 이내면 API 호출 없이 재사용 (Tavily 할당량 절약) ──
+// ── 캐시 재사용 조건: ① 7일 이내 ② 입력 검색 키워드가 캐시 생성 당시와 동일 ──
+//    (입력이 바뀌면 키워드가 달라져 캐시가 안 맞으므로 자동으로 새로 수집한다)
 const CACHE_PATH = "trend/data/tavily_raw.json";
 const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7일
 const FRESH = process.env.TAVILY_FRESH === "1";   // 강제 새로고침 플래그
+
+// 키워드 목록을 순서와 무관하게 비교하기 위한 지문(fingerprint)
+function keywordFingerprint(keywords) {
+  return JSON.stringify([...(keywords ?? [])].sort());
+}
+
 function cacheIsFresh() {
   try {
     if (!fs.existsSync(CACHE_PATH)) return false;
     const cached = JSON.parse(fs.readFileSync(CACHE_PATH, "utf-8"));
     const ts = cached.collected_at ? new Date(cached.collected_at).getTime() : 0;
     const age = Date.now() - ts;
-    return age >= 0 && age < CACHE_MAX_AGE_MS;
+    if (!(age >= 0 && age < CACHE_MAX_AGE_MS)) return false;
+    // 입력(검색 키워드)이 캐시 생성 당시와 동일할 때만 재사용
+    return keywordFingerprint(cached.search_keywords) === keywordFingerprint(QUERIES);
   } catch { return false; }
 }
 
 async function main() {
   if (!FRESH && cacheIsFresh()) {
-    console.log("Tavily: 7일 이내 캐시(tavily_raw.json) 재사용 — API 호출 건너뜀. (새로 받으려면 TAVILY_FRESH=1)");
+    // 캐시를 쓰더라도 로딩 피드에 키워드가 보이도록 한 줄씩 찍어준다 (API 재호출 없음).
+    console.log("Tavily 트렌드 기사 수집 시작 (캐시 재사용)...");
+    for (const query of QUERIES) console.log(`"${query}" 검색 중... (캐시)`);
+    console.log("Tavily: 7일 이내 + 동일 키워드 캐시(tavily_raw.json) 재사용 — API 호출 건너뜀. (새로 받으려면 TAVILY_FRESH=1)");
     return;
   }
   console.log("Tavily 트렌드 기사 수집 시작...\n");
@@ -65,6 +77,7 @@ async function main() {
 
   const output = {
     collected_at: new Date().toISOString(),
+    search_keywords: QUERIES,   // 캐시 재사용 판단용 — 다음 실행 때 입력 키워드와 비교
     brand_context: brandContext,
     raw_data: results
   };

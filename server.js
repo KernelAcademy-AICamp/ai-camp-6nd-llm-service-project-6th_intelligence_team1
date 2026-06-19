@@ -13,7 +13,7 @@
 import "dotenv/config"; // .env 로드 (SLACK_WEBHOOK_URL 등)
 import http from "node:http";
 import { readFile, writeFile, mkdir, unlink } from "node:fs/promises";
-import { exec } from "node:child_process";
+import { exec, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join, extname, normalize } from "node:path";
 
@@ -88,7 +88,7 @@ function buildBrandInput(f) {
     campaign_kpi: f.campaign_kpi || "",
     campaign_period: f.campaign_period || "",
     campaign_budget: f.campaign_budget || "",
-    media_channels: toArray(f.media_channels),
+    media_channels: (toArray(f.media_channels).length ? toArray(f.media_channels) : toArray(f.current_channels)).filter((c) => c !== "없음"),
     reference_campaign_url: f.reference_campaign_url || "",
     competitors: toArray(f.competitors)
   };
@@ -183,6 +183,66 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ ok: false, error: String(e) }));
     }
+    return;
+  }
+
+  // 스트리밍 실행: 단계를 spawn으로 돌리며 stdout/stderr를 줄 단위로 SSE 전송.
+  // → UI가 "수집되는 키워드"나 "시안 진행 단계"를 마지막에 몰아서가 아니라 실시간으로 표시할 수 있다.
+  // EventSource(GET)로 호출: /run-stream?stage=trend&fresh=1
+  if (req.method === "GET" && req.url.startsWith("/run-stream")) {
+    const u = new URL(req.url, "http://localhost");
+    const stage = u.searchParams.get("stage") || "";
+    const fresh = u.searchParams.get("fresh") === "1";
+    const cmd = STAGE_OVERRIDE || STAGE_CMDS[stage] || RUN_CMD;
+    const extraEnv = { GEN_IMAGE: "1", ...(fresh ? { YOUTUBE_FRESH: "1" } : {}) };
+
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no" // 프록시 버퍼링 방지 (실시간 전송 보장)
+    });
+    const send = (obj) => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch { /* 연결 종료됨 */ } };
+    console.log(`[run-stream] stage=${stage || "(full)"} → ${cmd}${fresh ? "  ⚡FRESH" : ""}`);
+
+    const child = spawn(cmd, {
+      cwd: ROOT,
+      shell: true,
+      env: { ...process.env, NO_UPDATE_NOTIFIER: "1", NPM_CONFIG_UPDATE_NOTIFIER: "false", NPM_CONFIG_FUND: "false", ...extraEnv }
+    });
+
+    let full = "";   // 전체 로그(완료 시 요약/에러 추출용)
+    let buf = "";    // 아직 줄바꿈이 안 끝난 마지막 조각
+    const onData = (chunk) => {
+      const text = chunk.toString();
+      full += text;
+      buf += text;
+      const lines = buf.split("\n");
+      buf = lines.pop(); // 미완성 줄은 다음 청크와 합치기 위해 남겨둠
+      for (const line of lines) send({ type: "log", line });
+    };
+    child.stdout.on("data", onData);
+    child.stderr.on("data", onData);
+
+    // exec와 동일하게 15분 타임아웃
+    const killTimer = setTimeout(() => { try { child.kill("SIGKILL"); } catch { /* 무시 */ } }, 15 * 60 * 1000);
+
+    let ended = false;
+    const finish = (ok) => {
+      if (ended) return;
+      ended = true;
+      clearTimeout(killTimer);
+      if (buf) send({ type: "log", line: buf }); // 남은 마지막 줄 flush
+      const log = ok ? full.slice(-4000) : focusError(full, "");
+      send({ type: "done", ok, stage, log });
+      try { res.end(); } catch { /* 무시 */ }
+      console.log(`[run-stream] stage=${stage || "(full)"} 완료 (ok=${ok})`);
+    };
+    child.on("close", (code) => finish(code === 0));
+    child.on("error", (err) => { send({ type: "log", line: "spawn error: " + err.message }); finish(false); });
+
+    // 브라우저가 도중에 연결을 끊으면 자식 프로세스도 정리
+    req.on("close", () => { if (!ended) { try { child.kill("SIGKILL"); } catch { /* 무시 */ } clearTimeout(killTimer); } });
     return;
   }
 
