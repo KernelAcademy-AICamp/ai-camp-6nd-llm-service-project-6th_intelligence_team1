@@ -1289,10 +1289,12 @@ function buildMatchReasons(reasonBullets, mergedFits, td) {
   });
 }
 
-export async function generateWriterOutput({ brand, trend, match } = {}) {
+export async function generateWriterOutput({ brand, trend, match, trendRaw } = {}) {
   const b = unwrap(brand);
   const t = unwrap(trend);
   const m = unwrap(match);
+  const tRaw = unwrap(trendRaw);
+  const rawData = Array.isArray(tRaw?.raw_data) ? tRaw.raw_data : [];
 
   const top = m.recommendations ?? [];
   const evaluations = m.evaluations ?? [];
@@ -1412,12 +1414,35 @@ export async function generateWriterOutput({ brand, trend, match } = {}) {
     };
   });
 
+  // ─── 리포트 상단 funnel 박스용 3개 필드 ───────────────────────
+  //   raw_count        ← trend-analysis.raw_count (수집된 원본 총량)
+  //   platforms        ← raw_data의 distinct source (한글 변환은 컴포넌트가 처리)
+  //   used_data_count  ← 추천 트렌드 3개 구성에 실제 활용된 raw 행 수 (중복 제거)
+  //                      finalTrend.source_search_keywords ↔ raw_data.query 조인.
+  //                      url 우선, 없으면 source+title 합성으로 dedup 키 생성.
+  //   값이 계산 가능한 경우만 노출 — 컴포넌트가 누락 시 자동 생략하도록 graceful.
+  const funnelExtras = {};
+  if (typeof t?.raw_count === "number") funnelExtras.raw_count = t.raw_count;
+  if (rawData.length > 0) {
+    funnelExtras.platforms = [...new Set(rawData.map((d) => d?.source).filter(Boolean))];
+    const finalNames = top.map((r) => r.trend_name);
+    const finalTrendsList = (t?.trends ?? []).filter((tr) => finalNames.includes(tr.trend_name));
+    const usedKeywords = new Set(finalTrendsList.flatMap((tr) => tr.source_search_keywords ?? []));
+    const usedSet = new Set(
+      rawData
+        .filter((r) => usedKeywords.has(r?.query))
+        .map((r) => r?.url || `${r?.source ?? ""}${r?.title ?? ""}`),
+    );
+    funnelExtras.used_data_count = usedSet.size;
+  }
+
   return {
     schema_version: "0.2",
     generated_at: new Date().toISOString(),
     status: "success",
     data: {
       source: "작성가",
+      ...funnelExtras,
       brand: {
         name: b.brand_name ?? "",
         product_name: b.product_name ?? "",
@@ -1443,6 +1468,13 @@ if (isDirectRun) {
   const brand = readJSON(resolve(PROJECT_ROOT, "shared/data/brand-analysis.json"));
   const trend = readJSON(resolve(PROJECT_ROOT, "shared/data/trend-analysis.json"));
   const match = readJSON(resolve(PROJECT_ROOT, "shared/data/match-result.json"));
+  // trend_raw.json — funnel 박스용 raw 데이터(수집가 합본). 없으면 platforms/used_data_count 생략.
+  let trendRaw = null;
+  try {
+    trendRaw = readJSON(resolve(PROJECT_ROOT, "trend/data/trend_raw.json"));
+  } catch {
+    // 파일 없거나 파싱 실패 — graceful, funnel 일부 필드 생략.
+  }
 
   // 1) 마크다운 리포트 (사람용)
   const md = generateReport({ brand, trend, match });
@@ -1454,7 +1486,7 @@ if (isDirectRun) {
   //    git 추적함. shared/data/는 gitignore라 UI 작업자(mockup HTML·web/) 디스크엔 안
   //    생기는 문제 때문에 서빙용 파일은 추적되는 위치에 보관.
   //    카드 1장당 LLM 1회로 fit_reasons·usage_plan·summary_bullets 풍부화.
-  const writerJson = await generateWriterOutput({ brand, trend, match });
+  const writerJson = await generateWriterOutput({ brand, trend, match, trendRaw });
   const jsonPath = resolve(__dirname, "writer-output.json");
   writeFileSync(jsonPath, JSON.stringify(writerJson, null, 2));
 
