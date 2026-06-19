@@ -76,7 +76,6 @@ const ASPECT_TAIL = "vertical 3:4 portrait composition";
 export async function generatePromptFromSources({ brand, content, analyses }) {
   const byKey = (src) => analyses.find((a) => a.source === src) ?? null;
   const pin = byKey("pinterest");
-  const ig = byKey("instagram");
 
   const block = (label, a) =>
     a

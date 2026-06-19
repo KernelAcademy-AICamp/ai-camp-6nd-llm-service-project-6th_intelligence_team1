@@ -11,14 +11,12 @@ import { generateImage } from "./generateImage.js";
 import { generateConcept } from "./concept.js";
 import { recordUsage } from "../shared/token-log.js";
 
-// 시안가 v2 — 매체별 강점 활용 흐름:
-//   1단계 검색 — 트렌드별 매체별 수집 (Pinterest·Instagram·Mintoiro 각 10장)
-//   2단계 분석 — 매체별로 선별(1장) + 분석 (3 LLM 호출/트렌드, 병렬)
-//                · Pinterest → 구도·앵글
-//                · Instagram → 무드·트렌드
-//                · Mintoiro → 컬러·패키지
-//   3단계 프롬프트 — 3매체 분석 종합 → 영문 generation_prompt 한 줄
-//   4단계 이미지 — Google Imagen 4.0 (generateImage.js)
+// 시안가 v2 — Pinterest 단일 소스 흐름:
+//   1단계 검색 — 트렌드별 Pinterest 수집 (쿼리 3개, 최대 20장)
+//   2단계 분석 — Pinterest 레퍼런스 선별(1장) + 구도·무드·컬러 분석
+//   3단계 프롬프트 — 분석 종합 → 영문 generation_prompt 한 줄
+//   4단계 이미지 — Gemini 2.5 Flash Image (제품 img2img), 실패 시 Imagen 4.0 폴백
+// (Instagram·Mintoiro 멀티소스는 db076f9에서 품질 개선 위해 Pinterest 단일로 축소)
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, "../..");
@@ -70,7 +68,7 @@ const DEFAULT_SHOT_DIRECTION = "product";
 const COMPOSITION_BY_RANK = {
   1: "top-down flat lay, overhead arrangement, neatly arranged composition", // R1 평면 배치
   2: "upper-body portrait close-up", // R2 인물 클로즈업
-  3: "extreme macro close-up, ingredient and liquid texture detail", // R3 초근접 매크로
+  3: "extreme macro close-up, product texture and finish detail", // R3 초근접 매크로 (제형 종류는 제품에 맞게 — 액상 vs 고체)
 };
 
 const contents = matchData.recommendations

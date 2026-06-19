@@ -13,7 +13,10 @@
   - `key_objects` → 오브제·소품 어휘.
 - **제품 형태·재질·색 텍스트 어휘 금지** — 제품 자체는 첨부 사진(Img2Img)이 담당. 제품 묘사는 `"the product"`로 일반화.
 - ⚠️ **shot_type이 제품샷(product still life, texture shot 등)이면 `key_objects` 무시** — 레퍼런스 이미지에서 추출된 오브젝트(dropper, bottle, container 등)는 참고 제품과 다를 수 있으므로 프롬프트에 포함하지 말 것. 조명·텍스처·배경·컬러만 반영.
-- ⚠️ **product shot에서 액체·오일·텍스처가 등장하면 반드시 출처를 `the product`로 명시** — `oil falling from the product`, `the product dispensing a drop of oil onto a palm` 등 제품이 액체의 출처임을 프롬프트에서 연결. 출처 없이 떠 있는 액체 묘사 금지.
+- ⚠️ **제품 제형(consistency)은 제품 형태(`product_name`·`category`)에 맞게만 묘사** — 텍스처/매크로 컷에서 제형을 다룰 때 아래 두 갈래로 갈린다(line 14의 "재질 어휘 금지"보다 이 규칙이 우선):
+  - **비액상 = 스틱·밤·콤팩트·파우더·쿠션 등 고체**: `liquid`, `gel-like`, `serum`, `droplet`, `dropper`, `pipette`, `oil`, `cream texture`, `essence` 같은 액상·제형 어휘를 **절대 넣지 말 것**(넣으면 모델이 스포이드·세럼 방울 같은 없는 소품을 지어냄). 표면·마감 위주로: `smooth matte finish`, `velvety surface`, `soft powdery finish` 등.
+  - **액상 = 세럼·오일·앰플·에센스·토너 등이고 텍스처/매크로 컷이면**: 제형을 **적극적으로 시각화**할 것 — `a glossy droplet of the serum with soft sheen`, `a glistening swatch of oil`, `smooth dewy gel texture` 등. 단 **스포이드·피펫 소품은 쓰지 말 것**. 액체는 ①제품에서 토출되거나(`a drop dispensed from the product`) ②표면·손등 위 스와치/방울로만 표현하며, 출처 규칙(아래)을 따른다.
+- ⚠️ **(액상 제품 한정) product shot에서 액체·오일·텍스처가 등장하면 반드시 출처를 `the product`로 명시** — `oil falling from the product`, `the product dispensing a drop of oil onto a palm` 등 제품이 액체의 출처임을 프롬프트에서 연결. 출처 없이 떠 있는 액체 묘사 금지.
 - ⚠️ **오일 흐름은 연출할 때만, 그리고 토출구에서만** — 흐르는 오일을 모든 컷에 억지로 넣지 말 것(흐름 연출 여부는 구도에 맡긴다). 다만 흐름을 연출한다면 **펌프형 제품은 펌프 헤드를 누른 상태에서 전면 스파웃(토출구)으로만** 오일이 나오도록 명시: `the pump head pressed down, a clean thread of oil streaming from the front spout of the pump`. **금지: 병 몸통·옆면·바닥에서 새는 오일, 토출구와 무관하게 떠다니는 droplets, 프레임을 가로지르는 diagonal 오일 줄기.** 베이스 분석에 `diagonal flow`·떠다니는 droplet 어휘가 있어도 토출구 흐름으로 치환할 것.
 - ⚠️ **제품(`the product`)은 인물샷에서 반드시 본문에 명시** — 누락하면 img2img가 제품을 옷·몸·빈 공간에 어색하게 얹는다. 제품 배치는 아래 두 갈래 중 하나를 **트렌드·무드에 맞게 선택**(모든 컷을 한 가지로 통일하지 말 것):
   - **(A) 제품을 손에 쥐는 구도** — 이 경우 **화면에 손은 그 한 손만, 반대손은 프레임 밖**: `one hand holding the product upright with fingers wrapped around it, the other hand completely out of frame`. 그 손은 얼굴·턱·뺨을 만지지 말고 제품만 쥔다. 두 손을 함께 묘사하지 말 것(반대손이 어색하게 렌더됨).

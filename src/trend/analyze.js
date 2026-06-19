@@ -160,16 +160,47 @@ const client = new Anthropic();
 console.log(`트렌드 분석 시작... (raw ${rawData.length}개 → 트렌드 정제)\n`);
 const startTime = Date.now();
 
-const response = await client.messages.create({
-  model: "claude-haiku-4-5",
-  max_tokens: 16384, // 트렌드를 "최대한 많이" 뽑으므로 출력 잘림 방지로 상향
-  system: [
-    { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
-  ],
-  messages: [{ role: "user", content: userMessage }],
-});
+// 트렌드를 "최대한 많이" 뽑으므로 출력 잘림 방지로 상향. haiku-4-5 출력 한도는
+// 64K라 여유가 있어, 잘림이 감지되면 1회 더 높여 자동 재시도한다.
+const MAX_TOKENS_PRIMARY = 32000;
+const MAX_TOKENS_RETRY = 48000;
+
+async function callLLM(maxTokens) {
+  return client.messages.create({
+    model: "claude-haiku-4-5",
+    max_tokens: maxTokens,
+    system: [
+      { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
+    ],
+    messages: [{ role: "user", content: userMessage }],
+  });
+}
+
+let response = await callLLM(MAX_TOKENS_PRIMARY);
+
+// 4-1. 출력이 max_tokens에 막혀 잘리면 JSON이 중간에 끊긴다. 이걸 "파싱 실패"로
+//      오인하지 않도록 stop_reason을 먼저 확인하고, 한도를 높여 1회 자동 재시도.
+if (response.stop_reason === "max_tokens") {
+  console.warn(
+    `⚠️ 출력이 max_tokens(${MAX_TOKENS_PRIMARY})에 막혀 잘렸습니다 — ${MAX_TOKENS_RETRY}로 상향해 재시도합니다.`,
+  );
+  response = await callLLM(MAX_TOKENS_RETRY);
+}
 
 const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+// 4-2. 재시도 후에도 여전히 잘렸으면, "파싱 실패"가 아니라 "출력 초과로 잘림"으로
+//      명확히 에러 처리한다 (원인이 가려지지 않게).
+if (response.stop_reason === "max_tokens") {
+  console.error(
+    `❌ 출력이 max_tokens(${MAX_TOKENS_RETRY})를 또 초과해 JSON이 잘렸습니다. 파싱 실패가 아니라 출력 초과입니다.`,
+  );
+  console.error(
+    "   트렌드 수를 줄이거나(입력 분할) max_tokens를 더 올려야 합니다.",
+  );
+  writeOutput(wrapError("트렌드 분석가 LLM 출력 초과로 JSON 잘림 (max_tokens)"));
+  process.exit(1);
+}
 
 // 5. 응답에서 JSON 추출 (LLM이 코드블록으로 감싸도 제거)
 const rawText = response.content.find((b) => b.type === "text")?.text ?? "";
@@ -180,6 +211,7 @@ try {
   parsed = JSON.parse(jsonText);
 } catch (err) {
   console.error("❌ LLM 응답을 JSON으로 파싱하지 못했습니다.");
+  console.error(`   (stop_reason: ${response.stop_reason}) — 출력 잘림은 아니나 JSON 형식이 깨졌습니다.`);
   console.error("--- 응답 원문 ---");
   console.error(rawText);
   writeOutput(wrapError("트렌드 분석가 LLM 출력 JSON 파싱 실패"));
