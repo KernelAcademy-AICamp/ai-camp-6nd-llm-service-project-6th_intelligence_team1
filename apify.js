@@ -82,7 +82,9 @@ async function buildChannelActivity(keywords, opts = {}, fresh = false) {
   const tiktokRaw = {}, instaRaw = {};
   for (const kw of keywords) {
     const tag = hashtagByKw[kw] || toHashtag(kw);
+    console.log(`틱톡 "${kw}" 조회 중...`);
     tiktokRaw[kw] = await fetchTiktok(kw, tag, fresh);
+    console.log(`인스타그램 "${kw}" 조회 중...`);
     instaRaw[kw] = await fetchInstagram(kw, tag, fresh);
   }
   const ytScores = normalizePool(keywords.map(kw => ({ keyword: kw, raw: youtubeRawByKw[kw] || {} })), r => r.median_views);

@@ -88,7 +88,7 @@ function buildBrandInput(f) {
     campaign_kpi: f.campaign_kpi || "",
     campaign_period: f.campaign_period || "",
     campaign_budget: f.campaign_budget || "",
-    media_channels: toArray(f.media_channels),
+    media_channels: (toArray(f.media_channels).length ? toArray(f.media_channels) : toArray(f.current_channels)).filter((c) => c !== "없음"),
     reference_campaign_url: f.reference_campaign_url || "",
     competitors: toArray(f.competitors)
   };

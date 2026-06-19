@@ -409,15 +409,27 @@
             transition: none;
         }
         .loading-orb-ball {
+            position: relative;
             width: 62px; height: 62px; border-radius: 50%;
             background: radial-gradient(circle at 30% 30%, #ffd1dc, #e6e6fa 70%);
             box-shadow: 0 0 40px rgba(255, 209, 220, 0.5);
             animation: orb-pulse 2.2s ease-in-out infinite;
+            transition: box-shadow 0.9s ease;
+        }
+        /* 오류 시 위로 덮이는 회색 그라디언트 레이어 (컬러→회색 크로스페이드) */
+        .loading-orb-ball::after {
+            content: ''; position: absolute; inset: 0; border-radius: 50%;
+            background: linear-gradient(135deg, #eaeaee 0%, #cdcdd4 100%);
+            opacity: 0; transition: opacity 0.9s ease;
         }
         @keyframes orb-pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.06); }
         }
+        /* 분석 오류(죽음) 상태: 링 숨김 + 볼이 회색으로 전환 + 펄스/빛번짐 정지 */
+        .loading-orb.dead .loading-orb-ring { opacity: 0; transition: opacity 0.6s ease; }
+        .loading-orb.dead .loading-orb-ball { box-shadow: none; animation: none; }
+        .loading-orb.dead .loading-orb-ball::after { opacity: 1; }
         .loading-message {
             font-size: 1.4rem; font-weight: 700;
             color: var(--text-primary);
@@ -826,7 +838,8 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label">뷰티 관여도 <span class="req">*</span></label>
+            <label class="form-label">타겟 뷰티관여도 <span class="req">*</span></label>
+            <p class="form-hint" style="font-size:0.82rem;color:#bca0bc;margin-top:6px;line-height:1.5;">우리 제품을 쓸 고객은 뷰티에 얼마나 진심인가요?</p>            
             <div class="pill-group" data-field="involvement">
                 <label class="pill"><input type="radio" name="beauty-level" value="입문자"><span>입문자</span></label>
                 <label class="pill"><input type="radio" name="beauty-level" value="일상사용자"><span>일상사용자</span></label>
@@ -835,7 +848,8 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label">소비 동기 <span class="req">*</span></label>
+            <label class="form-label">타겟 소비동기 <span class="req">*</span></label>
+            <p class="form-hint" style="font-size:0.82rem;color:#bca0bc;margin-top:6px;line-height:1.5;">고객이 무엇을 위해 우리 제품을 사용했으면 좋겠나요?</p>            
             <div class="pill-group" data-field="motivation">
                 <label class="pill"><input type="radio" name="motivation" value="자기표현"><span>자기표현</span></label>
                 <label class="pill"><input type="radio" name="motivation" value="관리·케어"><span>관리·케어</span></label>
@@ -911,7 +925,7 @@
 <!-- ============ LOADING ============ -->
 <section class="page hidden" id="page-loading">
    <div class="loading-wrap">
-        <div class="loading-orb">
+        <div class="loading-orb" id="loading-orb">
             <svg class="loading-orb-ring" viewBox="0 0 92 92" aria-hidden="true">
                 <defs>
                     <linearGradient id="orb-grad" x1="0" y1="0" x2="1" y2="1">
@@ -1303,8 +1317,8 @@
         } else if (step === 2) {
             if (!document.getElementById('product_name').value.trim()) errs.push('제품명');
             if (!getCategoryPath()) errs.push('카테고리');
-            if (!getOne('involvement')) errs.push('뷰티 관여도');
-            if (getCheckedValues('motivation').length === 0) errs.push('소비 동기');
+            if (!getOne('involvement')) errs.push('타겟 뷰티관여도');
+            if (getCheckedValues('motivation').length === 0) errs.push('타겟 소비동기');
         }
         return errs;
     }
@@ -1411,8 +1425,8 @@
         if (!d.category) e.push('카테고리');
         const hasFeatureOptions = document.querySelectorAll('#feature-chips input[name="feature"]').length > 0;
         if (hasFeatureOptions && d.texture_keywords.length === 0) e.push('제품 특징');
-        if (!d.target.involvement) e.push('뷰티 관여도');
-        if (d.target.motivation.length === 0) e.push('소비 동기');
+        if (!d.target.involvement) e.push('타겟 뷰티관여도');
+        if (d.target.motivation.length === 0) e.push('타겟 소비동기');
         if (!d.campaign_kpi) e.push('캠페인 KPI');
         if (!d.campaign_period) e.push('캠페인 기간');
         if (!d.campaign_budget) e.push('캠페인 예산');
@@ -1456,8 +1470,8 @@
             ['제품명', d.product_name],
             ['카테고리', d.category],
             ['제품 특징', fmt(d.texture_keywords)],
-            ['뷰티 관여도', d.target.involvement],
-            ['소비 동기', fmt(d.target.motivation)],
+            ['타겟 뷰티관여도', d.target.involvement],
+            ['타겟 소비동기', fmt(d.target.motivation)],
             ['캠페인 KPI', d.campaign_kpi],
             ['캠페인 기간', d.campaign_period],
             ['캠페인 예산', d.campaign_budget]
@@ -1634,7 +1648,7 @@
         _trendSrc = ['lf-naver', '네이버'];
         _trendSeen = new Set();
         _feed().innerHTML = '<div class="lf-head">트렌드 키워드를 실시간으로 모으는 중… 👀</div>'
-            + '<div class="lf-srcs"><span class="lf-chip lf-naver lf-blink">네이버</span><span class="lf-chip lf-yt lf-blink">유튜브</span><span class="lf-chip lf-tiktok">틱톡</span><span class="lf-chip lf-insta">인스타그램</span><span class="lf-chip lf-tavily lf-blink">Tavily</span></div>'
+            + '<div class="lf-srcs"><span class="lf-chip lf-naver lf-blink">네이버</span><span class="lf-chip lf-yt lf-blink">유튜브</span><span class="lf-chip lf-tiktok lf-blink">틱톡</span><span class="lf-chip lf-insta lf-blink">인스타그램</span><span class="lf-chip lf-tavily lf-blink">Tavily</span></div>'
             + '<div id="lf-body"></div>';
     }
     // 수집 로그 한 줄을 받아 출처를 추적하고, 키워드가 보이면 즉시 한 줄 추가
@@ -1644,12 +1658,15 @@
         else if (/네이버 데이터랩/.test(line)) _trendSrc = ['lf-naver', '네이버'];
         else if (/naver-search/.test(line)) _trendSrc = ['lf-naver', '네이버'];
         else if (/네이버 검색광고/.test(line)) _trendSrc = ['lf-naver', '네이버'];
+        else if (/틱톡/.test(line)) _trendSrc = ['lf-tiktok', '틱톡'];
+        else if (/인스타/.test(line)) _trendSrc = ['lf-insta', '인스타'];
 
         const m = line.match(/"([^"]+)"\s*(?:검색 중|조회 중|최근 검색량)/);
         if (!m) return;
         const kw = (m[1] || '').trim();
-        if (!kw || _trendSeen.has(kw) || _trendSeen.size >= 40) return;
-        _trendSeen.add(kw);
+        const seenKey = _trendSrc[1] + ':' + kw;
+        if (!kw || _trendSeen.has(seenKey) || _trendSeen.size >= 40) return;
+        _trendSeen.add(seenKey);
         const b = document.getElementById('lf-body');
         if (!b) return;
         b.insertAdjacentHTML('beforeend', `<div class="lf-row"><span class="lf-plus">+</span><span style="flex:1">${_esc(kw)}</span><span class="lf-chip ${_trendSrc[0]}">${_trendSrc[1]}</span></div>`);
@@ -1744,6 +1761,10 @@
         const barEl = document.getElementById('loading-progress-bar');
         const n = PIPELINE_STAGES.length;
 
+        // 재시도 시 이전 오류(죽음) 상태 초기화 → 링·컬러 볼 복구
+        document.getElementById('loading-orb').classList.remove('dead');
+        barEl.style.background = '';
+
         try {
             for (let i = 0; i < n; i++) {
                 const st = PIPELINE_STAGES[i];
@@ -1817,6 +1838,7 @@
             msgEl.textContent = '❌ 분석 중 오류: ' + (err.message || err);
             barEl.style.width = '100%';
             barEl.style.background = '#ef4444';
+            document.getElementById('loading-orb').classList.add('dead');
         }
     }
     
