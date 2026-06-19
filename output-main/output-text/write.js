@@ -822,16 +822,16 @@ function buildTimingNote(td) {
   const rate = td?.metrics?.growth_rate;
   const stage = td?.trend_stage;
   if (typeof rate === "number" && rate < -0.5) {
-    return "급격한 하락세라 짧은 캠페인 권장";
+    return "급격한 하락세라 짧은 캠페인이 좋아요";
   }
   if (stage === "declining") {
-    return "쇠퇴기에 접어드는 중이라 보완해서 활용 권장";
+    return "쇠퇴기에 접어드는 중이라 보완해서 쓰는 게 좋아요";
   }
   if (stage === "peak") {
-    return "피크를 찍는 중이라 빠르게 집행 권장";
+    return "피크 찍는 중이라 빠르게 집행하는 게 좋아요";
   }
   if (stage === "emerging" || stage === "growing") {
-    return "성장세 흐름이라 안정적 진입 가능";
+    return "성장세라 안정적으로 진입할 수 있어요";
   }
   return null;
 }
@@ -840,7 +840,7 @@ function buildTimingNote(td) {
 function buildLifespanPhrase(td) {
   const stage = STAGE_LABEL[td?.trend_stage] ?? null;
   const lifespan = td?.lifespan_estimate;
-  if (stage && lifespan) return `${stage}이며 ${lifespan} 흐름`;
+  if (stage && lifespan) return `${stage}이고 ${lifespan} 흐름`;
   if (stage) return `${stage} 단계`;
   if (lifespan) return `${lifespan} 흐름`;
   return null;
@@ -954,7 +954,7 @@ function buildUsagePlan(brand, td, opts = {}) {
       const channel = CHANNEL_LABEL[matchedKey] ?? matched.rawName;
       channelTag = `[${channel} 활성]`;
       channelEvidence = matched.status || null;
-      channelAction = "지금 채널과 잘 맞으니 강화 추천";
+      channelAction = "지금 채널이랑 잘 맞으니까 강화해보세요";
     } else {
       // 확장 — 트렌드 첫 활성 채널로 확장 제안
       const first = items[0];
@@ -967,7 +967,7 @@ function buildUsagePlan(brand, td, opts = {}) {
           .map((k) => CHANNEL_LABEL[k])
           .filter(Boolean)
           .join("·");
-        channelAction = `${marketerLabels} 외 ${channel} 확장 추천`;
+        channelAction = `${marketerLabels} 외에 ${channel}도 확장해보세요`;
       }
       // marketer가 0건이면 channelAction 그대로 null — 행동 제안에서 채널 비교 부분 생략
     }
@@ -1026,7 +1026,7 @@ function buildUsagePlan(brand, td, opts = {}) {
       // 두 의미 다 살리되 중복 "추천" 방지 — head 뒤에 콤마로 channelAction 붙임.
       sentence2 = `${head}, ${channelAction}`;
     } else if (head) {
-      sentence2 = head.endsWith("추천") ? head : `${head} 추천`;
+      sentence2 = `${head}을 추천드려요`;
     } else if (channelAction) {
       sentence2 = channelAction;
     }
@@ -1039,9 +1039,9 @@ function buildUsagePlan(brand, td, opts = {}) {
     const p = brand?.campaign_period;
     const b = brand?.campaign_budget;
     if (p && b) {
-      sentence3 = `${p} + ${b} 예산이라 ${pbLabel}로 활용 가능`;
+      sentence3 = `${p}에 ${b} 예산이면 ${pbLabel}로 써볼 수 있어요`;
     } else {
-      sentence3 = `${pbLabel}로 활용 가능`;
+      sentence3 = `${pbLabel}로 써볼 수 있어요`;
     }
   }
 
