@@ -1423,8 +1423,6 @@
         if (d.current_channels.length === 0) e.push('활용 중인 매체');
         if (!d.product_name) e.push('제품명');
         if (!d.category) e.push('카테고리');
-        const hasFeatureOptions = document.querySelectorAll('#feature-chips input[name="feature"]').length > 0;
-        if (hasFeatureOptions && d.texture_keywords.length === 0) e.push('제품 특징');
         if (!d.target.involvement) e.push('타겟 뷰티관여도');
         if (d.target.motivation.length === 0) e.push('타겟 소비동기');
         if (!d.campaign_kpi) e.push('캠페인 KPI');
@@ -1674,7 +1672,11 @@
     }
 
     // 시안 실시간: 빈 피드로 시작 → 백엔드 [0~4단계] 로그를 사람이 읽을 메시지로 변환
+    // _designIdx: 지금 몇 번째 시안을 만들고 있는지(▶ 줄마다 +1). 단계 메시지에 순번을 붙여 1·2·3 시안을 구분.
+    let _designIdx = 0;
+    function _ordKo(n) { return ['', '첫 번째', '두 번째', '세 번째', '네 번째', '다섯 번째', '여섯 번째'][n] || (n + '번째'); }
     function feedDesignLiveStart(d) {
+        _designIdx = 0;
         const product = (d && d.product_name) || '제품';
         _feed().innerHTML = `<div class="lf-head">${_esc(product)}에 트렌드 입히는 중...</div><div id="lf-body"></div>`;
     }
@@ -2258,14 +2260,42 @@
         return;
     }
     showToast('인쇄 창에서 "PDF로 저장"을 선택하세요');
-    // 닫힌 토글(<details>)을 모두 펼쳐 PDF에 내용이 빠지지 않게 함 (복원은 afterprint에서)
-    const restoreToggles = expandReportToggles();
-    // 저장 파일명: TrendFit_report_MMDD (브라우저가 document.title을 기본 파일명으로 사용)
-    const now = new Date();
-    const mmdd = String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
-    const prevTitle = document.title;
-    document.title = 'TrendFit_report_' + mmdd;
-    const restore = () => { document.title = prevTitle; restoreToggles(); window.removeEventListener('afterprint', restore); };
+// [시안 포함하기] 체크 시: 화면에 보이는 시안 이미지를 리포트(page-step4) 끝에 임시로 붙여 함께 인쇄.
+// 인쇄 CSS(@media print)는 page-step4만 출력하므로, 그 안에 넣어야 PDF에 포함됨. 인쇄 후 제거.
+let visBlock = null;
+if (includeVisuals()) {
+    const items = window.__lightboxItems || [];
+    if (items.length) {
+        const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        visBlock = document.createElement('div');
+        visBlock.id = 'print-visuals';
+        visBlock.style.cssText = 'margin-top:28px;page-break-before:always;break-before:page';
+        visBlock.innerHTML = '<h2 style="font-size:1.25rem;font-weight:800;margin:0 0 14px">예상 시안</h2>'
+            + '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">'
+            + items.map(v => `<figure style="margin:0;break-inside:avoid;page-break-inside:avoid"><img src="${esc(v.url)}" alt="${esc(v.title)}" style="width:100%;border-radius:10px;bo...`).join('')
+            + '</div>';
+        body.insertAdjacentElement('afterend', visBlock);
+    } else {
+        showToast('포함할 시안이 없어요 — 리포트만 저장됩니다');
+    }
+}
+
+// 닫힌 토글(<details>)을 모두 펼쳐 PDF에 내용이 빠지지 않게 함 (복원은 afterprint에서)
+const restoreToggles = expandReportToggles();
+
+// 저장 파일명: TrendFit_report_MMDD (브라우저가 document.title을 기본 파일명으로 사용)
+const now = new Date();
+const mmdd = String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
+const prevTitle = document.title;
+document.title = 'TrendFit_report_' + mmdd;
+
+    const restore = () => {
+    document.title = prevTitle;
+    if (visBlock) { visBlock.remove(); visBlock = null; }
+    restoreToggles();
+    window.removeEventListener('afterprint', restore);
+};
+     
     window.addEventListener('afterprint', restore);
     window.print();
 }

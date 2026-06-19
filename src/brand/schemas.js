@@ -118,6 +118,29 @@ export const ALL_CATEGORY_NOUNS = new Set([
   ...Object.values(CATEGORY_SUB_BY_MID).flat(),
 ]);
 
+// ─── 카테고리 검색 동의어 표 ─────────────────────────────────────────
+// 카테고리 명사(중·소분류) → 실제로 검색되는 동의어. 두 곳에서 사용:
+//   1) 키워드 생성 시 LLM에 "이 동의어도 핵심 명사로 써도 된다"고 알려줌
+//   2) sanitize 필터에서 정식 카테고리 명사처럼 취급 → 제품명에서 새어 나온
+//      단어는 막되, 등록된 동의어(예: 블러셔→치크)는 통과시킴
+// 키는 CATEGORY_*에 등록된 명사여야 하고, 값은 검색량이 보장되는 일반 표현만.
+// 팀원이 카탈로그에 맞춰 자유롭게 행을 추가하면 됨.
+export const CATEGORY_SYNONYMS = {
+  블러셔: ["치크"],
+  파운데이션: ["파데"],
+};
+
+// 주어진 카테고리 명사 목록의 동의어를 모두 모아 평탄 배열로 반환.
+//   getSynonymsForCategoryNouns(["블러셔", "베이스"]) → ["치크"]
+export function getSynonymsForCategoryNouns(nouns) {
+  const out = [];
+  for (const n of nouns ?? []) {
+    const syns = CATEGORY_SYNONYMS[n];
+    if (syns) out.push(...syns);
+  }
+  return out;
+}
+
 // ─── 그 외 enum ───────────────────────────────────────────────────
 export const INVOLVEMENT = ["입문자", "일상사용자", "얼리어답터"];
 

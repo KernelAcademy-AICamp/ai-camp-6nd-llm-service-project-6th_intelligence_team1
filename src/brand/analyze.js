@@ -9,6 +9,7 @@ import {
   BrandKeywordsLlmSchema,
   buildProductFeatures,
   expandAgeGroupForMatching,
+  getSynonymsForCategoryNouns,
 } from "./schemas.js";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -84,23 +85,26 @@ function buildForbiddenAttributeWords(input) {
         .map((s) => s.trim())
         .filter(Boolean),
     );
-    if (tokens.length === 1) {
-      const w = tokens[0];
-      // 카테고리 명사와 부분 일치도 허용 — 사용자가 "아이섀도우" 적었는데
-      // 카테고리엔 "아이섀도"로 등록된 케이스 같은 미세 차이 흡수.
-      // 또한 ALL_CATEGORY_NOUNS(전역 카테고리 명사) 안에 있으면 forbidden 제외:
-      // 사용자가 "쿠션"이라 적었는데 카테고리는 "기초제품 > 오일"인 케이스 등,
-      // product_name이 사실상 카테고리 명사인 경우 검색 키워드가 다 막히는 걸 방지.
-      const isCategoryNoun =
-        ALL_CATEGORY_NOUNS.has(w) ||
-        [...categoryNouns].some(
-          (n) => n.length >= 2 && (n.includes(w) || w.includes(n)),
-        );
-      if (w.length >= 2 && !isCategoryNoun) forbidden.add(w);
-    } else {
-      for (let i = 0; i < tokens.length - 1; i++) {
-        if (tokens[i].length >= 2) forbidden.add(tokens[i]);
-      }
+    // 이 입력의 카테고리에 등록된 검색 동의어(예: 블러셔→치크)도 정식 카테고리
+    // 명사처럼 취급 → 동의어는 키워드로 살리고, 제품명에서 새어 나온 나머지
+    // 단어(예: "선 실드 글로이 치크"의 실드·글로이)만 forbidden에 넣는다.
+    const synonymNouns = new Set(getSynonymsForCategoryNouns([...categoryNouns]));
+
+    // 한 어절이 "사실상 카테고리 명사인지" 판정.
+    //  - ALL_CATEGORY_NOUNS(전역) 또는 동의어 표에 있으면 카테고리 명사로 봄
+    //  - 카테고리 명사와 부분 일치도 허용 (아이섀도우 vs 아이섀도 같은 미세 차이 흡수)
+    const isCategoryNoun = (w) =>
+      ALL_CATEGORY_NOUNS.has(w) ||
+      synonymNouns.has(w) ||
+      [...categoryNouns].some(
+        (n) => n.length >= 2 && (n.includes(w) || w.includes(n)),
+      );
+
+    // 제품명의 모든 어절을 동일 규칙으로 검사. (이전엔 여러 어절일 때 *마지막*
+    // 어절을 "카테고리 명사겠지" 하고 무조건 봐줬는데, "…글로이 치크"처럼 마지막
+    // 어절이 카테고리 명사가 아닌 제품명 단어면 그대로 새어 나갔음 → 전부 검사.)
+    for (const w of tokens) {
+      if (w.length >= 2 && !isCategoryNoun(w)) forbidden.add(w);
     }
   }
   return forbidden;
@@ -181,6 +185,14 @@ async function generateTrendKeywords(input) {
   const featureOptions = (input.product_features ?? []).join(", ") || "(없음)";
   const featureCustom = (input.product_features_custom ?? []).join(", ") || "(없음)";
 
+  // 이 제품 카테고리의 검색 동의어(예: 블러셔→치크). LLM이 핵심 명사로 써도 됨.
+  const synonyms = getSynonymsForCategoryNouns([
+    input.category_sub,
+    input.category_mid,
+    input.category_major,
+  ]);
+  const synonymLine = synonyms.length ? synonyms.join(", ") : "(없음)";
+
   const userMessage = `다음 브랜드·제품 정보로 트렌드 수집용 키워드 세 종류를 모두 생성하세요.
 
 ## 입력
@@ -191,6 +203,7 @@ async function generateTrendKeywords(input) {
 - 대분류: ${input.category_major}
 - 중분류: ${input.category_mid}
 - 소분류: ${input.category_sub || "(없음 — 메이크업이 아니면 비어 있음)"}
+- 검색 동의어: ${synonymLine}  ← 위 카테고리 명사와 같은 뜻으로 실제 검색되는 표현. 핵심 명사로 그대로 써도 됨 (없으면 무시). 단, 제품명·브랜드 고유 표현은 절대 키워드에 넣지 말 것.
 
 ### 제품특징
 - 옵션 선택: ${featureOptions}

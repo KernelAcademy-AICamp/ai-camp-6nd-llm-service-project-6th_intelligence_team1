@@ -99,7 +99,7 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
 ## 규칙 (반드시 준수)
 - **category**: "대분류 > 소분류" 형식. 대분류는 클렌징/스킨케어/메이크업 중 하나, 소분류는 하위 (예: "메이크업 > 베이스", "메이크업 > 립", "스킨케어 > 토너")
 - **keywords**: 최소 1개
-- **source_search_keywords**: 위 "브랜드 프로필"의 \`search_keywords\` 중 이 트렌드의 근거가 된 검색어만 골라 글자 그대로(verbatim) 배열에 담으세요. 한 트렌드가 여러 검색어에 걸쳐있을 수 있으니 해당되는 것 모두. 관련된 게 없으면 빈 배열([]). 이 필드는 채널 활성도·검색 수요(demand_fit) 매칭의 조인 키로 사용됩니다.
+- **source_search_keywords**: 위 "수집된 raw 데이터"의 \`query\` 값 중 이 트렌드를 뒷받침한 검색어만 골라 **글자 그대로(verbatim) 복사**해 배열에 담으세요. (브랜드 키워드를 다시 쓰거나 자기 표현으로 바꾸지 말고, raw 데이터에 실제 등장한 \`query\` 문자열을 그대로 가져오세요. 예: raw query가 "글로시 립글로스"면 "글로스 립글로스"로 바꾸지 말 것.) 한 트렌드가 여러 검색어에 걸쳐있을 수 있으니 해당되는 것 모두. 관련된 게 없으면 빈 배열([]). 이 필드는 채널 활성도·검색 수요(demand_fit)·신뢰도 계산의 조인 키라, 한 글자라도 다르면 조인이 깨집니다.
 - **summary**: 50자 이내
 - **gender_ratio**: female + male 합이 정확히 1.0
 - **age_ratio**: 모든 값 합이 정확히 1.0. 키는 "10s","20s","30s","40s","50s+"만 사용
@@ -234,6 +234,28 @@ for (const trend of parsed.trends) {
   for (const ev of trend.evidence) {
     if (!ev || typeof ev !== "object") continue;
     ev.url = ev.url && realUrls.has(ev.url) ? ev.url : null;
+  }
+}
+
+// 6-2. source_search_keywords 안전망 — evidence.url과 동일 취지.
+//      이 필드는 demand_fit·channel_activity·신뢰도 계산의 조인 키라, LLM이
+//      한 글자라도 바꿔 쓰면(예: "글로시 립글로스"→"글로스 립글로스") 조인이 0건이 된다.
+//      실제 수집 raw_data의 query 집합에 존재하는 키워드만 남기고, 변형·환각된 것은 제거.
+const realQueries = new Set(rawData.map((d) => d.query).filter(Boolean));
+for (const trend of parsed.trends) {
+  if (!Array.isArray(trend.source_search_keywords)) {
+    trend.source_search_keywords = [];
+    continue;
+  }
+  const before = trend.source_search_keywords.length;
+  trend.source_search_keywords = trend.source_search_keywords.filter(
+    (k) => typeof k === "string" && realQueries.has(k),
+  );
+  const dropped = before - trend.source_search_keywords.length;
+  if (dropped > 0) {
+    console.warn(
+      `⚠️ ${trend.trend_id} source_search_keywords ${dropped}개 제거됨 (raw query 불일치 — 조인 보호)`,
+    );
   }
 }
 

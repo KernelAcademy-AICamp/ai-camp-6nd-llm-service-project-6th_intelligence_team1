@@ -194,7 +194,8 @@ const server = http.createServer(async (req, res) => {
     const stage = u.searchParams.get("stage") || "";
     const fresh = u.searchParams.get("fresh") === "1";
     const cmd = STAGE_OVERRIDE || STAGE_CMDS[stage] || RUN_CMD;
-    const extraEnv = { GEN_IMAGE: "1", ...(fresh ? { YOUTUBE_FRESH: "1" } : {}) };
+    // fresh면 모든 수집기(유튜브·Tavily·네이버·인스타/틱톡)가 캐시를 무시하고 새로 받도록 전달
+    const extraEnv = { GEN_IMAGE: "1", ...(fresh ? { YOUTUBE_FRESH: "1", TAVILY_FRESH: "1", NAVER_FRESH: "1", APIFY_FRESH: "1" } : {}) };
 
     res.writeHead(200, {
       "Content-Type": "text/event-stream; charset=utf-8",
@@ -266,10 +267,10 @@ const server = http.createServer(async (req, res) => {
       // 단계별 명령 선택 (stage 없으면 전체 파이프라인)
       const cmd = STAGE_OVERRIDE || STAGE_CMDS[stage] || RUN_CMD;
 
-      // [변경] fresh가 켜져 있으면 YouTube 수집이 캐시를 무시하도록 환경변수로 전달
-      // (form.fresh 는 UI가 fetch body에 실어 보냄. true일 때만 YOUTUBE_FRESH=1)
+      // [변경] fresh가 켜져 있으면 모든 수집기(유튜브·Tavily·네이버·인스타/틱톡)가 캐시를 무시하도록 전달
+      // (form.fresh 는 UI가 fetch body에 실어 보냄. true일 때만 *_FRESH=1)
       // GEN_IMAGE=1 상시 ON — UI 실행 시 design-v2가 시안 이미지까지 생성하도록 (기본은 프롬프트만)
-      const extraEnv = { GEN_IMAGE: "1", ...(form.fresh ? { YOUTUBE_FRESH: "1" } : {}) };
+      const extraEnv = { GEN_IMAGE: "1", ...(form.fresh ? { YOUTUBE_FRESH: "1", TAVILY_FRESH: "1", NAVER_FRESH: "1", APIFY_FRESH: "1" } : {}) };
       console.log(`[run] stage=${stage || "(full)"} → ${cmd}${form.fresh ? "  ⚡FRESH" : ""}`);
 
       const result = await runCmd(cmd, extraEnv);
