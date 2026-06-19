@@ -3,7 +3,7 @@ import { envelopeSchema } from "../../shared/envelope.js";
 
 // 시안가 v2 입출력 스키마.
 // 입력: 매칭가 산출(match-result) + 트렌드 분석가 산출(trend-analysis) + 브랜드 분석가 산출(brand-analysis)
-// 처리: 트렌드별 × 매체별(Pinterest·Instagram·Mintoiro) 검색 → 매체별 선별·분석 → 매체별 분석 종합 → 시안 1개.
+// 처리: 트렌드별 Pinterest 검색 → 레퍼런스 선별·분석 → 분석 종합 → 시안 1개.
 // 출력: 트렌드 1개당 시안 1장.
 
 // ─── 입력 스키마 (매칭가 산출 검증) ─────────────────────────────────
@@ -38,12 +38,10 @@ export const LlmSearchQueriesSchema = z.object({
   queries: z.array(z.string().min(1)).min(1).max(5),
 });
 
-// ─── 2단계 LLM: 매체별 선별 + 분석 ──────────────────────────────────
-// N장 보여주고 → 대표 1장 인덱스 + 그 매체 강점에 맞는 분석 추출.
-// 매체별 강점:
-//   - pinterest → composition·shot_type (구도·앵글·연출)
-//   - instagram → mood·trend·lifestyle (트렌드 무드·인물·라이프스타일)
-//   - mintoiro → color_palette·package (패키지 디테일·컬러·타이포)
+// ─── 2단계 LLM: Pinterest 레퍼런스 선별 + 분석 ──────────────────────
+// N장 보여주고 → 대표 1장 인덱스 + 구도·shot_type·무드·컬러 분석 추출.
+// (analyzeOneSource는 source-agnostic하게 작성돼 있어 enum에 instagram·mintoiro가
+//  남아 있으나, 현재 파이프라인은 Pinterest만 투입함 — db076f9 참조)
 export const LlmSourceAnalysisSchema = z.object({
   best_index: z.number().int().min(0), // 보낸 이미지 배열의 인덱스 (0부터)
   shot_type: z.string(), // 동적, 한국어
