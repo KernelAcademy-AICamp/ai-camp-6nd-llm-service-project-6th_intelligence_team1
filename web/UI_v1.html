@@ -1674,7 +1674,11 @@
     }
 
     // 시안 실시간: 빈 피드로 시작 → 백엔드 [0~4단계] 로그를 사람이 읽을 메시지로 변환
+    // _designIdx: 지금 몇 번째 시안을 만들고 있는지(▶ 줄마다 +1). 단계 메시지에 순번을 붙여 1·2·3 시안을 구분.
+    let _designIdx = 0;
+    function _ordKo(n) { return ['', '첫 번째', '두 번째', '세 번째', '네 번째', '다섯 번째', '여섯 번째'][n] || (n + '번째'); }
     function feedDesignLiveStart(d) {
+        _designIdx = 0;
         const product = (d && d.product_name) || '제품';
         _feed().innerHTML = `<div class="lf-head">${_esc(product)}에 트렌드 입히는 중...</div><div id="lf-body"></div>`;
     }
@@ -1690,20 +1694,21 @@
             const c = line.match(/콘텐츠\s*(\d+)\s*개/);
             _designRow(`🎬 시안 ${c ? c[1] + '개 ' : ''}생성을 시작합니다`);
         } else if ((m = line.match(/^\s*▶\s*(.+?)\s*\(/))) {
-            _designRow(`▶ "${m[1].trim()}" 시안 작업 중`);
+            _designIdx++;
+            _designRow(`▶ ${_ordKo(_designIdx)} 시안 "${m[1].trim()}" 제작을 시작해요`);
         } else if (/\[0단계\]/.test(line)) {
-            _designRow('🧭 콘텐츠 컨셉 잡는 중...');
+            _designRow(`🧭 ${_ordKo(_designIdx)} 시안 컨셉 잡는 중...`);
         } else if ((m = line.match(/\[1단계\]\s*Pinterest\s*(\d+)/))) {
-            _designRow(`📌 핀터레스트 레퍼런스 ${m[1]}개 수집`);
+            _designRow(`📌 ${_ordKo(_designIdx)} 시안 핀터레스트 레퍼런스 ${m[1]}개 수집`);
             if (barEl) barEl.style.width = '62%';
         } else if (/\[2단계\]/.test(line)) {
-            _designRow('🎨 무드·구도·컬러 분석 완료');
+            _designRow(`🎨 ${_ordKo(_designIdx)} 시안 무드·구도·컬러 분석 완료`);
             if (barEl) barEl.style.width = '70%';
         } else if (/\[3단계\]/.test(line)) {
-            _designRow('✍️ AI 이미지 프롬프트 작성 완료');
+            _designRow(`✍️ ${_ordKo(_designIdx)} 시안 이미지 프롬프트 작성 완료`);
             if (barEl) barEl.style.width = '78%';
         } else if (/\[4단계\]/.test(line)) {
-            _designRow('🖼️ 예상 시안 이미지 생성 완료 ✨');
+            _designRow(`🖼️ ${_ordKo(_designIdx)} 시안 이미지 생성 완료 ✨`);
             if (barEl) barEl.style.width = '85%';
         }
     }
@@ -2244,12 +2249,35 @@
         return;
     }
     showToast('인쇄 창에서 "PDF로 저장"을 선택하세요');
+    // [시안 포함하기] 체크 시: 화면에 보이는 시안 이미지를 리포트(page-step4) 끝에 임시로 붙여 함께 인쇄.
+    // 인쇄 CSS(@media print)는 page-step4만 출력하므로, 그 안에 넣어야 PDF에 포함됨. 인쇄 후 제거.
+    let visBlock = null;
+    if (includeVisuals()) {
+        const items = window.__lightboxItems || [];
+        if (items.length) {
+            const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            visBlock = document.createElement('div');
+            visBlock.id = 'print-visuals';
+            visBlock.style.cssText = 'margin-top:28px;page-break-before:always;break-before:page';
+            visBlock.innerHTML = '<h2 style="font-size:1.25rem;font-weight:800;margin:0 0 14px">예상 시안</h2>'
+                + '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">'
+                + items.map(v => `<figure style="margin:0;break-inside:avoid;page-break-inside:avoid"><img src="${esc(v.url)}" alt="${esc(v.title)}" style="width:100%;border-radius:10px;border:1px solid #eee"><figcaption style="margin-top:6px;font-size:0.85rem;color:#666">${esc(v.title)}${v.caption ? ' — ' + esc(v.caption) : ''}</figcaption></figure>`).join('')
+                + '</div>';
+            body.insertAdjacentElement('afterend', visBlock);
+        } else {
+            showToast('포함할 시안이 없어요 — 리포트만 저장됩니다');
+        }
+    }
     // 저장 파일명: TrendFit_report_MMDD (브라우저가 document.title을 기본 파일명으로 사용)
     const now = new Date();
     const mmdd = String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
     const prevTitle = document.title;
     document.title = 'TrendFit_report_' + mmdd;
-    const restore = () => { document.title = prevTitle; window.removeEventListener('afterprint', restore); };
+    const restore = () => {
+        document.title = prevTitle;
+        if (visBlock) { visBlock.remove(); visBlock = null; }
+        window.removeEventListener('afterprint', restore);
+    };
     window.addEventListener('afterprint', restore);
     window.print();
 }

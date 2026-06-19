@@ -160,7 +160,10 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   } else {
     const { keywords, hashtagByKw } = loadBrandKeywords();
     const youtubeRawByKw = loadYoutubeRaw();
-    buildChannelActivity(keywords, { youtubeRawByKw, hashtagByKw }, false)
+    // 서버가 ?fresh=1 요청 시 APIFY_FRESH=1을 넘겨주며, 그때만 캐시 무시하고 새로 수집
+    const apifyFresh = process.env.APIFY_FRESH === "1";
+    if (apifyFresh) console.log("⚡ APIFY FRESH 모드: 인스타·틱톡 캐시 무시하고 새로 받습니다");
+    buildChannelActivity(keywords, { youtubeRawByKw, hashtagByKw }, apifyFresh)
       .then(out => {
         fs.writeFileSync('trend/data/channel-activity.json', JSON.stringify(out, null, 2), 'utf-8');
         console.log(JSON.stringify(out, null, 2));
