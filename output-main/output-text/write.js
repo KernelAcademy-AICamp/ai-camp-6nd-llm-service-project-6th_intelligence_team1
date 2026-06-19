@@ -60,6 +60,10 @@ const TECHNICAL_TERM_MAP = [
   ["stage declining", "하락 단계"],
   ["ingred", "성분·제형"],
   ["features", "특성"],
+  ["product_name", "제품명"],
+  ["lifespan_estimate", "트렌드 수명"],
+  ["keywords", "키워드"],
+  ["status", "현황"],
 ];
 // 배열 내부 문자열을 따옴표 제거 + 쉼표로 join.
 //   "'자기표현'"        → "자기표현"
