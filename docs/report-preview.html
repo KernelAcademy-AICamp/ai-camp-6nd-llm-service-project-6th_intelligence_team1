@@ -75,7 +75,9 @@
     // (실제 앱은 fetch('/output-main/output-text/writer-output.json') 로 받지만,
     //  미리보기는 더블클릭만으로 보이도록 writer-output.example.json 의 data 를 인라인)
     var SAMPLE_DATA = {
-      trends_total: 18,   // 분석한 전체 트렌드 수 (작성가가 writer-output에 넣어줄 값) → funnel
+      raw_count: 181,        // 훑어본 raw 데이터 수 → funnel 박스1
+      used_data_count: 96,   // (나) 선별 트렌드 카드 구성에 활용된 데이터 수 → funnel 박스2
+      platforms: "YouTube · 네이버 블로그 · 네이버 뉴스 · 데이터랩 · Tavily",  // 수집 플랫폼 → funnel 박스1
       brand: {
         name: "힌스 (hince)",
         product_name: "커버 마스터 핑크 쿠션",

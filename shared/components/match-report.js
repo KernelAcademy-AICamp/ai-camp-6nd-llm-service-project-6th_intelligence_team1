@@ -471,9 +471,37 @@
       el.innerHTML = '<div class="mr-report">' + headerSection(brand) + '<div class="mr-empty">—</div></div>';
       return el;
     }
+    // funnel — 박스 3개: 훑어본 데이터 N → 정제된 트렌드 M → 리포트 선별 K
+    //  raw_count·trend_count는 트렌드 분석가 산출물(있으면 표시), K는 항상 contents 길이
+    var steps = [];
+    if (d.raw_count) steps.push({
+      label: "전체 수집 데이터",
+      platforms: d.platforms || "YouTube · 네이버 · Tavily · 데이터랩",
+      value: d.raw_count,
+      note: "훑어본 데이터",
+    });
+    if (d.used_data_count) steps.push({ label: "활용된 데이터", value: d.used_data_count, note: "리포트 구성 활용" });
+    var funnel = steps.length
+      ? '<div class="mr-funnel">' +
+          steps
+            .map(function (s) {
+              return (
+                '<div class="mr-funnel-card">' +
+                  '<div class="mr-fc-label">' + esc(s.label) + "</div>" +
+                  '<div class="mr-fc-value">' + esc(s.value) + '<span class="mr-fc-unit">개</span></div>' +
+                  '<div class="mr-fc-note">' + esc(s.note) +
+                    (s.platforms ? '<span class="mr-fc-platforms">' + esc(s.platforms) + "</span>" : "") +
+                  "</div>" +
+                "</div>"
+              );
+            })
+            .join("") +
+        "</div>"
+      : "";
     el.innerHTML =
       '<div class="mr-report">' +
         headerSection(brand) +
+        funnel +
         summarySection(contents) +
         sectionHead("PART II", "트렌드 카드", "유행현황 · 수집 근거 · 매칭이유 · 매칭 기준") +
         '<div class="mr-trend-grid">' + contents.map(card).join("") + "</div>" +
