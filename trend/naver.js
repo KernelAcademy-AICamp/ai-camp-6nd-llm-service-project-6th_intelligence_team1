@@ -57,6 +57,7 @@ async function main() {
       keywords: group.keywords,
       latest_ratio: group.data[group.data.length - 1]?.ratio || 0,
       trend_data: group.data,
+      published_at: null,   // DataLab은 항목별 발행일 없음 → 최신성 미집계(정상)
       url: null
     }))
   };

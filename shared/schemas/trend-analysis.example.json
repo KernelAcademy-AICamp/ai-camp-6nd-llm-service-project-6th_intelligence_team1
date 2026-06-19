@@ -70,6 +70,12 @@
           }
         ],
         "source_search_keywords": [],
+        "confidence": "높음",
+        "confidence_basis": {
+          "mention_total": 0,
+          "channel_count": 0,
+          "recent_count": 0
+        },
         "channel_activity": [
           {
             "search_keyword": "",
@@ -99,8 +105,15 @@
   },
   "_field_guide": {
     "_comment": "이 _field_guide 블록은 example 파일에만 있는 작성 가이드입니다. 실제 trend-analysis.json에는 포함하지 않습니다. v0.4·v0.5 변경 사항을 정리합니다.",
+    "v0.7_changelog": [
+      "추가: trends[].confidence ('높음'|'중간'|'낮음') — 트렌드별 신뢰도. 렌더러 match-report.js의 confidenceOf가 이 필드를 우선 사용(없으면 evidence 개수로 폴백)",
+      "추가: trends[].confidence_basis { mention_total, channel_count, recent_count } — 신뢰도 근거 노출용. mention_total은 '매체 언급 건수'(네이버 검색량 아님 — 라벨은 '언급 N건'으로 표기 권장)",
+      "산출 방식: src/trend/merge-confidence.js가 trend-analysis.json + trend_raw.json 읽어 결정적으로 계산(LLM 아님). 지지 raw = raw query ∈ source_search_keywords. (npm run trend:merge-confidence)",
+      "등급(잠정): 높음=channel_count>=3 && recent_count>=1 / 중간=channel_count==2 / 낮음=channel_count<=1. 첫 분포 보고 튜닝. 주의: youtube 180일·naver 18개월 수집창이라 30일내 recent_count 표본이 적을 수 있음. naver_datalab은 표기 차이로 조인이 거의 안 돼 실질 channel_count는 최대 4(youtube/tavily/naver_blog/naver_news)",
+      "선행 조건: trends[].source_search_keywords가 raw query와 verbatim 일치해야 조인됨 (analyze.js 안전망이 보장)"
+    ],
     "v0.5_changelog": [
-      "추가: trends[].source_search_keywords (배열) — 이 트렌드가 어떤 brand-analysis.data.search_keywords에서 도출됐는지 명시. 분석가가 직접 매핑 (구조 C 방식: 트렌드는 의미 단위, 검색어는 별도 매핑 테이블)",
+      "추가: trends[].source_search_keywords (배열) — 이 트렌드를 뒷받침한 raw 데이터의 query 값을 글자 그대로(verbatim) 복사. analyze.js 안전망이 raw query 집합에 없는 키워드는 자동 제거 (조인 키 보호)",
       "추가: trends[].channel_activity (배열) — 트렌드 1이 만든 channel-activity.json에서 source_search_keywords로 조인해 붙이는 채널별 활성도 데이터. 한 트렌드가 여러 검색어와 연관되므로 배열 구조",
       "병합 방식: src/trend/merge-channel-activity.js 스크립트가 trend-analysis.json + channel-activity.json 읽어서 channel_activity 배열을 채움 (npm run trend:merge-activity)",
       "주의: 각 element의 scores.{youtube,instagram,tiktok}.{score,evidence,source} + top_channel은 변형 없이 보존. 점수 평균·합산 ❌ (후보군 내 상대 순위라 깨짐)"
@@ -190,11 +203,11 @@
       "_note": "safe(시급성) 판정은 trend_stage(emerging/peak/declining)·lifespan_estimate 필드를 그대로 사용합니다. 별도 변경 없음."
     },
     "source_search_keywords": {
-      "purpose": "이 트렌드가 어떤 brand-analysis.data.search_keywords에서 도출됐는지 명시하는 조인 키 배열. channel-activity.json과의 join에 사용.",
-      "how_to_fill": "분석가가 trend-analysis를 만들 때, 각 트렌드를 구성한 raw 데이터의 검색어를 brand-analysis.data.search_keywords와 매칭해서 1~N개 적습니다.",
+      "purpose": "이 트렌드를 뒷받침한 raw 데이터의 query 값을 담는 조인 키 배열. demand_fit·channel_activity·confidence(신뢰도) 계산의 join에 사용.",
+      "how_to_fill": "분석가가 각 트렌드의 근거가 된 raw_data 항목의 `query` 문자열을 **글자 그대로(verbatim) 복사**합니다. 자기 표현으로 바꾸거나 브랜드 키워드를 재작성하지 않습니다. (raw query는 수집 시 brand-analysis.data.search_keywords와 동일하므로 결과적으로 일치하지만, 기준은 어디까지나 raw에 실제 등장한 query입니다.) 코드 안전망(analyze.js)이 raw query 집합에 없는 키워드는 자동 제거합니다.",
       "good_example": ["실키 파운데이션 리뷰", "30대 데일리 파운데이션 트렌드"],
-      "bad_example": ["실키파운데이션", "메이크업"],
-      "note": "정확히 brand-analysis.data.search_keywords의 문자열과 일치해야 join이 됩니다. 다르면 channel_activity가 비어집니다."
+      "bad_example": ["실키파운데이션", "메이크업", "글로스 립글로스(raw query '글로시 립글로스'를 변형 — 조인 깨짐)"],
+      "note": "raw_data의 query 문자열과 글자 단위로 정확히 일치해야 join이 됩니다. 한 글자라도 다르면 channel_activity·demand_fit·confidence가 비어집니다."
     },
     "channel_activity": {
       "purpose": "트렌드 1(가지수님)이 만든 channel-activity.json을 source_search_keywords로 조인해 붙이는 채널별 활성도 데이터. 매칭가에게 전달돼 활성 채널 판정에 사용됨.",

@@ -1423,8 +1423,6 @@
         if (d.current_channels.length === 0) e.push('활용 중인 매체');
         if (!d.product_name) e.push('제품명');
         if (!d.category) e.push('카테고리');
-        const hasFeatureOptions = document.querySelectorAll('#feature-chips input[name="feature"]').length > 0;
-        if (hasFeatureOptions && d.texture_keywords.length === 0) e.push('제품 특징');
         if (!d.target.involvement) e.push('타겟 뷰티관여도');
         if (d.target.motivation.length === 0) e.push('타겟 소비동기');
         if (!d.campaign_kpi) e.push('캠페인 KPI');
@@ -1694,21 +1692,20 @@
             const c = line.match(/콘텐츠\s*(\d+)\s*개/);
             _designRow(`🎬 시안 ${c ? c[1] + '개 ' : ''}생성을 시작합니다`);
         } else if ((m = line.match(/^\s*▶\s*(.+?)\s*\(/))) {
-            _designIdx++;
-            _designRow(`▶ ${_ordKo(_designIdx)} 시안 "${m[1].trim()}" 제작을 시작해요`);
+            _designRow(`▶ "${m[1].trim()}" 시안 작업 중`);
         } else if (/\[0단계\]/.test(line)) {
-            _designRow(`🧭 ${_ordKo(_designIdx)} 시안 컨셉 잡는 중...`);
+            _designRow('🧭 콘텐츠 컨셉 잡는 중...');
         } else if ((m = line.match(/\[1단계\]\s*Pinterest\s*(\d+)/))) {
-            _designRow(`📌 ${_ordKo(_designIdx)} 시안 핀터레스트 레퍼런스 ${m[1]}개 수집`);
+            _designRow(`📌 핀터레스트 레퍼런스 ${m[1]}개 수집`);
             if (barEl) barEl.style.width = '62%';
         } else if (/\[2단계\]/.test(line)) {
-            _designRow(`🎨 ${_ordKo(_designIdx)} 시안 무드·구도·컬러 분석 완료`);
+            _designRow('🎨 무드·구도·컬러 분석 완료');
             if (barEl) barEl.style.width = '70%';
         } else if (/\[3단계\]/.test(line)) {
-            _designRow(`✍️ ${_ordKo(_designIdx)} 시안 이미지 프롬프트 작성 완료`);
+            _designRow('✍️ AI 이미지 프롬프트 작성 완료');
             if (barEl) barEl.style.width = '78%';
         } else if (/\[4단계\]/.test(line)) {
-            _designRow(`🖼️ ${_ordKo(_designIdx)} 시안 이미지 생성 완료 ✨`);
+            _designRow('🖼️ 예상 시안 이미지 생성 완료 ✨');
             if (barEl) barEl.style.width = '85%';
         }
     }

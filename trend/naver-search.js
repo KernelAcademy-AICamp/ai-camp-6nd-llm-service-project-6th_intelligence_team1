@@ -103,7 +103,7 @@ async function fetchNaverSearch(query, type) {
     if (!isRelevant(title + " " + description)) continue;
     const date = parseDate(item, type);
     if (date && date < cutoffDate) continue;
-    filtered.push({ query, source: `naver_${type}`, title, description, url: item.link });
+    filtered.push({ query, source: `naver_${type}`, title, description, published_at: date ? date.toISOString() : null, url: item.link });
     if (filtered.length >= MAX_RESULTS) break;
   }
   return filtered;

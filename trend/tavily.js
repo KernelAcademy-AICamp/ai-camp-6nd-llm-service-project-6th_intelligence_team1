@@ -30,6 +30,7 @@ async function fetchTrendArticles(query) {
     source: "tavily",
     title: result.title,
     description: result.content,
+    published_at: null,   // Tavily는 항목별 발행일 없음 → 최신성 미집계(정상)
     url: result.url
   }));
 }

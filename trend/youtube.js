@@ -85,6 +85,7 @@ async function fetchTrendingVideos(query) {
     description: item.snippet.description,
     view_count: parseInt(statsMap[item.id.videoId]?.viewCount || 0),
     like_count: parseInt(statsMap[item.id.videoId]?.likeCount || 0),
+    published_at: item.snippet.publishedAt ?? null,   // 발행일(ISO) — 신뢰도 최신성 집계용
     url: `https://www.youtube.com/watch?v=${item.id.videoId}`
   }));
 }
