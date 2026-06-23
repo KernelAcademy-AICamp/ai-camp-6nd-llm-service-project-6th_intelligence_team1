@@ -16,7 +16,7 @@
 //   verifiable_count = url 있음 OR (집계성 출처 + period 있음) 근거 수
 //   total_evidence   = 근거 총 개수
 // 등급 (잠정 — 첫 분포 보고 튜닝. 검증 하네스 confidence_dist_check.py와 동일 규칙)
-//   높음: source_count >= 3 그리고 fresh_count >= 1
+//   높음: source_count >= 3 그리고 fresh_count >= 1 그리고 verifiable_count >= 1 (3신호 모두 충족)
 //   중간: source_count == 2
 //   낮음: source_count <= 1
 //
@@ -69,9 +69,9 @@ function readJson(path) {
   }
 }
 
-// 등급 판정 (source_count·fresh_count 기준 — 하네스와 동일)
-function gradeOf(sourceCount, freshCount) {
-  if (sourceCount >= 3 && freshCount >= 1) return "높음";
+// 등급 판정 (3신호 — 출처 다양성·신선·검증가능성. 하네스와 동일)
+function gradeOf(sourceCount, freshCount, verifiableCount) {
+  if (sourceCount >= 3 && freshCount >= 1 && verifiableCount >= 1) return "높음";
   if (sourceCount === 2) return "중간";
   return "낮음";
 }
@@ -113,7 +113,7 @@ for (const trend of trends) {
   const total_evidence = ev.length;
   const period = trend?.metrics?.period ?? "";
 
-  const confidence = gradeOf(source_count, fresh_count);
+  const confidence = gradeOf(source_count, fresh_count, verifiable_count);
   trend.confidence = confidence;
   trend.confidence_basis = {
     source_count,

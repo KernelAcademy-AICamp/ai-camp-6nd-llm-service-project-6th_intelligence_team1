@@ -112,7 +112,7 @@
       "추가: trends[].evidence[].published_at·url — analyze.js id-조인이 코드로 부여(LLM 작성 ❌). 집계성 근거(데이터랩 등)는 url·발행일 없으면 null이 정상",
       "용도: 신뢰도(evidence 기반) 산출 입력 — 출처 다양성(distinct source)·신선도(published_at)·검증가능성(url). 빈도(언급 수) 방식은 broad 키워드로 변별 불가라 폐기",
       "변경: merge-confidence.js를 source_search_keywords 조인(채널 포화로 전부 '높음') → evidence 기반 산출로 재작성 완료. confidence_basis = { source_count, source_types[], fresh_count, verifiable_count, total_evidence, period } (기존 { mention_total, channel_count, recent_count }에서 교체)",
-      "등급(잠정): 높음=source_count>=3 && fresh_count>=1 / 중간=source_count==2 / 낮음=source_count<=1. 검증 하네스 confidence_dist_check.py와 동일 규칙. 첫 분포 보고 튜닝",
+      "등급(잠정): 높음=source_count>=3 && fresh_count>=1 && verifiable_count>=1(3신호) / 중간=source_count==2 / 낮음=source_count<=1. 검증 하네스 confidence_dist_check.py와 동일 규칙. 첫 분포 보고 튜닝",
       "TODO: published_at 포함 재수집(npm run trend) 후 첫 분포로 변별 검증. 신선/검증을 채워도 출처종류만 2~3으로 움직여 변별 부족 가능 → 수집 키워드 확장 검토"
     ],
     "v0.7_changelog": [
