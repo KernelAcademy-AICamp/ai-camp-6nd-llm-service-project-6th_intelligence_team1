@@ -21,7 +21,7 @@ function saveCache(cache) {
   writeFileSync(CACHE_PATH, JSON.stringify(cache, null, 2), "utf-8");
 }
 
-const apify = new ApifyClient({ token: process.env.APIFY_API_TOKEN });
+const apify = new ApifyClient({ token: process.env.APIFY_TOKEN });
 const anthropic = new Anthropic();
 
 const searchSystemPrompt = readFileSync(
