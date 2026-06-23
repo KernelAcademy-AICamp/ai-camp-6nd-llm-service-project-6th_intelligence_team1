@@ -167,6 +167,10 @@
         .form-group { margin-bottom: 40px; }
         .form-label { display: block; font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text-primary); margin-bottom: 16px; }
         .req { color: #f4a8b8; font-weight: 700; margin-left: 3px; }
+        .hint-trigger { position: relative; cursor: help; border-bottom: 1px dotted #bca0bc; }
+        .hint-tip { position: absolute; top: 135%; left: 0; white-space: nowrap; background: #ffffff; border: 1px solid rgba(126, 107, 126, 0.2); border-radius: 10px; padding: 10px 14px; font-size: 0.82rem; font-weight: 500; letter-spacing: normal; color: #6e556e; line-height: 1.5; opacity: 0; visibility: hidden; transition: opacity 0.12s ease; z-index: 10; box-shadow: 0 6px 18px rgba(126, 107, 126, 0.18); }
+        .hint-trigger:hover .hint-tip, .hint-trigger:focus .hint-tip { opacity: 1; visibility: visible; }
+        .hint-tip::before { content: ""; position: absolute; top: -6px; left: 18px; width: 10px; height: 10px; background: #ffffff; border-left: 1px solid rgba(126, 107, 126, 0.2); border-top: 1px solid rgba(126, 107, 126, 0.2); transform: rotate(45deg); }
 
         .text-input {
             width: 100%; background: transparent; border: none;
@@ -838,8 +842,7 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label">타겟 뷰티관여도 <span class="req">*</span></label>
-            <p class="form-hint" style="font-size:0.82rem;color:#bca0bc;margin-top:6px;line-height:1.5;">우리 제품을 쓸 고객은 뷰티에 얼마나 진심인가요?</p>            
+            <label class="form-label"><span class="hint-trigger" tabindex="0">타겟 뷰티관여도<span class="hint-tip">우리 제품을 쓸 고객은 뷰티에 얼마나 진심인가요?</span></span> <span class="req">*</span></label>
             <div class="pill-group" data-field="involvement">
                 <label class="pill"><input type="radio" name="beauty-level" value="입문자"><span>입문자</span></label>
                 <label class="pill"><input type="radio" name="beauty-level" value="일상사용자"><span>일상사용자</span></label>
@@ -848,8 +851,7 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label">타겟 소비동기 <span class="req">*</span></label>
-            <p class="form-hint" style="font-size:0.82rem;color:#bca0bc;margin-top:6px;line-height:1.5;">고객이 무엇을 위해 우리 제품을 사용했으면 좋겠나요?</p>            
+            <label class="form-label"><span class="hint-trigger" tabindex="0">타겟 소비동기<span class="hint-tip">고객이 무엇을 위해 우리 제품을 사용했으면 좋겠나요?</span></span> <span class="req">*</span></label>
             <div class="pill-group" data-field="motivation">
                 <label class="pill"><input type="radio" name="motivation" value="자기표현"><span>자기표현</span></label>
                 <label class="pill"><input type="radio" name="motivation" value="관리·케어"><span>관리·케어</span></label>

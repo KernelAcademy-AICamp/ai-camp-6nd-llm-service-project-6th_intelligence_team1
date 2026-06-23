@@ -103,6 +103,52 @@
 .mr-conf-high .mr-conf-bar.mr-on { background: #5e7a54; }
 .mr-conf-mid .mr-conf-bar.mr-on { background: #9a7b3a; }
 .mr-conf-low .mr-conf-bar.mr-on { background: #8a7e8a; }
+/* 신뢰도 호버 툴팁 — 칩에 마우스 올리거나 포커스 시 근거 노출 */
+.mr-conf-has-tip { position: relative; cursor: help; outline: none; }
+.mr-conf-tip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  display: none;
+  width: 250px;
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--mr-text);
+  background: #fff;
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius-md);
+  box-shadow: var(--mr-shadow-card);
+  white-space: normal;
+}
+.mr-conf-has-tip:hover .mr-conf-tip,
+.mr-conf-has-tip:focus .mr-conf-tip,
+.mr-conf-has-tip:focus-within .mr-conf-tip { display: block; }
+.mr-conf-tip-head {
+  display: block;
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--mr-text);
+  margin-bottom: 8px;
+}
+.mr-conf-tip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  border-top: 1px solid var(--mr-border);
+}
+.mr-conf-tip-k { color: var(--mr-text-sub); flex: none; }
+.mr-conf-tip-v { color: var(--mr-text); text-align: right; }
+.mr-conf-tip-foot {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--mr-text-mute);
+}
 /* funnel (전체 — 분석한 트렌드 수 → 선별 수) */
 /* funnel — 박스 3개 (PART 뱃지색 배경 + 흰 글자 / 라벨 · 플랫폼 · 큰 숫자 · 캡션) */
 .mr-funnel { display: flex; align-items: stretch; gap: 12px; margin: 0 0 22px; flex-wrap: wrap; }
@@ -147,8 +193,22 @@
   border-radius: var(--mr-radius-lg);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* overflow: visible — 닫힌 카드에서도 신뢰도 툴팁이 카드 밖으로 나가 안 잘리게.
+     (모서리 라운드는 아래 summary/body에 직접 부여해 그대로 유지) */
+  overflow: visible;
   box-shadow: var(--mr-shadow-card);
+}
+/* overflow:visible 전환에 따른 모서리 보정 — 헤더 그라데이션·본문이 카드 라운드 밖으로 안 삐져나오게 */
+.mr-trend-card > summary.mr-card-top {
+  border-top-left-radius: var(--mr-radius-lg);
+  border-top-right-radius: var(--mr-radius-lg);
+}
+.mr-trend-card .mr-card-body {
+  border-bottom-left-radius: var(--mr-radius-lg);
+  border-bottom-right-radius: var(--mr-radius-lg);
+}
+details.mr-trend-card:not([open]) > summary.mr-card-top {
+  border-radius: var(--mr-radius-lg);
 }
 
 .mr-card-top {

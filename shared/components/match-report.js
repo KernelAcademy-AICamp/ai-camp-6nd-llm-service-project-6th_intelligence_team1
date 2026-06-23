@@ -250,6 +250,44 @@
     return { lvl: lvl, label: { high: "높음", mid: "중간", low: "낮음" }[lvl] };
   }
 
+  // 출처 코드 → 사람이 읽는 라벨
+  function srcLabel(s) {
+    var M = {
+      youtube: "유튜브",
+      naver_blog: "네이버 블로그",
+      naver_news: "네이버 뉴스",
+      naver_datalab: "네이버 데이터랩",
+      tavily: "Tavily",
+    };
+    return M[s] || s;
+  }
+
+  // 신뢰도 호버 툴팁 — confidence_basis(출처종류·신선·검증·기간)를 근거로 노출
+  function confidenceTip(b) {
+    function rowEl(k, v) {
+      return (
+        '<span class="mr-conf-tip-row"><span class="mr-conf-tip-k">' + k +
+        '</span><span class="mr-conf-tip-v">' + esc(v) + "</span></span>"
+      );
+    }
+    var types = (b.source_types || []).map(srcLabel);
+    var srcText = types.length
+      ? types.join("·") + " " + types.length + "종"
+      : (b.source_count || 0) + "종";
+    var rows =
+      rowEl("출처", srcText) +
+      rowEl("신선도", "최근 30일 근거 " + (b.fresh_count || 0) + "건") +
+      rowEl("검증", "원문 확인 " + (b.verifiable_count || 0) + "/" + (b.total_evidence || 0) + "건");
+    if (b.period) rows += rowEl("기간", b.period);
+    return (
+      '<span class="mr-conf-tip" role="tooltip">' +
+        '<span class="mr-conf-tip-head">이 신뢰도의 근거</span>' +
+        rows +
+        '<span class="mr-conf-tip-foot">출처 종류·최신성·검증가능성으로 산출</span>' +
+      "</span>"
+    );
+  }
+
   function card(c) {
     var rankCls = " mr-c" + (c.rank || 1); // 순위별 카드 색 구분 (mr-c1/c2/c3)
     // "보완 활용 권장" 배지 — 매칭 기준(q1/q2 passes·rank)과 별개. Safe-Fit 신호에만 연동.
@@ -264,9 +302,12 @@
     var filled = conf.lvl === "high" ? 3 : conf.lvl === "mid" ? 2 : 1;
     var bars = "";
     for (var bi = 0; bi < 3; bi++) bars += '<span class="mr-conf-bar' + (bi < filled ? " mr-on" : "") + '"></span>';
+    var basis = c.confidence_basis;
     var confChip =
-      '<span class="mr-conf mr-conf-' + conf.lvl + '">신뢰도 ' + conf.label +
+      '<span class="mr-conf mr-conf-' + conf.lvl + (basis ? " mr-conf-has-tip" : "") + '"' +
+        (basis ? ' tabindex="0"' : "") + ">신뢰도 " + conf.label +
         '<span class="mr-conf-meter">' + bars + "</span>" +
+        (basis ? confidenceTip(basis) : "") +
       "</span>";
 
     // 카드 전체를 <details>로 — 헤더(summary) 클릭 시 본문 접기/펼치기 (네이티브, JS 불필요)

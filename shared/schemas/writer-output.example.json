@@ -34,6 +34,15 @@
           "growth_rate": 22,
           "period": "26.01-05"
         },
+        "confidence": "높음",
+        "confidence_basis": {
+          "source_count": 3,
+          "source_types": ["youtube", "naver_news", "naver_datalab"],
+          "fresh_count": 2,
+          "verifiable_count": 3,
+          "total_evidence": 3,
+          "period": "26.01-05"
+        },
         "summary_bullets": [
           "글래스 스킨이나 과도한 광택보다 자연스럽고 얇은 레이어의 매트한 피부 표현이 2026년 핵심 트렌드로 떠올랐다. 매트와 글로우의 대비를 이용한 밸런스 잡힌 베이스 메이크업이 새로운 기준으로 자리 잡고 있다.",
           "매트 쿠션 검색 관심도가 2026년 1월 38.9에서 5월 47.4로 22% 상승했으며, 라네즈 네오 쿠션 더 매트 등 신제품 출시로 시장이 활성화 중이다.",

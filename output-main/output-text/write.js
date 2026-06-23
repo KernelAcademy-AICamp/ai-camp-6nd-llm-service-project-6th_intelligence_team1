@@ -1325,6 +1325,10 @@ export async function generateWriterOutput({ brand, trend, match, trendRaw } = {
       // 렌더러가 배지 판단에 쓰는 raw 신호 — 작성가는 노출만 함.
       trend_stage: td?.trend_stage ?? null,
       growth_rate: td?.metrics?.growth_rate ?? null,
+      // 신뢰도 전파 — merge-confidence가 trend-analysis에 채운 값을 그대로 노출.
+      // 렌더러 confidenceOf가 c.confidence 우선 사용, 호버 툴팁은 confidence_basis 사용.
+      confidence: td?.confidence ?? null,
+      confidence_basis: td?.confidence_basis ?? null,
       summary_bullets: buildSummaryBullets(td),
       reason_bullets: (r.summary_reasons ?? []).map(reasonText).filter(Boolean),
       evidence: buildEvidence(td),

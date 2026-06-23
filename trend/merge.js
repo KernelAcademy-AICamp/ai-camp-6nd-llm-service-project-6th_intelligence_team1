@@ -15,7 +15,7 @@ const merged = {
     ...tavily.raw_data,    // Tavily 기사 데이터
     ...naver.raw_data,        // 네이버 검색량 데이터 (데이터랩)
     ...naverSearch.raw_data   // 네이버 블로그·뉴스 검색 데이터
-  ]
+  ].map((item, i) => ({ id: `r${i}`, ...item }))   // 안정적 조인 키 — evidence.source_ids가 이 id를 가리킴
 };
 
 // 트렌드 분석가 B에게 넘길 파일로 저장
