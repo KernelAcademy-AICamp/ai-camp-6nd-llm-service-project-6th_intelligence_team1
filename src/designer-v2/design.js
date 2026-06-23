@@ -123,6 +123,11 @@ let totalInputTokens = 0;
 let totalOutputTokens = 0;
 const usedQueries = []; // R1 → R2 → R3 순으로 누적, 중복 방지
 
+// 네트워크·타임아웃 류 에러 패턴 — UI(generateMockups)의 isNet 정규식과 동일하게 유지.
+// 이런 에러는 폴백 불가 → 시안 단계를 즉시 실패시켜 UI가 "네트워크 불안정" 안내를 띄우게 함.
+const NETWORK_ERROR_RE =
+  /timeout|시간\s*초과|네트워크|fetch failed|ETIMEDOUT|ECONNRESET|ENOTFOUND|EAI_AGAIN/i;
+
 for (const c of contents) {
   console.log(`▶ ${c.trend_name} (${c.content_id ?? "id 없음"})`);
 
@@ -212,6 +217,16 @@ for (const c of contents) {
     console.log(`  [4단계] 이미지 저장: ${generatedImageUrl}`);
   } catch (err) {
     console.error(`  ❌ [4단계] 실패: ${err.message}`);
+    // 네트워크·타임아웃(5분 초과)은 재시도·폴백을 이미 소진한 하드 실패 →
+    // 시안 단계를 즉시 종료(비정상 종료)해 server가 ok=false로 UI에 전달하고,
+    // UI가 키워드를 보고 "네트워크가 불안정해요. 다시 시도해주세요."를 띄우게 한다.
+    if (NETWORK_ERROR_RE.test(err.message)) {
+      console.error(
+        "❌ 시안 이미지 생성 중단 — 네트워크 불안정 (timeout/시간 초과). 다시 시도해주세요.",
+      );
+      process.exit(1);
+    }
+    // 그 외 일반 에러는 기존대로 placeholder 폴백 (generated_image_url=null로 계속 진행)
   }
 
   visuals.push({
