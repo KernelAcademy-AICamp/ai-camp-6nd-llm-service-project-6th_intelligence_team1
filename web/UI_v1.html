@@ -975,6 +975,16 @@
 
         <div class="submit-row">
             <button class="back-button" onclick="goToPage(2)">← 돌아가기</button>
+            <!-- 리포트 공유: 시안 없이도 리포트 페이지에서 바로 가능 (시안 페이지 STEP5와 동일 동작) -->
+            <div class="share-area">
+                <button class="cta-button share-report-btn" onclick="toggleShareOptions(this)">리포트 공유하기</button>
+                <div class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end;">
+                    <button class="share-btn-channel" onclick="shareTo('PDF')">📄 PDF</button>
+                    <button class="share-btn-channel" onclick="shareTo('Notion')">📝 Notion</button>
+                    <button class="share-btn-channel" onclick="shareTo('Slack')">💬 Slack</button>
+                    <button class="share-btn-channel" onclick="shareTo('Google Drive')">📁 Google Drive</button>
+                </div>
+            </div>
             <button class="cta-button" onclick="showPageById('page-photo')">시안 생성하러 가기 →</button>
         </div>
     </div>
@@ -1033,10 +1043,10 @@
         <div class="submit-row">
             <button class="back-button" onclick="showPageById('page-photo')">← 돌아가기</button>
             <div class="share-area">
-                <button class="cta-button" id="share-report-btn" onclick="toggleShareOptions()">리포트 공유하기</button>
+                <button class="cta-button share-report-btn" id="share-report-btn" onclick="toggleShareOptions(this)">리포트 공유하기</button>
                 <div id="share-options-row" class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end;">
                     <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-secondary);cursor:pointer;white-space:nowrap;">
-                        <input type="checkbox" id="include-visuals"> 시안 포함하기
+                        <input type="checkbox" class="include-visuals" id="include-visuals"> 시안 포함하기
                     </label>
                     <button class="share-btn-channel" onclick="shareTo('PDF')">📄 PDF</button>
                     <button class="share-btn-channel" onclick="shareTo('Notion')">📝 Notion</button>
@@ -1523,7 +1533,7 @@
         const tone = (d.tone_and_manner || []).join(' · ');
         const tgt = [(d.target?.age_groups || []).join('·'), (d.target?.gender || '')].filter(Boolean).join(' ');
         const rows = [['브랜드', d.brand_name], ['제품', d.product_name], ['카테고리', d.category], ['톤앤매너', tone], ['타겟', tgt]].filter(r => r[1]);
-        _feed().innerHTML = '<div class="lf-head">방금 입력하신 정보를 확인했어요</div><div id="lf-body"></div>';
+        _feed().innerHTML = '<div class="lf-head">방금 입력하신 정보를 분석하고 있어요…</div><div id="lf-body"></div>';
         const b = document.getElementById('lf-body');
         rows.forEach((r, i) => setTimeout(() => {
             b.insertAdjacentHTML('beforeend', `<div class="lf-row lf-brandrow"><span class="lf-check">✓</span><span class="lf-key">${_esc(r[0])}</span><span>${_esc(r[1])}</span></div>`);
@@ -1597,7 +1607,7 @@
         const f = _feed();
         if (!f) return;
         const product = (d && d.product_name) || '제품';
-        const head = `<div class="lf-head">${_esc(product)}에 트렌드 입히는 중...</div>`;
+        const head = `<div class="lf-head">${_esc(product)}에 트렌드 입히는 중…</div>`;
         if (step === 'upload') {
             f.innerHTML = head + '<div class="lf-dots"><span></span><span></span><span></span></div>';
             _feedScroll();
@@ -1607,7 +1617,7 @@
             const steps = [
                 '📌 핀터레스트에서 핫한 이미지 분석 완료',
                 '🎨 무드·구도·컬러 추출 완료',
-                '🖼️ AI가 예상 시안 그리는 중...'
+                '🖼️ AI가 예상 시안 그리는 중…'
             ];
             steps.forEach((s, i) => setTimeout(() => {
                 b.insertAdjacentHTML('beforeend', `<div class="lf-row lf-brandrow"><span class="lf-check">✓</span><span>${_esc(s)}</span></div>`);
@@ -1647,7 +1657,7 @@
     function feedTrendCollectStart() {
         _trendSrc = ['lf-naver', '네이버'];
         _trendSeen = new Set();
-        _feed().innerHTML = '<div class="lf-head">트렌드 키워드를 실시간으로 모으는 중… 👀</div>'
+        _feed().innerHTML = '<div class="lf-head">트렌드 키워드를 실시간으로 모으는 중…</div>'
             + '<div class="lf-srcs"><span class="lf-chip lf-naver lf-blink">네이버</span><span class="lf-chip lf-yt lf-blink">유튜브</span><span class="lf-chip lf-tiktok lf-blink">틱톡</span><span class="lf-chip lf-insta lf-blink">인스타그램</span><span class="lf-chip lf-tavily lf-blink">Tavily</span></div>'
             + '<div id="lf-body"></div>';
     }
@@ -2077,24 +2087,32 @@
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 1600);
     }
-    function toggleShareOptions() {
-        document.getElementById('share-report-btn').style.display = 'none';
-        const row = document.getElementById('share-options-row');
+    // 공유 영역이 리포트 페이지(STEP4)·시안 페이지(STEP5) 두 곳에 있어, 클릭한 버튼이 속한
+    // .share-area 기준으로 동작하도록 컨텍스트 기반 처리.
+    let _activeShareArea = null;
+    function toggleShareOptions(btn) {
+        const area = (btn && btn.closest && btn.closest('.share-area')) || document.querySelector('.share-area');
+        _activeShareArea = area;
+        const b = area.querySelector('.share-report-btn'); if (b) b.style.display = 'none';
+        const row = area.querySelector('.share-options-row');
         row.style.display = 'flex';
         row.classList.add('show');
         // 공유 영역 밖을 클릭하면 다시 [리포트 공유하기] 버튼으로 복원
         setTimeout(() => document.addEventListener('click', onOutsideShareClick), 0);
     }
     function hideShareOptions() {
-        const row = document.getElementById('share-options-row');
-        row.style.display = 'none';
-        row.classList.remove('show');
-        document.getElementById('share-report-btn').style.display = '';
+        document.querySelectorAll('.share-area').forEach((area) => {
+            const row = area.querySelector('.share-options-row');
+            if (row) { row.style.display = 'none'; row.classList.remove('show'); }
+            const b = area.querySelector('.share-report-btn');
+            if (b) b.style.display = '';
+        });
+        _activeShareArea = null;
         document.removeEventListener('click', onOutsideShareClick);
     }
     function onOutsideShareClick(e) {
-        const area = document.querySelector('.share-area');
-        if (area && !area.contains(e.target)) hideShareOptions();
+        const areas = Array.from(document.querySelectorAll('.share-area'));
+        if (areas.length && areas.every((a) => !a.contains(e.target))) hideShareOptions();
     }
     /* 외부 서비스 URL */
     const SHARE_URLS = {
@@ -2111,7 +2129,8 @@
 
     /* [시안 포함하기] 체크 여부 */
     function includeVisuals() {
-        const cb = document.getElementById('include-visuals');
+        const area = _activeShareArea || document;
+        const cb = area.querySelector('.include-visuals');
         return !!(cb && cb.checked);
     }
 
@@ -2255,8 +2274,8 @@
 
     /* 리포트(step4)를 브라우저 기본 인쇄로 PDF 저장
        → @media print CSS가 리포트만 전체 출력. 사용자는 인쇄 창에서 "PDF로 저장" 선택. */
-    function downloadPDF() {
-    const body = document.getElementById('report_body');
+    async function downloadPDF() {
+       const body = document.getElementById('report_body');
     if (!body || !body.innerHTML.trim()) {
         showToast('리포트가 아직 준비되지 않았어요');
         return;
@@ -2299,6 +2318,11 @@ document.title = 'TrendFit_report_' + mmdd;
 };
      
     window.addEventListener('afterprint', restore);
+    if (visBlock) {
+        await Promise.all([...visBlock.querySelectorAll('img')].map(img =>
+            img.complete ? Promise.resolve() : (img.decode ? img.decode().catch(()=>{}) : new Promise(r => { img.onload = img.onerror = r; }))
+        ));
+    }
     window.print();
 }
 
@@ -2413,7 +2437,12 @@ document.title = 'TrendFit_report_' + mmdd;
             // ④ 시안 페이지로 이동
             setTimeout(() => goToPage(4), 350);
         } catch (err) {
-            showToast('시안 생성 실패: ' + (err.message || err));
+            // 타임아웃/네트워크 류는 별도 안내, 그 외는 일반 실패 안내
+            const m = String((err && (err.message || err)) || '');
+            const isNet = /timeout|시간\s*초과|네트워크|fetch failed|ETIMEDOUT|ECONNRESET|ENOTFOUND|EAI_AGAIN/i.test(m);
+            showToast(isNet
+                ? '네트워크가 불안정해요. 다시 시도해주세요.'
+                : '시안 생성에 실패했어요. 다시 시도해주세요.');
             showPageById('page-photo');
         }
     }
