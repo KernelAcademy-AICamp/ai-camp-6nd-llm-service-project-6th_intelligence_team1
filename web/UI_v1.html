@@ -975,6 +975,16 @@
 
         <div class="submit-row">
             <button class="back-button" onclick="goToPage(2)">← 돌아가기</button>
+            <!-- 리포트 공유: 시안 없이도 리포트 페이지에서 바로 가능 (시안 페이지 STEP5와 동일 동작) -->
+            <div class="share-area">
+                <button class="cta-button share-report-btn" onclick="toggleShareOptions(this)">리포트 공유하기</button>
+                <div class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end;">
+                    <button class="share-btn-channel" onclick="shareTo('PDF')">📄 PDF</button>
+                    <button class="share-btn-channel" onclick="shareTo('Notion')">📝 Notion</button>
+                    <button class="share-btn-channel" onclick="shareTo('Slack')">💬 Slack</button>
+                    <button class="share-btn-channel" onclick="shareTo('Google Drive')">📁 Google Drive</button>
+                </div>
+            </div>
             <button class="cta-button" onclick="showPageById('page-photo')">시안 생성하러 가기 →</button>
         </div>
     </div>
@@ -1033,10 +1043,10 @@
         <div class="submit-row">
             <button class="back-button" onclick="showPageById('page-photo')">← 돌아가기</button>
             <div class="share-area">
-                <button class="cta-button" id="share-report-btn" onclick="toggleShareOptions()">리포트 공유하기</button>
+                <button class="cta-button share-report-btn" id="share-report-btn" onclick="toggleShareOptions(this)">리포트 공유하기</button>
                 <div id="share-options-row" class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end;">
                     <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-secondary);cursor:pointer;white-space:nowrap;">
-                        <input type="checkbox" id="include-visuals"> 시안 포함하기
+                        <input type="checkbox" class="include-visuals" id="include-visuals"> 시안 포함하기
                     </label>
                     <button class="share-btn-channel" onclick="shareTo('PDF')">📄 PDF</button>
                     <button class="share-btn-channel" onclick="shareTo('Notion')">📝 Notion</button>
@@ -2077,24 +2087,32 @@
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 1600);
     }
-    function toggleShareOptions() {
-        document.getElementById('share-report-btn').style.display = 'none';
-        const row = document.getElementById('share-options-row');
+    // 공유 영역이 리포트 페이지(STEP4)·시안 페이지(STEP5) 두 곳에 있어, 클릭한 버튼이 속한
+    // .share-area 기준으로 동작하도록 컨텍스트 기반 처리.
+    let _activeShareArea = null;
+    function toggleShareOptions(btn) {
+        const area = (btn && btn.closest && btn.closest('.share-area')) || document.querySelector('.share-area');
+        _activeShareArea = area;
+        const b = area.querySelector('.share-report-btn'); if (b) b.style.display = 'none';
+        const row = area.querySelector('.share-options-row');
         row.style.display = 'flex';
         row.classList.add('show');
         // 공유 영역 밖을 클릭하면 다시 [리포트 공유하기] 버튼으로 복원
         setTimeout(() => document.addEventListener('click', onOutsideShareClick), 0);
     }
     function hideShareOptions() {
-        const row = document.getElementById('share-options-row');
-        row.style.display = 'none';
-        row.classList.remove('show');
-        document.getElementById('share-report-btn').style.display = '';
+        document.querySelectorAll('.share-area').forEach((area) => {
+            const row = area.querySelector('.share-options-row');
+            if (row) { row.style.display = 'none'; row.classList.remove('show'); }
+            const b = area.querySelector('.share-report-btn');
+            if (b) b.style.display = '';
+        });
+        _activeShareArea = null;
         document.removeEventListener('click', onOutsideShareClick);
     }
     function onOutsideShareClick(e) {
-        const area = document.querySelector('.share-area');
-        if (area && !area.contains(e.target)) hideShareOptions();
+        const areas = Array.from(document.querySelectorAll('.share-area'));
+        if (areas.length && areas.every((a) => !a.contains(e.target))) hideShareOptions();
     }
     /* 외부 서비스 URL */
     const SHARE_URLS = {
@@ -2111,7 +2129,8 @@
 
     /* [시안 포함하기] 체크 여부 */
     function includeVisuals() {
-        const cb = document.getElementById('include-visuals');
+        const area = _activeShareArea || document;
+        const cb = area.querySelector('.include-visuals');
         return !!(cb && cb.checked);
     }
 
@@ -2418,7 +2437,12 @@ document.title = 'TrendFit_report_' + mmdd;
             // ④ 시안 페이지로 이동
             setTimeout(() => goToPage(4), 350);
         } catch (err) {
-            showToast('시안 생성 실패: ' + (err.message || err));
+            // 타임아웃/네트워크 류는 별도 안내, 그 외는 일반 실패 안내
+            const m = String((err && (err.message || err)) || '');
+            const isNet = /timeout|시간\s*초과|네트워크|fetch failed|ETIMEDOUT|ECONNRESET|ENOTFOUND|EAI_AGAIN/i.test(m);
+            showToast(isNet
+                ? '네트워크가 불안정해요. 다시 시도해주세요.'
+                : '시안 생성에 실패했어요. 다시 시도해주세요.');
             showPageById('page-photo');
         }
     }
