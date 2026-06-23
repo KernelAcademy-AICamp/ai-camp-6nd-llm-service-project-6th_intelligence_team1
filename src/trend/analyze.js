@@ -30,7 +30,9 @@ try {
 }
 
 const brandContext = raw.brand_context ?? {};
-const rawData = raw.raw_data ?? [];
+// 각 raw 항목에 안정적 조인 키(id) 부여 — merge.js가 부여하지만, 옛 파일 호환용으로
+// 없으면 인덱스로 폴백. evidence.source_ids가 이 id를 가리켜 url·발행일을 조인한다.
+const rawData = (raw.raw_data ?? []).map((d, i) => ({ ...d, id: d.id ?? `r${i}` }));
 if (rawData.length === 0) {
   console.error("❌ raw_data가 비어있습니다. 수집기 실행을 확인하세요.");
   process.exit(1);
@@ -78,7 +80,7 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
       "lifespan_estimate": "3-6개월",
       "metrics": { "score": 89, "growth_rate": 0.45, "period": "2026-04 ~ 2026-05" },
       "evidence": [
-        { "source": "YouTube", "source_type": "sns_api", "metric": "관련 영상 다수", "value": "무드 메이크업 튜토리얼 다수 관측", "period": "최근 30일", "url": "https://www.youtube.com/watch?v=..." }
+        { "source": "YouTube", "source_type": "sns_api", "metric": "관련 영상 다수", "value": "무드 메이크업 튜토리얼 다수 관측", "period": "최근 30일", "source_ids": ["r12"] }
       ],
       "audience_distribution": {
         "primary_gender": "female",
@@ -111,7 +113,7 @@ const systemPrompt = `당신은 10년차 뷰티 트렌드 분석가입니다.
 - **audience_signal**: 핵심 소비자를 행동·라이프스타일·니즈 중심으로 1~2문장 서술. 연령·성별 수치는 audience_distribution에 있으므로 여기선 행태 묘사 위주
 - 모든 자연어는 한국어
 - 검색·조회수 등 수치는 raw 데이터로 직접 관측되지 않으면 brand_context 기반으로 합리적 추정하되, source에 "추정" 명시
-- **evidence.url**: 각 근거가 나온 위 raw_data 항목의 \`url\` 값을 **글자 그대로(verbatim) 복사**하세요. 절대 지어내거나 변형하지 마세요. 매칭되는 raw 항목이 없거나 집계성 근거(검색량 지수 등 url 없음)면 \`url\`을 빈 문자열("")로 두세요.
+- **evidence.source_ids**: 각 근거가 어느 raw_data 항목에서 나왔는지 위 raw_data의 \`id\` 값을 배열로 적으세요(예: ["r12", "r7"]). 한 근거가 여러 raw 항목에 기반하면 모두 넣고, 위 데이터에 실제 존재하는 id만 쓰세요. 집계성 근거(검색량 지수 등)도 그 raw 항목의 id를 적으면 됩니다. **url·발행일(published_at)은 코드가 id로 자동으로 붙이니 직접 쓰지 마세요.**
 - **출력은 순수 JSON 하나만.** 코드 블록 표시나 설명 텍스트 없이 JSON만.`;
 
 // 3. 사용자 메시지 — 브랜드 프로필 + 수집 컨텍스트 + raw 데이터
@@ -127,9 +129,9 @@ const brandProfile = {
 const targetCategory = brand.category ?? "";
 const targetTexture = (brand.texture_keywords ?? []).join(", ");
 
-// LLM에 보낼 raw 데이터에서 url 제거 — url은 LLM 호출 후 검증용(realUrls)으로만
-// 쓰이므로 모델에 보낼 필요가 없다. 입력 토큰의 ~19%를 차지해 비용 절감 효과 큼.
-// rawData 원본은 그대로 두어 이후 url 검증 로직이 정상 동작한다.
+// LLM에 보낼 raw 데이터에서 url 제거 — 모델에 보낼 필요가 없다(입력 토큰의 ~19%).
+// 대신 각 항목의 id는 그대로 보내, LLM은 evidence.source_ids로 출처를 가리키기만 한다.
+// url·published_at은 LLM 호출 후 코드가 id로 raw에서 직접 붙인다(아래 6-1 id-조인).
 const rawDataForLlm = rawData.map(({ url, ...rest }) => rest);
 
 const userMessage = `다음 수집 데이터를 분석해서, 이 브랜드/제품에 맞는 트렌드를 산출하세요.
@@ -166,14 +168,18 @@ const MAX_TOKENS_PRIMARY = 32000;
 const MAX_TOKENS_RETRY = 48000;
 
 async function callLLM(maxTokens) {
-  return client.messages.create({
-    model: "claude-haiku-4-5",
-    max_tokens: maxTokens,
-    system: [
-      { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
-    ],
-    messages: [{ role: "user", content: userMessage }],
-  });
+  // 스트리밍으로 호출 — max_tokens가 커서 비스트리밍은 SDK가 "10분 초과 가능" 으로 막는다.
+  // .finalMessage()가 누적된 전체 Message(stop_reason·content·usage)를 반환해 이후 로직은 동일.
+  return client.messages
+    .stream({
+      model: "claude-haiku-4-5",
+      max_tokens: maxTokens,
+      system: [
+        { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
+      ],
+      messages: [{ role: "user", content: userMessage }],
+    })
+    .finalMessage();
 }
 
 let response = await callLLM(MAX_TOKENS_PRIMARY);
@@ -225,15 +231,25 @@ if (!Array.isArray(parsed.trends) || parsed.trends.length === 0) {
   process.exit(1);
 }
 
-// 6-1. evidence.url 안전망 — LLM이 url을 지어내거나 한 글자라도 변형하면 링크가 깨진다.
-//      실제 수집 raw_data에 존재하는 url만 신뢰하고, 그 외(환각·변형·빈값)는 null 처리.
-//      → 수집 단계의 진짜 링크만 끝까지 전달됨.
-const realUrls = new Set(rawData.map((d) => d.url).filter(Boolean));
+// 6-1. evidence id-조인 — LLM은 근거 출처를 source_ids(raw_data의 id)로만 가리키고,
+//      url·published_at은 코드가 raw에서 직접 붙인다. (LLM이 링크·날짜를 지어낼 여지 제거)
+//      → 수집 단계의 진짜 링크·발행일만 끝까지 전달됨. 신뢰도(출처 다양성·신선도·검증가능성) 계산의 입력.
+const rawById = new Map(rawData.map((d) => [d.id, d]));
 for (const trend of parsed.trends) {
   if (!Array.isArray(trend.evidence)) continue;
   for (const ev of trend.evidence) {
     if (!ev || typeof ev !== "object") continue;
-    ev.url = ev.url && realUrls.has(ev.url) ? ev.url : null;
+    // 실재하는 id만 남김 (환각·변형 제거)
+    const ids = Array.isArray(ev.source_ids)
+      ? ev.source_ids.filter((id) => rawById.has(id))
+      : [];
+    ev.source_ids = ids;
+    const cited = ids.map((id) => rawById.get(id));
+    // url: 인용한 raw 중 url이 있는 첫 항목 (집계성 근거는 url 없음 → null)
+    ev.url = cited.find((d) => d.url)?.url ?? null;
+    // published_at: 인용한 raw 중 가장 최근 발행일 (집계성·미수집은 null)
+    const dates = cited.map((d) => d.published_at).filter(Boolean).sort();
+    ev.published_at = dates.length ? dates[dates.length - 1] : null;
   }
 }
 
