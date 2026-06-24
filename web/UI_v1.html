@@ -975,17 +975,19 @@
 
         <div class="submit-row">
             <button class="back-button" onclick="goToPage(2)">← 돌아가기</button>
-            <!-- 리포트 공유: 시안 없이도 리포트 페이지에서 바로 가능 (시안 페이지 STEP5와 동일 동작) -->
-            <div class="share-area">
-                <button class="cta-button share-report-btn" onclick="toggleShareOptions(this)">리포트 공유하기</button>
-                <div class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end;">
-                    <button class="share-btn-channel" onclick="shareTo('PDF')">📄 PDF</button>
-                    <button class="share-btn-channel" onclick="shareTo('Notion')">📝 Notion</button>
-                    <button class="share-btn-channel" onclick="shareTo('Slack')">💬 Slack</button>
-                    <button class="share-btn-channel" onclick="shareTo('Google Drive')">📁 Google Drive</button>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <!-- 리포트 공유: 시안 없이도 리포트 페이지에서 바로 가능 (시안 페이지 STEP5와 동일 동작) -->
+                <div class="share-area">
+                    <button class="cta-button share-report-btn" onclick="toggleShareOptions(this)">리포트 공유하기</button>
+                    <div class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end;">
+                        <button class="share-btn-channel" onclick="shareTo('PDF')">📄 PDF</button>
+                        <button class="share-btn-channel" onclick="shareTo('Notion')">📝 Notion</button>
+                        <button class="share-btn-channel" onclick="shareTo('Slack')">💬 Slack</button>
+                        <button class="share-btn-channel" onclick="shareTo('Google Drive')">📁 Google Drive</button>
+                    </div>
                 </div>
+                <button class="cta-button" onclick="showPageById('page-photo')">시안 생성하러 가기 →</button>
             </div>
-            <button class="cta-button" onclick="showPageById('page-photo')">시안 생성하러 가기 →</button>
         </div>
     </div>
 </section>
