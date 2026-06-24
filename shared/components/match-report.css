@@ -149,6 +149,20 @@
   font-size: 11px;
   color: var(--mr-text-mute);
 }
+/* 신뢰도 근거 블록 — 화면에선 숨김(신뢰도 칩 호버 툴팁으로 노출), PDF(인쇄)에만 표시.
+   confidenceBlock()이 항상 렌더하되 가시성은 CSS가 제어. 호버 툴팁은 인쇄 땐 호버가
+   없어 자연히 안 나오므로, 결과적으로 화면=툴팁 / PDF=블록 으로 갈린다. */
+.mr-conf-block { display: none; }
+@media print { .mr-conf-block { display: block; } }
+/* 리포트 푸터 — 맨 아래 작성 주체 문구 (화면·PDF 공통) */
+.mr-report-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--mr-border);
+  text-align: center;
+  font-size: 12px;
+  color: var(--mr-text-mute);
+}
 /* funnel (전체 — 분석한 트렌드 수 → 선별 수) */
 /* funnel — 박스 3개 (PART 뱃지색 배경 + 흰 글자 / 라벨 · 플랫폼 · 큰 숫자 · 캡션) */
 .mr-funnel { display: flex; align-items: stretch; gap: 12px; margin: 0 0 22px; flex-wrap: wrap; }
