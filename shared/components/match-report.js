@@ -378,7 +378,8 @@
           keywordTags(c.keywords) +
           metricStrip(c) +   // 지표(검색량 지수·기간) — 핑크 헤더 박스 안. 접으면 CSS로 숨김
         "</summary>" +
-        // 단일 컬럼 — 순서: (헤더 안 지표) → 유행현황 → 매칭 분석 → 수집근거 → 신뢰도 근거 → (활용방안)
+        // 단일 컬럼 — 순서: (헤더 안 지표) → 유행현황 → 매칭 분석 → 활용방안 → 수집근거 → 신뢰도 근거
+        //   신뢰도 근거(.mr-conf-block)는 화면 숨김 / PDF에만 표시 (CSS가 제어)
         '<div class="mr-card-body">' +
           '<div class="mr-block">' +
             '<div class="mr-block-label"><span class="mr-ico">≡</span> 유행현황 (Status)</div>' +
@@ -388,18 +389,17 @@
             '<div class="mr-block-label"><span class="mr-ico">≡</span> 매칭 분석</div>' +
             matchExplain(c.match_reasons) +
           "</div>" +
+          '<div class="mr-block">' +
+            '<div class="mr-block-label"><span class="mr-ico">≡</span> 활용 방안</div>' +
+            (c.usage_plan
+              ? '<div class="mr-usage">' + esc(c.usage_plan) + "</div>"
+              : '<div class="mr-usage mr-fit-placeholder">활용방안 작성</div>') +
+          "</div>" +
           '<details class="mr-block mr-evidence-details">' +
             '<summary class="mr-block-label"><span class="mr-ico">≡</span> 수집 근거</summary>' +
             evidenceList(c.evidence) +
           "</details>" +
           confidenceBlock(c) +
-        "</div>" +
-        // 활용 방안 — 카드 하단 전체 폭
-        '<div class="mr-card-usage">' +
-          '<div class="mr-block-label"><span class="mr-ico">≡</span> 활용 방안</div>' +
-          (c.usage_plan
-            ? '<div class="mr-usage">' + esc(c.usage_plan) + "</div>"
-            : '<div class="mr-usage mr-fit-placeholder">활용방안 작성</div>') +
         "</div>" +
       "</details>"
     );
