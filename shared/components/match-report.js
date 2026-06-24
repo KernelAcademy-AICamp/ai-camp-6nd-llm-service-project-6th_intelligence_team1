@@ -70,6 +70,27 @@
     return '<div class="mr-keyword-tags">' + chips + "</div>";
   }
 
+  // 수집 플랫폼 — 데이터(d.platforms)에서 동적으로. 소스 키는 한글 라벨로 매핑, 라벨이면 그대로.
+  //  허용: 배열(["youtube","naver_blog"] 또는 ["YouTube","네이버 블로그"]) 또는 " · "/"," 구분 문자열
+  var PLATFORM_LABEL = {
+    youtube: "YouTube",
+    naver: "네이버",
+    naver_blog: "네이버 블로그",
+    naver_news: "네이버 뉴스",
+    naver_datalab: "데이터랩",
+    naver_olive: "올리브영",
+    instagram: "인스타그램",
+    tavily: "Tavily",
+  };
+  function formatPlatforms(p) {
+    if (!p) return "";
+    var arr = Array.isArray(p) ? p : String(p).split(/\s*[·,]\s*/);
+    return arr
+      .filter(Boolean)
+      .map(function (x) { return PLATFORM_LABEL[String(x).trim()] || String(x).trim(); })
+      .join(" · ");
+  }
+
   // 정량 지표 — headline_metric(지표·값·증감) + 기간(metrics.period)
   function metricStrip(c) {
     var hm = c.headline_metric || {};
@@ -288,6 +309,36 @@
     );
   }
 
+  // 신뢰도 근거 — confidence_basis를 카드 본문 블록으로 노출 (호버 툴팁과 동일 내용을
+  // 항상 보이게 + PDF에도 포함). 수집근거 아래에 배치.
+  function confidenceBlock(c) {
+    var b = c.confidence_basis;
+    if (!b) return "";
+    var conf = confidenceOf(c);
+    var types = (b.source_types || []).map(srcLabel);
+    var srcText = types.length
+      ? types.join("·") + " " + types.length + "종"
+      : (b.source_count || 0) + "종";
+    function row(k, v) {
+      return (
+        '<span class="mr-conf-tip-row"><span class="mr-conf-tip-k">' + k +
+        '</span><span class="mr-conf-tip-v">' + esc(v) + "</span></span>"
+      );
+    }
+    var rows =
+      row("신뢰도", conf.label) +
+      row("출처", srcText) +
+      row("신선도", "최근 30일 근거 " + (b.fresh_count || 0) + "건") +
+      row("검증", "원문 확인 " + (b.verifiable_count || 0) + "/" + (b.total_evidence || 0) + "건");
+    if (b.period) rows += row("기간", b.period);
+    return (
+      '<div class="mr-block mr-conf-block">' +
+        '<div class="mr-block-label"><span class="mr-ico">≡</span> 신뢰도 근거</div>' +
+        '<div class="mr-conf-basis">' + rows + "</div>" +
+      "</div>"
+    );
+  }
+
   function card(c) {
     var rankCls = " mr-c" + (c.rank || 1); // 순위별 카드 색 구분 (mr-c1/c2/c3)
     // "보완 활용 권장" 배지 — 매칭 기준(q1/q2 passes·rank)과 별개. Safe-Fit 신호에만 연동.
@@ -327,20 +378,21 @@
           keywordTags(c.keywords) +
           metricStrip(c) +   // 지표(검색량 지수·기간) — 핑크 헤더 박스 안. 접으면 CSS로 숨김
         "</summary>" +
-        // 단일 컬럼 — 이미지 순서: (헤더 안 지표) → 유행현황 → 수집근거 → 매칭이유 → 매칭 설명
+        // 단일 컬럼 — 순서: (헤더 안 지표) → 유행현황 → 매칭 분석 → 수집근거 → 신뢰도 근거 → (활용방안)
         '<div class="mr-card-body">' +
           '<div class="mr-block">' +
             '<div class="mr-block-label"><span class="mr-ico">≡</span> 유행현황 (Status)</div>' +
             bulletList(c.summary_bullets) +
           "</div>" +
-          '<details class="mr-block mr-evidence-details">' +
-            '<summary class="mr-block-label"><span class="mr-ico">≡</span> 수집 근거</summary>' +
-            evidenceList(c.evidence) +
-          "</details>" +
           '<div class="mr-block">' +
             '<div class="mr-block-label"><span class="mr-ico">≡</span> 매칭 분석</div>' +
             matchExplain(c.match_reasons) +
           "</div>" +
+          '<details class="mr-block mr-evidence-details">' +
+            '<summary class="mr-block-label"><span class="mr-ico">≡</span> 수집 근거</summary>' +
+            evidenceList(c.evidence) +
+          "</details>" +
+          confidenceBlock(c) +
         "</div>" +
         // 활용 방안 — 카드 하단 전체 폭
         '<div class="mr-card-usage">' +
@@ -517,7 +569,7 @@
     var steps = [];
     if (d.raw_count) steps.push({
       label: "전체 수집 데이터",
-      platforms: d.platforms || "YouTube · 네이버 · Tavily · 데이터랩",
+      platforms: formatPlatforms(d.platforms), // 실제 수집 소스 기반 (없으면 미표시)
       value: d.raw_count,
       note: "훑어본 데이터",
     });
@@ -546,6 +598,7 @@
         summarySection(contents) +
         sectionHead("PART II", "트렌드 카드", "유행현황 · 수집 근거 · 매칭이유 · 매칭 기준") +
         '<div class="mr-trend-grid">' + contents.map(card).join("") + "</div>" +
+        '<div class="mr-report-footer">해당 리포트는 트렌드핏 AI가 작성했습니다.</div>' +
       "</div>";
     return el;
   }
