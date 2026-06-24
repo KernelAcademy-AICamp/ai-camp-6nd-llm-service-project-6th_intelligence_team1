@@ -323,15 +323,11 @@ details.mr-trend-card:not([open]) > summary .mr-metric-strip { display: none; }
   flex-direction: column;
   gap: 24px;
 }
-/* 블록 사이 실선 구분 (수집근거 · 매칭이유 · 매칭 설명) */
+/* 블록 사이 실선 구분 (유행현황 · 매칭분석 · 활용방안 · 수집근거)
+   수집근거(.mr-evidence-details)도 .mr-block 클래스를 갖고 있어 이 규칙으로 구분선이 붙는다. */
 .mr-card-body > .mr-block + .mr-block {
   border-top: 1px solid var(--mr-border);
   padding-top: 24px;
-}
-/* 유행현황 ↔ 수집근거 사이 선은 제거 (여백만 유지) */
-.mr-card-body > .mr-block + .mr-evidence-details {
-  border-top: none;
-  padding-top: 0;
 }
 .mr-block-label {
   display: inline-flex;
