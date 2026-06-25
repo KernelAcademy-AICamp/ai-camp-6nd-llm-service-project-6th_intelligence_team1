@@ -227,10 +227,10 @@
     var groups = reasons
       .map(function (r) {
         var resultPrefix = r.result ? esc(r.result) + " " : "";
+        // r.summary는 detail에 포함된 내용 중복이라 노출 안 함.
         return (
           '<div class="mr-ed-group">' +
             '<div class="mr-ed-group-title">' + resultPrefix + esc(r.title || "") + "</div>" +
-            (r.summary ? '<div class="mr-ed-summary">' + esc(r.summary) + "</div>" : "") +
             '<div class="mr-ed-reason">' + esc(r.detail || "") + "</div>" +
           "</div>"
         );
@@ -516,9 +516,7 @@
         var tag = resTag.tag
           ? '<span class="mr-fit-tag ' + resTag.cls + '">' + esc(r.result || "") + " " + resTag.tag + "</span>"
           : "";
-        var summary = r.summary
-          ? '<div class="mr-fit-summary">' + esc(r.summary) + "</div>"
-          : "";
+        // r.summary는 detail에 이미 모두 포함된 내용이라 중복 노출 안 함.
         var detail = r.detail
           ? '<div class="mr-fit-reason">' + esc(r.detail) + "</div>"
           : '<div class="mr-fit-reason mr-fit-placeholder">여기에 어떤 기준으로 매칭했는지 작성</div>';
@@ -526,7 +524,6 @@
           '<div class="mr-fit-row">' +
             '<div class="mr-fit-head"><span class="mr-fit-name">' + esc(r.title || "") + "</span>" + tag + "</div>" +
             '<div class="mr-fit-desc">' + esc(REASON_DESC[r.id] || "") + "</div>" +
-            summary +
             detail +
           "</div>"
         );
