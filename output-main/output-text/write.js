@@ -912,6 +912,65 @@ function mapPeriodBudget(period, budget) {
   return null;
 }
 
+// 기간·예산(brand 단일 값) × 트렌드 시점 신호(stage/growth/lifespan) × rank(집행 강도)
+// 셋을 결합해 카드별로 다른 운용 문장을 만든다. 옛 buildUsagePlan은 brand 단일 값만
+// 써서 1·2·3 순위 카드가 모두 같은 sentence3을 갖던 문제 해소.
+function buildBudgetSentence(brand, td, rank) {
+  const p = brand?.campaign_period;
+  const b = brand?.campaign_budget;
+  if (!p && !b) return null;
+  const head = p && b ? `${p}에 ${b} 예산이면` : p ? `${p} 캠페인이면` : "이 예산이면";
+
+  const stage = td?.trend_stage;
+  const growth = td?.metrics?.growth_rate ?? 0;
+  const lifespan = String(td?.lifespan_estimate ?? "");
+  const isLong = /6개월|장기|이상/.test(lifespan);
+
+  // 트렌드 시점 신호(stage/growth) × rank(메인/보조/테스트) 매트릭스로 활용 표현 분기.
+  let action;
+  if (stage === "declining") {
+    action =
+      rank === 1
+        ? "메인 캠페인이라도 단기 집중 회수형으로 빠르게 활용해보세요"
+        : rank === 2
+          ? "보조 콘텐츠로 단기 회수 시점에 한정 활용해보세요"
+          : "테스트성으로 짧게 시도해보고 빠르게 종료하는 게 좋아요";
+  } else if (stage === "emerging" && growth >= 0.3) {
+    // "부상"은 "상처"와 동음이의 — "급상승"·"떠오르는"으로 풀어 명확화.
+    action =
+      rank === 1
+        ? "메인 캠페인으로 급상승 초반에 빠르게 집중 투입하기 좋아요"
+        : rank === 2
+          ? "보조 콘텐츠로 떠오르는 흐름에 빠르게 합류하기 좋아요"
+          : "테스트로 초반 반응을 보며 확장 여부 판단하기 좋아요";
+  } else if (stage === "peak" && isLong) {
+    // "정점 흐름" 같은 명사 결합은 어색 — "정점에 자리잡은 트렌드"로 풀어쓰기.
+    action =
+      rank === 1
+        ? "메인 캠페인으로 안정적으로 길게 끌고 가기 좋아요"
+        : rank === 2
+          ? "보조 콘텐츠로 정점에 자리잡은 이 트렌드를 꾸준히 활용하기 좋아요"
+          : "테스트로 작게 진입해 반응 보며 확대하기 좋아요";
+  } else if (stage === "peak") {
+    action =
+      rank === 1
+        ? "메인 캠페인으로 정점에 도달한 지금 집중 집행하기 좋아요"
+        : rank === 2
+          ? "보조 콘텐츠로 정점에 안착한 흐름에 합류해 안정 운용하기 좋아요"
+          : "테스트로 작게 시도하며 효과 가늠해보기 좋아요";
+  } else {
+    // emerging without high growth, or stage 미상
+    action =
+      rank === 1
+        ? "메인 캠페인으로 꾸준한 노출 전략에 활용 가능해요"
+        : rank === 2
+          ? "보조 콘텐츠로 안정적으로 가져가기 좋아요"
+          : "테스트로 가볍게 시작해보기 좋아요";
+  }
+
+  return `${head} ${action}`;
+}
+
 // 시의성 멘트 — trend_stage·growth_rate 기반 카드별 한 줄 단서. 매칭 적합도와
 // 별개인 "트렌드 수명/추세" 신호로 마케터에게 집행 타이밍 힌트 제공.
 //
@@ -1137,18 +1196,11 @@ function buildUsagePlan(brand, td, opts = {}) {
     }
   }
 
-  // ─ 문장 3: 기간/예산 ───────────────────────────────────────────
-  // "{기간} + {예산} 예산이라 {pb}로 활용 가능"
-  let sentence3 = null;
-  if (pbLabel) {
-    const p = brand?.campaign_period;
-    const b = brand?.campaign_budget;
-    if (p && b) {
-      sentence3 = `${p}에 ${b} 예산이면 ${pbLabel}로 써볼 수 있어요`;
-    } else {
-      sentence3 = `${pbLabel}로 써볼 수 있어요`;
-    }
-  }
+  // ─ 문장 3: 기간/예산 × 트렌드 시점 × rank ─────────────────────
+  // 기간·예산(brand 단일) × trend_stage·growth_rate·lifespan(트렌드 시점) × rank(집행 강도)
+  // 셋을 결합해 카드별로 다른 운용 방안 문장. pbLabel만 쓰던 옛 로직은 1·2·3 카드가
+  // 같은 문장이라 마케터에게 정보 가치가 약했음 → 트렌드 특성 반영해 차별화.
+  const sentence3 = buildBudgetSentence(brand, td, rank);
 
   // 세 문장을 줄바꿈으로 분리해 출력 (최대 3줄). 데이터 비어 있는 문장은 자동 생략.
   // 한 줄에 한 문장씩 들어가게 ".\n"으로 join — 마지막 문장도 마침표 한 번씩.
@@ -1542,6 +1594,68 @@ function buildMetricPrefixSentence(td) {
   return sentences.length > 0 ? sentences.join(" ") : null;
 }
 
+// PART I 본문 폴백 — LLM intro_summary가 없을 때 사용. PART II 유행현황과 같은
+// 데이터지만 카드 rank별로 문장 구조·어휘를 다르게 짜서 1·2·3 카드가 같은 패턴으로
+// 보이지 않도록 한다. rank의 의미: 1=핵심 진입, 2=안정 운용, 3=지속 활용.
+//   1순위 → 급변 신호 중심 ("급증, 빠른 확산 흐름")
+//   2순위 → 안정·안착 중심 ("정점에 안착한 흐름")
+//   3순위 → 지속·롱테일 중심 ("장기간 안정적으로 자리잡은")
+// 수치·출처 중 하나라도 없으면 null → 호출부에서 summary_bullets[0] 최종 폴백.
+function buildIntroBodyFallback(td, rank) {
+  const rate = td?.metrics?.growth_rate;
+  if (typeof rate !== "number" || Math.abs(Math.round(rate * 100)) === 0) return null;
+  const sourceName = buildSourceName(td);
+  if (!sourceName) return null;
+
+  const pct = Math.round(rate * 100);
+  const absPct = Math.abs(pct);
+  const isPositive = pct > 0;
+  const isHighGrowth = absPct >= 50;
+  const stage = td?.trend_stage;
+  const lifespan = String(td?.lifespan_estimate ?? "").trim();
+  const isLong = /6개월|이상/.test(lifespan);
+
+  // rank 1: 변동·진입 신호 중심
+  if (rank === 1) {
+    if (stage === "emerging" && isHighGrowth) {
+      return `${sourceName}에서 ${absPct}% 급증, 빠르게 확산되는 단기형 트렌드예요`;
+    }
+    if (stage === "peak") {
+      return `${sourceName}에서 ${absPct}% ${isPositive ? "증가" : "감소"}, 정점에 도달한 지금이 핵심 진입 적기예요`;
+    }
+    if (stage === "declining") {
+      return `${sourceName} 기준 ${absPct}% 감소 추세로 회수 시점에만 한정 진입하는 게 좋아요`;
+    }
+    return `${sourceName} 기준 ${absPct}% ${isPositive ? "증가" : "감소"} 추세예요`;
+  }
+
+  // rank 2: 안정·안착 중심
+  if (rank === 2) {
+    if (stage === "peak" && isLong) {
+      return `${sourceName}에서 ${absPct}% 꾸준한 증가세, 정점에 안착해 6개월 이상 이어지는 흐름이에요`;
+    }
+    if (stage === "peak") {
+      return `${sourceName}에서 ${absPct}% ${isPositive ? "증가" : "감소"} 신호 포착, 정점에서 안정세를 보이는 트렌드예요`;
+    }
+    if (stage === "emerging") {
+      return `${sourceName}에서 ${absPct}% ${isPositive ? "증가" : "감소"} 신호, 성장세에 안착하고 있어요`;
+    }
+    return `${sourceName} 보도 기준 ${absPct}% ${isPositive ? "증가" : "감소"}, 안정적인 흐름이에요`;
+  }
+
+  // rank 3 (또는 기타): 지속·롱테일 중심
+  if (stage === "peak" && isLong) {
+    return `${sourceName}에서 ${absPct}% 증가세, 장기간 안정적으로 자리잡은 트렌드예요`;
+  }
+  if (stage === "peak") {
+    return `${sourceName} 기준 ${absPct}% ${isPositive ? "증가" : "감소"}, 정점에서 자리를 지키고 있어요`;
+  }
+  if (stage === "emerging") {
+    return `${sourceName}에서 ${absPct}% 성장세, 초기 확산 단계에 진입한 트렌드예요`;
+  }
+  return `${sourceName}에서 ${absPct}% ${isPositive ? "증가" : "감소"} 흐름이에요`;
+}
+
 // 트렌드 수치를 카드 안 3항목에 다른 각도(추세/속도/규모)로 노출.
 // 한 트렌드의 같은 prefix 문장이 3번 반복되던 문제를 해소하면서, 각 항목에
 // 정량 신호를 골고루 부여. 데이터 누락 시 null 반환 → 호출부에서 polished만 사용.
@@ -1558,8 +1672,8 @@ function buildStatSentence(td, idx) {
     const tier =
       score >= 80 ? "상위권" : score >= 60 ? "중상위권" : score >= 40 ? "중간" : "하위권";
     const name = buildSourceName(td);
-    const prefix = name ? `${name}에 따르면 ` : "";
-    return `${prefix}검색 관심도가 ${tier} 수준으로 꾸준히 부상 중이에요.`;
+    const sourcePrefix = name ? `${name}에 따르면 ` : "";
+    return `${sourcePrefix}검색 관심도가 ${tier} 수준으로 꾸준히 부상 중이에요.`;
   }
   if (idx === 1) {
     const rate = td?.metrics?.growth_rate;
@@ -1758,6 +1872,11 @@ export async function generateWriterOutput({ brand, trend, match, trendRaw } = {
       summary_bullets: statsLine
         ? [...baseSummaryBullets, statsLine]
         : baseSummaryBullets,
+      // PART I 본문 폴백 — LLM intro_summary가 없을 때(WRITER_NO_LLM=1 또는 호출 실패)
+      // summary_bullets[0]은 PART II와 표현이 겹쳐 보이는 문제가 있어, 같은 데이터를
+      // 다른 각도(출처+수치+rank별 신호)로 재구성한 코드 템플릿 문장을 fallback에 사용.
+      // rank별 다른 문장 구조 적용 — 1·2·3 카드가 같은 패턴으로 보이지 않게.
+      intro_body_fallback: buildIntroBodyFallback(td, c.rank),
       usage_plan: usagePlans[i] || "",
       match_reasons: buildMatchReasons(c.reason_bullets, mergedFits, td),
     };

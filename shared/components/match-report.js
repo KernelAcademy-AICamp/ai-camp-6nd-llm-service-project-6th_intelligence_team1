@@ -440,11 +440,18 @@
   }
 
   // PART I — 트렌드 요약 (순위 + 트렌드명 + 한 줄 요약)
-  // body 우선순위: intro_summary(LLM이 유행현황을 새 표현으로 압축) → summary_bullets[0](fallback)
+  // body 우선순위:
+  //   1) intro_summary       — LLM이 유행현황을 새 표현으로 압축 (WRITER_NO_LLM 미설정 시)
+  //   2) intro_body_fallback — write.js 코드 템플릿 (출처+수치+단계 신호 한 줄)
+  //   3) summary_bullets[0]  — 트렌드 분석가 원문 (PART II와 겹쳐 보일 수 있어 최후 폴백)
   function summarySection(contents) {
     var items = contents
       .map(function (c) {
-        var body = c.intro_summary || (c.summary_bullets && c.summary_bullets[0]) || c.trend_name;
+        var body =
+          c.intro_summary ||
+          c.intro_body_fallback ||
+          (c.summary_bullets && c.summary_bullets[0]) ||
+          c.trend_name;
         return (
           '<div class="mr-summary-item">' +
             '<div class="mr-summary-letter">' + esc(c.rank) + "</div>" +
