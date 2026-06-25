@@ -418,8 +418,31 @@
   ]
 };  /* ← 실데이터 주입 (writer-output.json) */
 
-    // 컴포넌트 호출 (앱이 하는 그대로)
-    renderMatchReport(document.getElementById("match-report-mount"), SAMPLE_DATA);
+    // 서버가 떠 있으면 실제 writer-output.json을 fetch해서 렌더 (trend_summary 등 최신 출력).
+    // fetch 실패(파일 직접 열기·서버 없음)면 SAMPLE_DATA로 fallback.
+    // 디버그 로그 — 콘솔(F12)에서 어느 경로로 렌더됐는지 확인.
+    (function () {
+      var mount = document.getElementById("match-report-mount");
+      if (!mount) {
+        console.error("[report-live] 마운트 엘리먼트(#match-report-mount) 없음");
+        return;
+      }
+      console.log("[report-live] writer-output.json fetch 시도…");
+      fetch("/output-main/output-text/writer-output.json?ts=" + Date.now())
+        .then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        })
+        .then(function (json) {
+          var data = json && json.data ? json.data : json;
+          console.log("[report-live] 실데이터 렌더 — trend_summary 존재?", !!data.trend_summary);
+          renderMatchReport(mount, data);
+        })
+        .catch(function (err) {
+          console.warn("[report-live] fetch 실패 — SAMPLE_DATA로 fallback:", err.message);
+          renderMatchReport(mount, SAMPLE_DATA);
+        });
+    })();
 
     // 폭 테스트 버튼 (비율 검증용)
     document.querySelectorAll(".preview-width-toggle button").forEach(function (btn) {

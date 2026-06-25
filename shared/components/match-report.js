@@ -380,19 +380,31 @@
         "</summary>" +
         // 단일 컬럼 — 순서: (헤더 안 지표) → 유행현황 → 매칭 분석 → 활용방안 → 수집근거 → 신뢰도 근거
         //   신뢰도 근거(.mr-conf-block)는 화면 숨김 / PDF에만 표시 (CSS가 제어)
+        // 유행현황 — summary_bullets[0]는 PART I 본문(intro_summary 또는 동일 텍스트)으로
+        //   이미 노출되므로 PART II에선 [1:]만 표시해 중복 방지.
         '<div class="mr-card-body">' +
           '<div class="mr-block">' +
             '<div class="mr-block-label"><span class="mr-ico">≡</span> 유행현황 (Status)</div>' +
-            bulletList(c.summary_bullets) +
+            bulletList((c.summary_bullets || []).slice(1)) +
           "</div>" +
           '<div class="mr-block">' +
             '<div class="mr-block-label"><span class="mr-ico">≡</span> 매칭 분석</div>' +
             matchExplain(c.match_reasons) +
           "</div>" +
+          // 활용 방안 — usage_plan은 write.js에서 "\n"으로 3문장 분리되어 들어옴
+          //   불렛 리스트로 분리 렌더 (이전 한 줄 텍스트 → UL/LI). 마침표는 unbullet
+          //   가독성 위해 제거. 빈 경우 placeholder.
           '<div class="mr-block">' +
             '<div class="mr-block-label"><span class="mr-ico">≡</span> 활용 방안</div>' +
             (c.usage_plan
-              ? '<div class="mr-usage">' + esc(c.usage_plan) + "</div>"
+              ? '<ul class="mr-usage">' +
+                c.usage_plan
+                  .split("\n")
+                  .map(function (line) { return line.trim().replace(/\.$/, ""); })
+                  .filter(Boolean)
+                  .map(function (line) { return "<li>" + esc(line) + "</li>"; })
+                  .join("") +
+                "</ul>"
               : '<div class="mr-usage mr-fit-placeholder">활용방안 작성</div>') +
           "</div>" +
           '<details class="mr-block mr-evidence-details">' +
@@ -418,11 +430,21 @@
     );
   }
 
+  // PART I — 트렌드 한 문장 요약 (LLM이 contents 종합해 만든 단일 문장).
+  // writer-output.json의 data.trend_summary가 있을 때 summarySection 대신 사용.
+  function trendSummarySection(text) {
+    return (
+      sectionHead("PART I", "트렌드 요약", "") +
+      '<div class="mr-summary-card mr-trend-summary"><p>' + esc(text) + "</p></div>"
+    );
+  }
+
   // PART I — 트렌드 요약 (순위 + 트렌드명 + 한 줄 요약)
+  // body 우선순위: intro_summary(LLM이 유행현황을 새 표현으로 압축) → summary_bullets[0](fallback)
   function summarySection(contents) {
     var items = contents
       .map(function (c) {
-        var body = (c.summary_bullets && c.summary_bullets[0]) || c.trend_name;
+        var body = c.intro_summary || (c.summary_bullets && c.summary_bullets[0]) || c.trend_name;
         return (
           '<div class="mr-summary-item">' +
             '<div class="mr-summary-letter">' + esc(c.rank) + "</div>" +
@@ -591,6 +613,8 @@
             .join("") +
         "</div>"
       : "";
+    // PART I: 3개 카드 레이아웃(번호 + 트렌드명 + 본문).
+    // 본문은 c.intro_summary(LLM이 유행현황 압축) 우선, 없으면 summary_bullets[0]로 fallback.
     el.innerHTML =
       '<div class="mr-report">' +
         headerSection(brand) +

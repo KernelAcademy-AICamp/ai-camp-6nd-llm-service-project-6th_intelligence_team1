@@ -688,6 +688,17 @@ a.mr-src-chip[href]::after { content: '↗'; font-size: 10px; opacity: 0.85; mar
 .mr-summary-title { font-size: 20px; font-weight: 700; margin: 0 0 12px; color: var(--mr-text); }
 .mr-summary-body { font-size: 16px; color: var(--mr-text-sub); margin: 0; line-height: 1.9; }
 
+/* LLM이 만든 트렌드 한 문장 요약 — A/B/C 리스트 대신 노출 */
+.mr-summary-card.mr-trend-summary { padding: 32px 32px; }
+.mr-summary-card.mr-trend-summary > p {
+  font-size: 18px;
+  line-height: 1.85;
+  margin: 0;
+  color: var(--mr-text);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
 /* ===== DATA — 트렌드 점수 비교 그래프 ===== */
 .mr-compare-card {
   background: var(--mr-surface);
@@ -884,6 +895,9 @@ a.mr-src-chip[href]::after { content: '↗'; font-size: 10px; opacity: 0.85; mar
   padding: 9px 12px;
 }
 .mr-usage { font-size: 17px; line-height: 1.7; color: var(--mr-text-sub); }
+ul.mr-usage { margin: 0; padding-left: 1.4em; list-style: disc; }
+ul.mr-usage > li { margin: 4px 0; }
+ul.mr-usage > li::marker { color: var(--mr-text-sub); }
 
 /* 활용 방안 — 카드 하단 전체 폭 */
 .mr-card-usage {
