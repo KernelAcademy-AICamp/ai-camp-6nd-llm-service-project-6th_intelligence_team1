@@ -649,11 +649,10 @@ function cleanDelta(delta) {
 // 셋 다 카드마다 다를 수 있어 별도 라벨로 노출. invalid_keyword 시 월간 검색량
 // 스킵 (트렌드 분석가가 검색어 부적합 표시).
 
-// 트렌드 출처 라벨 — evidence의 source 종류를 사람이 읽는 한국어로 모아 표기.
-// 검색 관심도·증가율이 어느 수집 채널 데이터를 바탕으로 분석됐는지 마케터가
-// 즉시 인지하도록 카드 안 sentence 앞에 prefix로 붙는다.
-//   evidence = [{source:"naver_news"}, {source:"naver_blog"}] → "네이버 뉴스·블로그 기준"
-function buildSourceAttribution(td) {
+// 트렌드 출처 이름만 — evidence의 source 종류를 사람이 읽는 한국어로 모아 한 묶음.
+//   evidence = [{source:"naver_news"}, {source:"naver_blog"}] → "네이버 뉴스·블로그"
+//   매칭 안 되거나 빈 evidence → "" (호출부에서 prefix 생략 처리)
+function buildSourceName(td) {
   const SOURCE_KO = {
     naver_news: "네이버 뉴스",
     naver_blog: "네이버 블로그",
@@ -667,7 +666,6 @@ function buildSourceAttribution(td) {
     ...new Set((td?.evidence ?? []).map((e) => e?.source).filter(Boolean)),
   ];
   if (sources.length === 0) return "";
-  // 네이버 계열 묶음 — "네이버 뉴스·블로그"처럼 prefix 공유.
   const naverKinds = [];
   const others = [];
   sources.forEach((s) => {
@@ -680,7 +678,13 @@ function buildSourceAttribution(td) {
     ? `네이버 ${[...new Set(naverKinds.filter(Boolean))].join("·") || ""}`.trim()
     : "";
   const parts = [naverPart, ...others].filter(Boolean);
-  return parts.length ? `${parts.join("·")} 기준 ` : "";
+  return parts.length ? parts.join("·") : "";
+}
+
+// "X 기준 " 형태로 prefix. 측정 출처 표기에 자연스러운 표현 (기존 호환).
+function buildSourceAttribution(td) {
+  const name = buildSourceName(td);
+  return name ? `${name} 기준 ` : "";
 }
 
 // 검색 추이 지수 — metrics.score(0~100) + growth_rate로 합성. score가 숫자가
@@ -1541,18 +1545,21 @@ function buildMetricPrefixSentence(td) {
 // 트렌드 수치를 카드 안 3항목에 다른 각도(추세/속도/규모)로 노출.
 // 한 트렌드의 같은 prefix 문장이 3번 반복되던 문제를 해소하면서, 각 항목에
 // 정량 신호를 골고루 부여. 데이터 누락 시 null 반환 → 호출부에서 polished만 사용.
-//   idx 0 (제품·제형):   검색 추이 지수 + 추세         — metrics.score
-//   idx 1 (브랜드 매체·톤): 증가율 + 속도              — metrics.growth_rate
+//   idx 0 (제품·제형):   검색 추이 지수 + tier + 출처    — metrics.score
+//   idx 1 (브랜드 매체·톤): 증가율 + 출처               — metrics.growth_rate
 //   idx 2 (타겟 고객층):  네이버 월간 검색량 + 규모    — demand_fit.monthly_searches (출처: 네이버 검색광고 API)
+// 출처(buildSourceAttribution)는 evidence의 수집 채널을 기반으로 표기.
 function buildStatSentence(td, idx) {
   if (idx === 0) {
     const score = td?.metrics?.score;
     if (typeof score !== "number") return null;
     // 척도 해석: 80+ 상위권 / 60~79 중상위권 / 40~59 중간 / 0~39 하위권.
-    // score는 LLM 추정값이라 숫자(지수)는 빼고 tier 라벨만 노출.
+    // 지수(숫자)는 마케터에게 의미 모호해 노출 안 함 — tier 라벨 + 출처 prefix만.
     const tier =
       score >= 80 ? "상위권" : score >= 60 ? "중상위권" : score >= 40 ? "중간" : "하위권";
-    return `검색 관심도 ${tier} 수준으로 꾸준히 부상 중인 트렌드예요.`;
+    const name = buildSourceName(td);
+    const prefix = name ? `${name}에 따르면 ` : "";
+    return `${prefix}검색 관심도가 ${tier} 수준으로 꾸준히 부상 중이에요.`;
   }
   if (idx === 1) {
     const rate = td?.metrics?.growth_rate;
@@ -1560,9 +1567,11 @@ function buildStatSentence(td, idx) {
     const pct = Math.round(rate * 100);
     if (pct === 0) return null;
     const abs = Math.abs(pct);
+    const name = buildSourceName(td);
+    const prefix = name ? `${name}에서 ` : "";
     return pct > 0
-      ? `최근 ${abs}% 증가하며 빠르게 확산되고 있어요.`
-      : `최근 ${abs}% 감소했지만 안정적으로 자리잡은 트렌드예요.`;
+      ? `${prefix}최근 ${abs}% 증가하며 빠르게 확산되고 있어요.`
+      : `${prefix}최근 ${abs}% 감소했지만 안정적으로 자리잡은 트렌드예요.`;
   }
   if (idx === 2) {
     const df = td?.demand_fit;
@@ -1625,7 +1634,12 @@ export async function generateWriterOutput({ brand, trend, match, trendRaw } = {
   const findEval = (name) => evaluations.find((e) => e.trend_name === name);
 
   // LLM 클라이언트 — ANTHROPIC_API_KEY 없으면 풍부화 단계 자동 스킵.
-  const client = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null;
+  // WRITER_NO_LLM=1 환경변수로 LLM 호출 전체 강제 스킵 (토큰 절약 / 오프라인 데모용).
+  // API 키가 없거나 빈 문자열이어도 null로 떨어져 같은 fallback 경로 사용.
+  const llmDisabled =
+    process.env.WRITER_NO_LLM === "1" || !process.env.ANTHROPIC_API_KEY;
+  const client = llmDisabled ? null : new Anthropic();
+  if (llmDisabled) console.log("ℹ️  LLM 호출 스킵 — fallback 모드로 진행");
 
   // 1) 카드 raw 생성 (LLM 호출 없음, 순수 매핑)
   const rawContents = top.map((r, i) => {
