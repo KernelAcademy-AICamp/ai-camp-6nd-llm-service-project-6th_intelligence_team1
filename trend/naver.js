@@ -26,7 +26,8 @@ const brandContext = {
 async function fetchSearchTrend() {
   const response = await axios.post(BASE_URL,
     {
-      startDate: "2026-01-01",
+      // 고정일 대신 오늘 기준 180일(6개월) 전 — 전 소스 수집 기간 통일
+      startDate: new Date(Date.now() - 180 * 864e5).toISOString().split("T")[0],
       endDate: new Date().toISOString().split("T")[0],
       timeUnit: "month",
       keywordGroups: KEYWORD_GROUPS
