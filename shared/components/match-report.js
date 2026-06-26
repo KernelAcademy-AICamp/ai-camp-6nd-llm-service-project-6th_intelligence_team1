@@ -91,7 +91,22 @@
       .join(" · ");
   }
 
-  // 정량 지표 — headline_metric(지표·값·증감) + 기간(metrics.period)
+  // metrics.period("2026-03 ~ 2026-06") → 6개월 윈도우 표기("2026-01 ~ 2026-06").
+  // 끝 월 기준 5개월 전부터로 통일. 카드별 시작일 다르던 들쭉날쭉 해소.
+  function format6MonthPeriod(period) {
+    if (!period) return period;
+    var m = String(period).match(/^\s*(\d{4})-(\d{1,2})\s*~\s*(\d{4})-(\d{1,2})\s*$/);
+    if (!m) return period;
+    var y2 = parseInt(m[3], 10);
+    var em = parseInt(m[4], 10);
+    var sm = em - 5;
+    var y1 = y2;
+    if (sm < 1) { sm += 12; y1 -= 1; }
+    var pad = function (n) { return n < 10 ? "0" + n : String(n); };
+    return y1 + "-" + pad(sm) + " ~ " + y2 + "-" + pad(em);
+  }
+
+  // 정량 지표 — headline_metric(지표·값·증감) + 기간(metrics.period, 6개월 윈도우).
   function metricStrip(c) {
     var hm = c.headline_metric || {};
     var period = c.metrics && c.metrics.period;
@@ -104,9 +119,10 @@
       );
     }
     if (period) {
+      var displayPeriod = format6MonthPeriod(period);
       cells.push(
         '<div class="mr-metric"><div class="mr-m-label">기간</div>' +
-        '<div class="mr-m-value">' + esc(period) + "</div></div>"
+        '<div class="mr-m-value">' + esc(displayPeriod) + "</div></div>"
       );
     }
     return cells.length ? '<div class="mr-metric-strip">' + cells.join("") + "</div>" : "";

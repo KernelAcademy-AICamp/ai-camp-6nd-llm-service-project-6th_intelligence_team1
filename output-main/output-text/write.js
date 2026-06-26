@@ -490,6 +490,8 @@ const SOURCE_LABEL = {
   naver_news: "Naver News",
   tavily: "Tavily",
   youtube: "YouTube",
+  instagram: "Instagram",
+  tiktok: "TikTok",
 };
 
 function targetDisplay(b) {
@@ -548,8 +550,9 @@ function buildSummaryBullets(td) {
 // evidence: 분석가가 만든 원본을 v2 enum 형식으로 정규화
 // Instagram 등 EXCLUDED_SOURCES는 트렌드 측이 보내와도 작성가가 출력에서 제외.
 // value의 "N+" 표기는 expandNPlus로 "N건 이상" 자연 한국어로 풀어 씀.
+// + Apify 채널 활동(channel_activity의 Instagram·TikTok evidence)도 함께 수집.
 function buildEvidence(td) {
-  return (td?.evidence ?? [])
+  const fromAnalyzer = (td?.evidence ?? [])
     .filter((e) => !isExcluded(e.source))
     .map((e) => {
       const src = normalizeSource(e.source);
@@ -563,6 +566,32 @@ function buildEvidence(td) {
         url: e.url ?? sourceUrl(e.source) ?? null,
       };
     });
+
+  // Apify 채널 활동(인스타·틱톡) — channel_activity[*].scores에서 evidence 텍스트 추출.
+  // 트렌드 분석가가 evidence에 안 넣은 경우에도 수집 근거에 노출되도록 보강.
+  const fromApify = [];
+  const seen = new Set();
+  (td?.channel_activity ?? []).forEach((ca) => {
+    const keyword = ca?.search_keyword || "";
+    Object.entries(ca?.scores ?? {}).forEach(([platform, data]) => {
+      if (!data?.evidence) return;
+      // 같은 (platform, keyword) 조합 중복 제거.
+      const dedupKey = `${platform}|${keyword}`;
+      if (seen.has(dedupKey)) return;
+      seen.add(dedupKey);
+      const humanized = humanizeApifyEvidence(data.evidence);
+      fromApify.push({
+        source: platform,
+        label: SOURCE_LABEL[platform] ?? platform,
+        description: keyword
+          ? `'${keyword}' 키워드: ${humanized}`
+          : humanized,
+        url: null,
+      });
+    });
+  });
+
+  return [...fromAnalyzer, ...fromApify];
 }
 
 // channels: trend의 media_channel_status를 그대로 받되 빈 배열 fallback
@@ -1105,6 +1134,65 @@ function buildDistinction(allKeywordArrays, myIndex) {
 //    핵심 캠페인으로 시즌 프로모션에 맞춰 '세미매트', '쿠션' 키워드 중심의 시즌 루틴·한정
 //    할인 메시지 중심 콘텐츠, 인스타그램 외 유튜브 확장 추천.
 //    한달 + 200만원 미만 예산이라 단기 효율형 트렌드로 활용 가능."
+// Apify evidence 문구를 마케터 친화 표현(활동 수준 해석)으로 변환.
+// 원본 형식 예시:
+//   Instagram: "#보습오일 게시물 10개, 중앙 인게이지먼트 2"
+//   TikTok:    "#보습오일 영상 10개, 중앙 조회수 3005"
+// 변환 후 (옵션 C — 활동 수준 라벨로 직관화):
+//   Instagram: "#보습오일 게시물 10개 — 활동 수준 낮음 (게시물당 약 2개 반응)"
+//   TikTok:    "#보습오일 영상 10개 — 활동 수준 보통 (영상당 약 3,005회 조회)"
+// 임계 기준:
+//   Instagram 인게이지먼트: <10 낮음 / 10~99 보통 / 100+ 활발
+//   TikTok 조회수: <1000 낮음 / 1000~9999 보통 / 10000+ 활발
+function humanizeApifyEvidence(text, { compact = false } = {}) {
+  if (!text) return text;
+  const str = String(text);
+
+  // Instagram 패턴
+  const igMatch = str.match(
+    /(#\S+)\s+게시물\s+(\d+)개\s*,\s*중앙\s*인게이지먼트\s+(\d+)/,
+  );
+  if (igMatch) {
+    const [, hashtag, count, engStr] = igMatch;
+    const eng = parseInt(engStr, 10);
+    const level = eng < 10 ? "낮음" : eng < 100 ? "보통" : "활발";
+    const engKo = eng.toLocaleString("ko-KR");
+    return compact
+      ? `${hashtag} 게시물 ${count}개, 활동 수준 ${level}`
+      : `${hashtag} 게시물 ${count}개 — 활동 수준 ${level} (게시물당 약 ${engKo}개 반응)`;
+  }
+
+  // TikTok 패턴
+  const ttMatch = str.match(
+    /(#\S+)\s+영상\s+(\d+)개\s*,\s*중앙\s*조회수\s+(\d+)/,
+  );
+  if (ttMatch) {
+    const [, hashtag, count, viewStr] = ttMatch;
+    const views = parseInt(viewStr, 10);
+    const level = views < 1000 ? "낮음" : views < 10000 ? "보통" : "활발";
+    const viewsKo = views.toLocaleString("ko-KR");
+    return compact
+      ? `${hashtag} 영상 ${count}개, 활동 수준 ${level}`
+      : `${hashtag} 영상 ${count}개 — 활동 수준 ${level} (영상당 약 ${viewsKo}회 조회)`;
+  }
+
+  return str; // 패턴 매칭 안 되면 원문 그대로
+}
+
+// channel_activity에서 특정 platform의 evidence 텍스트 찾기.
+// 예: platform="instagram" → "#보습오일 게시물 10개, 중앙 인게이지먼트 2"
+// 같은 platform이 여러 keyword에 걸쳐 있으면 첫 번째 사용.
+// 자연어 변환 적용해서 반환.
+function findChannelActivityEvidence(td, platform) {
+  if (!platform || !Array.isArray(td?.channel_activity)) return null;
+  for (const ca of td.channel_activity) {
+    const data = ca?.scores?.[platform];
+    // 활용방안 안 한 줄에 들어가야 해서 compact 버전(괄호·em-dash 없이) 반환.
+    if (data?.evidence) return humanizeApifyEvidence(data.evidence, { compact: true });
+  }
+  return null;
+}
+
 function buildUsagePlan(brand, td, opts = {}) {
   if (!td?.trend_name) return "";
   const rank = opts?.rank;
@@ -1158,8 +1246,12 @@ function buildUsagePlan(brand, td, opts = {}) {
     if (matched) {
       const channel = CHANNEL_LABEL[matchedKey] ?? matched.rawName;
       // 매체별 활성도 — 마케터 활성 채널이 트렌드 채널과 매칭된 경우.
-      //   "현재 X에서 활성중인 트렌드예요."
-      channelTag = `현재 ${channel}에서 활성중인 트렌드예요.`;
+      // Apify channel_activity에서 같은 platform 수치 찾아 괄호로 부착.
+      //   "현재 X에서 활성중인 트렌드예요 (게시물 N개, 인게이지먼트 M)."
+      const apifyEvidence = findChannelActivityEvidence(td, matchedKey);
+      channelTag = apifyEvidence
+        ? `현재 ${channel}에서 활성중인 트렌드예요 (${apifyEvidence}).`
+        : `현재 ${channel}에서 활성중인 트렌드예요.`;
       channelEvidence = matched.status || null;
       channelAction = "지금 채널이랑 잘 맞으니까 강화해보세요";
     } else {
@@ -1630,28 +1722,29 @@ function buildMetricPrefixSentence(td) {
   return sentences.length > 0 ? sentences.join(" ") : null;
 }
 
-// metrics.period("2026-05 ~ 2026-06") → 한국어("2026년 5~6월").
-// 같은 해면 압축(2026년 5~6월), 다른 해면 풀어쓰기(2025년 1월~2026년 6월).
-// 시작이 너무 옛날(2024 이전)이면 마케터에게 거리감 크고 거의 무의미 →
-// 표시상 2025년 1월로 클램프 (실제 데이터는 그대로, 표기만 보정).
+// metrics.period → 끝 월 기준 6개월 윈도우로 통일 표기.
+//   예: 끝 월이 2026-06이면 → "2026년 1월부터 6월까지"
+//        끝 월이 2026-08이면 → "2026년 3월부터 8월까지"
+//        끝 월이 2026-02이면 → "2025년 9월부터 2026년 2월까지"
+// 마케터 시각 통일성을 위해 카드별 다른 시작일을 6개월 윈도우로 강제 정렬.
+// 트레이드오프: 실제 evidence는 더 옛날일 수 있어 수집 근거와 시점 불일치 가능.
 function formatPeriodKo(period) {
   if (!period) return null;
   const m = String(period).match(/^\s*(\d{4})-(\d{1,2})\s*~\s*(\d{4})-(\d{1,2})\s*$/);
   if (!m) return String(period).trim() || null;
-  let y1 = parseInt(m[1], 10);
-  let sm = parseInt(m[2], 10);
+  // 끝 월만 사용, 시작은 5개월 전(끝 월 포함 6개월).
   const y2 = parseInt(m[3], 10);
   const em = parseInt(m[4], 10);
-  // 표시 클램프 — 2025-01 이전은 너무 멀어 마케터 의미 약함.
-  if (y1 < 2025) {
-    y1 = 2025;
-    sm = 1;
+  let sm = em - 5;
+  let y1 = y2;
+  if (sm < 1) {
+    sm += 12;
+    y1 -= 1;
   }
   if (y1 === y2) {
-    if (sm === em) return `${y1}년 ${sm}월`;
-    return `${y1}년 ${sm}~${em}월`;
+    return `${y1}년 ${sm}월부터 ${em}월까지`;
   }
-  return `${y1}년 ${sm}월~${y2}년 ${em}월`;
+  return `${y1}년 ${sm}월부터 ${y2}년 ${em}월까지`;
 }
 
 // PART I 본문 폴백 — LLM intro_summary가 없을 때 사용. PART II 트렌드현황과 같은
@@ -1678,45 +1771,50 @@ function buildIntroBodyFallback(td, rank) {
   const lifespan = String(td?.lifespan_estimate ?? "").trim();
   const isLong = /6개월|이상/.test(lifespan);
 
+  // "최근 6개월 흐름 (날짜)" 형태로 통일 — 옵션 4 스타일.
+  const periodLabel = periodKo
+    ? `최근 6개월 흐름 (${periodKo})`
+    : "최근 6개월 흐름";
+
   // rank 1: 변동·진입 신호 중심
   if (rank === 1) {
     if (stage === "emerging" && isHighGrowth) {
-      return `${sourceName}에서 ${periodTag}${absPct}% 급증, 빠르게 확산되는 단기형 트렌드예요`;
+      return `${sourceName} 기준 ${periodLabel}, ${absPct}% 급증, 빠르게 확산되는 단기형 트렌드예요`;
     }
     if (stage === "peak") {
-      return `${sourceName}에서 ${periodTag}${absPct}% ${isPositive ? "증가" : "감소"}, 정점에 도달한 지금이 핵심 진입 적기예요`;
+      return `${sourceName} 기준 ${periodLabel}, ${absPct}% ${isPositive ? "증가" : "감소"}, 정점에 도달한 지금이 핵심 진입 적기예요`;
     }
     if (stage === "declining") {
-      return `${sourceName} 기준 ${periodTag}${absPct}% 감소 추세로 회수 시점에만 한정 진입하는 게 좋아요`;
+      return `${sourceName} 기준 ${periodLabel}, ${absPct}% 감소 추세로 회수 시점에만 한정 진입하는 게 좋아요`;
     }
-    return `${sourceName} 기준 ${periodTag}${absPct}% ${isPositive ? "증가" : "감소"} 추세예요`;
+    return `${sourceName} 기준 ${periodLabel}, ${absPct}% ${isPositive ? "증가" : "감소"} 추세예요`;
   }
 
   // rank 2: 안정·안착 중심
   if (rank === 2) {
     if (stage === "peak" && isLong) {
-      return `${sourceName}에서 ${periodTag}${absPct}% 꾸준한 증가세, 정점에 안착해 6개월 이상 이어지는 흐름이에요`;
+      return `${sourceName} 기준 ${periodLabel}, ${absPct}% 꾸준한 증가세, 정점에 안착한 흐름이에요`;
     }
     if (stage === "peak") {
-      return `${sourceName}에서 ${periodTag}${absPct}% ${isPositive ? "증가" : "감소"} 신호 포착, 정점에서 안정세를 보이는 트렌드예요`;
+      return `${sourceName} 기준 ${periodLabel}, ${absPct}% ${isPositive ? "증가" : "감소"} 신호 포착, 정점에서 안정세를 보이는 트렌드예요`;
     }
     if (stage === "emerging") {
-      return `${sourceName}에서 ${periodTag}${absPct}% ${isPositive ? "증가" : "감소"} 신호, 성장세에 안착하고 있어요`;
+      return `${sourceName} 기준 ${periodLabel}, ${absPct}% ${isPositive ? "증가" : "감소"} 신호, 성장세에 안착하고 있어요`;
     }
-    return `${sourceName} 보도 기준 ${periodTag}${absPct}% ${isPositive ? "증가" : "감소"}, 안정적인 흐름이에요`;
+    return `${sourceName} 기준 ${periodLabel}, ${absPct}% ${isPositive ? "증가" : "감소"}, 안정적인 흐름이에요`;
   }
 
   // rank 3 (또는 기타): 지속·롱테일 중심
   if (stage === "peak" && isLong) {
-    return `${sourceName}에서 ${periodTag}${absPct}% 증가세, 장기간 안정적으로 자리잡은 트렌드예요`;
+    return `${sourceName} 기준 ${periodLabel}, ${absPct}% 증가세, 장기간 안정적으로 자리잡은 트렌드예요`;
   }
   if (stage === "peak") {
-    return `${sourceName} 기준 ${periodTag}${absPct}% ${isPositive ? "증가" : "감소"}, 정점에서 자리를 지키고 있어요`;
+    return `${sourceName} 기준 ${periodLabel}, ${absPct}% ${isPositive ? "증가" : "감소"}, 정점에서 자리를 지키고 있어요`;
   }
   if (stage === "emerging") {
-    return `${sourceName}에서 ${periodTag}${absPct}% 성장세, 초기 확산 단계에 진입한 트렌드예요`;
+    return `${sourceName} 기준 ${periodLabel}, ${absPct}% 성장세, 초기 확산 단계에 진입한 트렌드예요`;
   }
-  return `${sourceName}에서 ${periodTag}${absPct}% ${isPositive ? "증가" : "감소"} 흐름이에요`;
+  return `${sourceName} 기준 ${periodLabel}, ${absPct}% ${isPositive ? "증가" : "감소"} 흐름이에요`;
 }
 
 // 트렌드 수치를 카드 안 3항목에 다른 각도(추세/속도/규모)로 노출.
