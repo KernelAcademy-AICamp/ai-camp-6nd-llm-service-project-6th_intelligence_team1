@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>트렌드핏 — 와이어프레임 (저충실도)</title>
+<style>
+  :root {
+    --ink: #222;
+    --line: #999;
+    --line-soft: #c9c9c9;
+    --fill: #ececec;
+    --fill-2: #f4f4f4;
+    --note: #6a6a6a;
+    --note-bg: #fffbe6;
+    --note-line: #e3d27a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #d8d8d8;
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 1080px; margin: 0 0 0 auto; padding: 32px 20px 80px; }
+
+  /* ---- 문서 헤더 ---- */
+  .doc-head { margin-bottom: 8px; }
+  .doc-head h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -0.3px; }
+  .doc-head p { margin: 0; color: var(--note); font-size: 13px; }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 16px;
+    margin: 16px 0 28px; padding: 12px 16px;
+    background: #fff; border: 1px solid var(--line-soft); border-radius: 6px;
+    font-size: 12px; color: var(--note);
+  }
+  .legend b { color: var(--ink); }
+
+  /* ---- 흐름 네비게이션 ---- */
+  .flow {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .flow .step {
+    flex: 1 1 0; min-width: 120px; text-align: center;
+    padding: 10px 8px; background: #fff;
+    border: 1.5px solid var(--line); border-radius: 6px;
+    font-size: 12px; font-weight: 600;
+  }
+  .flow .step span { display: block; font-weight: 400; color: var(--note); font-size: 11px; margin-top: 2px; }
+  .flow .arrow { color: var(--line); font-size: 18px; flex: 0 0 auto; }
+
+  /* ---- 화면 카드(목업 프레임) ---- */
+  .screen {
+    background: #fff;
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.12);
+    margin-bottom: 40px;
+    overflow: hidden;
+  }
+  .screen-label {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; background: #2c2c2c; color: #fff;
+    font-size: 13px; font-weight: 600;
+  }
+  .screen-label .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #fff; color: #2c2c2c; font-size: 12px;
+  }
+  .screen-label .tag { margin-left: auto; font-weight: 400; opacity: .7; font-size: 11px; }
+  .browser-bar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; background: var(--fill-2);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .browser-bar .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line-soft); }
+  .browser-bar .url {
+    margin-left: 10px; flex: 1; height: 18px;
+    background: #fff; border: 1px solid var(--line-soft); border-radius: 9px;
+  }
+  .canvas { padding: 24px; }
+
+  /* ---- 와이어프레임 프리미티브 ---- */
+  .wf-box { border: 1.5px dashed var(--line); border-radius: 6px; background: var(--fill-2); }
+  .wf-solid { border: 1.5px solid var(--line); border-radius: 6px; background: #fff; }
+  .bar { height: 12px; background: var(--fill); border-radius: 3px; }
+  .bar.s { width: 35%; } .bar.m { width: 60%; } .bar.l { width: 85%; } .bar.full { width: 100%; }
+  .bar.dark { background: #cfcfcf; }
+  .h-title { height: 20px; background: #cfcfcf; border-radius: 3px; width: 50%; }
+  .stack > * + * { margin-top: 8px; }
+  .row { display: flex; gap: 12px; }
+  .center { text-align: center; }
+  .muted { color: var(--note); font-size: 12px; }
+  .ph-label { font-size: 11px; color: var(--note); margin-bottom: 6px; font-weight: 600; letter-spacing: .2px; }
+
+  .field { margin-bottom: 16px; }
+  .field .lbl { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+  .input { height: 34px; border: 1.5px solid var(--line); border-radius: 5px; background: #fff; display: flex; align-items: center; padding: 0 10px; }
+  .input .ph { width: 45%; height: 10px; background: var(--fill); border-radius: 3px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { padding: 5px 12px; border: 1.5px solid var(--line); border-radius: 14px; font-size: 11px; color: var(--note); background: #fff; }
+  .chip.on { background: #2c2c2c; color: #fff; border-color: #2c2c2c; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; padding: 11px 22px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+  .btn.primary { background: #2c2c2c; color: #fff; }
+  .btn.ghost { background: #fff; border: 1.5px solid var(--line); color: var(--ink); }
+
+  .img-ph {
+    position: relative; background: var(--fill-2);
+    border: 1.5px dashed var(--line); border-radius: 6px;
+    min-height: 90px;
+  }
+  .img-ph::before, .img-ph::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(to top right, transparent calc(50% - 1px), var(--line-soft) 50%, transparent calc(50% + 1px));
+  }
+  .img-ph::after { transform: scaleX(-1); }
+
+  /* 주석 콜아웃 */
+  .note {
+    border-left: 3px solid var(--note-line);
+    background: var(--note-bg);
+    padding: 8px 12px; margin: 14px 0 0;
+    font-size: 12px; color: #5b5126; border-radius: 0 4px 4px 0;
+  }
+  .note b { color: #3f3814; }
+
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .grid-3, .grid-2 { grid-template-columns: 1fr; } }
+
+  /* 리포트 전용 */
+  .verdict-badge { display:inline-flex; align-items:center; justify-content:center; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--line); font-size: 12px; font-weight: 700; }
+  .meter { display: inline-flex; gap: 3px; vertical-align: middle; }
+  .meter i { width: 14px; height: 8px; border-radius: 2px; background: var(--fill); border: 1px solid var(--line-soft); display:inline-block; }
+  .meter i.on { background: #9a9a9a; }
+  .judge-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--line-soft); }
+  .pipe-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1.5px solid var(--line); border-radius: 8px; background: #fff; }
+  .pipe-row .icon { width: 34px; height: 34px; border-radius: 8px; background: var(--fill); border: 1.5px solid var(--line); flex: 0 0 auto; }
+  .pipe-row .spinner { width: 18px; height: 18px; border-radius: 50%; border: 3px solid var(--fill); border-top-color: #2c2c2c; margin-left:auto; }
+  .check { font-size: 16px; margin-left: auto; color: var(--note); }
+  .collapsed { opacity: .85; }
+  .foot-note { text-align:center; color: var(--note); font-size: 11px; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="doc-head">
+    <h1>트렌드핏 (TrendFit) — 와이어프레임</h1>
+    <p>뷰티 브랜드 × 트렌드 매칭 리포트 서비스 · 저충실도(Lo-fi) · 전체 사용자 흐름</p>
+  </div>
+
+  <div class="legend">
+    <span><b>회색 박스</b> = 콘텐츠 영역</span>
+    <span><b>점선</b> = 동적 생성/AI 산출 영역</span>
+    <span><b>━ 막대</b> = 텍스트 자리</span>
+    <span><b>⨯ 박스</b> = 이미지 자리</span>
+    <span style="color:#5b5126;"><b style="color:#3f3814;">노란 주석</b> = 설계 의도/데이터 연결</span>
+  </div>
+
+  <!-- 흐름 네비게이션 -->
+  <div class="flow">
+    <div class="step">① 브랜드 입력<span>마케터</span></div>
+    <div class="arrow">→</div>
+    <div class="step">② 분석 진행<span>4-에이전트 파이프라인</span></div>
+    <div class="arrow">→</div>
+    <div class="step">③ 매칭 리포트<span>최종 산출물</span></div>
+    <div class="arrow">→</div>
+    <div class="step">④ 내보내기<span>PDF · 공유</span></div>
+  </div>
+
+  <!-- ===================== 화면 1: 브랜드 입력 ===================== -->
+  <section class="screen">
+    <div class="screen-label"><span class="num">1</span> 브랜드 정보 입력 <span class="tag">→ brand-analysis.json</span></div>
+    <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url"></span></div>
+    <div class="canvas">
+      <div class="center" style="margin-bottom:20px;">
+        <div class="h-title" style="margin:0 auto 8px;"></div>
+        <div class="muted">우리 브랜드와 맞는 트렌드를 찾아드립니다 — 5가지만 입력하세요</div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <div class="field">
+            <div class="lbl">브랜드명 · 제품명</div>
+            <div class="input"><span class="ph"></span></div>
+          </div>
+          <div class="field">
+            <div class="lbl">카테고리</div>
+            <div class="input"><span class="ph" style="width:30%"></span></div>
+          </div>
+          <div class="field">
+            <div class="lbl">톤앤매너 <span class="muted">(7종 중 선택)</span></div>
+            <div class="chips">
+              <span class="chip on">Z세대·트렌디</span>
+              <span class="chip">클린뷰티</span>
+              <span class="chip">로맨틱·감성</span>
+              <span class="chip">럭셔리</span>
+              <span class="chip">키치</span>
+              <span class="chip">더마</span>
+              <span class="chip">비건</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="field">
+            <div class="lbl">타겟 — 성별 / 연령대</div>
+            <div class="row">
+              <div class="input" style="flex:1"><span class="ph" style="width:40%"></span></div>
+              <div class="input" style="flex:1"><span class="ph" style="width:40%"></span></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="lbl">타겟 — 관여/동기 (라이프스타일·니즈)</div>
+            <div class="wf-box" style="height:60px;"></div>
+          </div>
+          <div class="field">
+            <div class="lbl">검색 키워드 <span class="muted">(트렌드 수집용)</span></div>
+            <div class="chips">
+              <span class="chip">＋ 매트 쿠션</span>
+              <span class="chip">＋ 20대 메이크업</span>
+              <span class="chip">＋ 키워드 추가</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="center" style="margin-top:24px;">
+        <span class="btn primary">트렌드 매칭 시작 ▶</span>
+      </div>
+
+      <div class="note">
+        <b>데이터 연결:</b> 이 폼은 <code>brand-analysis.json</code>의 필드와 1:1 매핑 —
+        <code>brand_name</code>, <code>category</code>, <code>tone_and_manner</code>,
+        <code>target(gender/age/involvement/motivation)</code>, <code>search_keywords</code>.
+        톤앤매너 7종은 매칭가 시스템 프롬프트의 친화/충돌 테이블과 동일.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 화면 2: 분석 진행 ===================== -->
+  <section class="screen">
+    <div class="screen-label"><span class="num">2</span> 분석 진행 (파이프라인 상태) <span class="tag">멀티 에이전트 실행 중</span></div>
+    <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url"></span></div>
+    <div class="canvas">
+      <div class="center" style="margin-bottom:6px;"><div class="h-title" style="margin:0 auto;"></div></div>
+      <div class="center muted" style="margin-bottom:20px;">AI 에이전트들이 순차적으로 트렌드를 수집·평가하고 있어요</div>
+
+      <div class="stack" style="max-width:560px; margin:0 auto;">
+        <div class="pipe-row">
+          <div class="icon"></div>
+          <div style="flex:1"><div class="bar m" style="margin-bottom:6px;"></div><div class="bar s dark"></div></div>
+          <span class="check">✓ 트렌드 수집 (네이버·유튜브·Tavily)</span>
+        </div>
+        <div class="pipe-row">
+          <div class="icon"></div>
+          <div style="flex:1"><div class="bar l" style="margin-bottom:6px;"></div><div class="bar s dark"></div></div>
+          <span class="check">✓ 매칭가 평가 (2질문×2비교)</span>
+        </div>
+        <div class="pipe-row" style="border-color:#2c2c2c;">
+          <div class="icon"></div>
+          <div style="flex:1"><div class="bar m" style="margin-bottom:6px;"></div><div class="bar full dark"></div></div>
+          <span class="spinner"></span>
+        </div>
+        <div class="pipe-row collapsed">
+          <div class="icon"></div>
+          <div style="flex:1"><div class="bar s" style="margin-bottom:6px;"></div><div class="bar s"></div></div>
+          <span class="check">작성가 리포트 생성 대기…</span>
+        </div>
+      </div>
+
+      <div class="note">
+        <b>파이프라인:</b> 트렌드 분석가 → 매칭가(<code>match-result.json</code>) → 디자인가(<code>design-output.json</code>) → 작성가(<code>writer-output.json</code>).
+        각 단계는 JSON 파일로 결과를 넘김. 현재 단계는 진행 표시(스피너), 완료 단계는 ✓.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 화면 3: 매칭 리포트 ===================== -->
+  <section class="screen">
+    <div class="screen-label"><span class="num">3</span> 트렌드 매칭 리포트 <span class="tag">핵심 산출물 · writer-output.json 렌더</span></div>
+    <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url"></span></div>
+    <div class="canvas">
+
+      <!-- 헤더 -->
+      <div class="ph-label">▤ 리포트 헤더</div>
+      <div class="wf-solid" style="padding:16px;">
+        <div class="bar s dark" style="margin-bottom:8px;"></div>
+        <div class="h-title" style="width:65%; margin-bottom:10px;"></div>
+        <div class="chips">
+          <span class="chip">제품 ▦</span><span class="chip">카테고리 ▦</span><span class="chip">타겟 ▦</span>
+        </div>
+      </div>
+
+      <!-- 퍼널 -->
+      <div class="ph-label" style="margin-top:18px;">▤ 데이터 퍼널 (수집 → 정제)</div>
+      <div class="wf-box" style="padding:16px; display:flex; align-items:center; gap:16px;">
+        <div style="flex:1; text-align:center;"><div class="h-title" style="width:50%; margin:0 auto 4px;"></div><div class="muted">전체 수집 데이터</div></div>
+        <div style="color:var(--line); font-size:20px;">▶</div>
+        <div style="flex:.6; text-align:center;"><div class="h-title" style="width:60%; margin:0 auto 4px;"></div><div class="muted">활용된 데이터</div></div>
+      </div>
+
+      <!-- PART I -->
+      <div class="ph-label" style="margin-top:18px;">▤ PART I — 트렌드 요약 (한눈에 훑기 · 상위 3)</div>
+      <div class="grid-3">
+        <div class="wf-solid" style="padding:14px;">
+          <div class="verdict-badge" style="margin-bottom:8px;">1</div>
+          <div class="bar m dark" style="margin-bottom:8px;"></div>
+          <div class="stack"><div class="bar full"></div><div class="bar l"></div></div>
+        </div>
+        <div class="wf-solid" style="padding:14px;">
+          <div class="verdict-badge" style="margin-bottom:8px;">2</div>
+          <div class="bar m dark" style="margin-bottom:8px;"></div>
+          <div class="stack"><div class="bar full"></div><div class="bar l"></div></div>
+        </div>
+        <div class="wf-solid" style="padding:14px;">
+          <div class="verdict-badge" style="margin-bottom:8px;">3</div>
+          <div class="bar m dark" style="margin-bottom:8px;"></div>
+          <div class="stack"><div class="bar full"></div><div class="bar l"></div></div>
+        </div>
+      </div>
+
+      <!-- PART II -->
+      <div class="ph-label" style="margin-top:18px;">▤ PART II — 트렌드 상세 카드 (펼침/접힘)</div>
+
+      <!-- 1순위 펼친 카드 -->
+      <div class="wf-solid" style="padding:0; margin-bottom:12px;">
+        <!-- 카드 헤더 -->
+        <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line-soft); background:var(--fill-2);">
+          <div class="verdict-badge">1</div>
+          <div class="bar m dark"></div>
+          <span class="chip" style="margin-left:auto;">📈 상승 중</span>
+          <span>신뢰도 <span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+          <span style="font-size:14px; color:var(--note);">▾</span>
+        </div>
+        <div style="padding:16px;">
+          <!-- 키워드 + 지표 -->
+          <div class="chips" style="margin-bottom:10px;">
+            <span class="chip">#키워드</span><span class="chip">#키워드</span><span class="chip">#키워드</span>
+          </div>
+          <div class="wf-box" style="padding:10px 14px; margin-bottom:16px; display:flex; gap:24px;">
+            <div><div class="muted">검색량 지수</div><div class="bar s dark" style="margin-top:4px;"></div></div>
+            <div><div class="muted">기간</div><div class="bar s dark" style="margin-top:4px;"></div></div>
+          </div>
+
+          <!-- 블록1: 트렌드 현황 -->
+          <div class="ph-label">① 트렌드 현황</div>
+          <div class="stack" style="margin-bottom:16px;">
+            <div class="bar full"></div><div class="bar l"></div><div class="bar m"></div>
+          </div>
+
+          <!-- 블록2: 매칭 분석 -->
+          <div class="ph-label">② 매칭 분석 — "어떻게 평가했나요?"</div>
+          <div style="margin-bottom:16px;">
+            <div class="judge-row"><span class="verdict-badge" style="width:22px;height:22px;font-size:11px;">✅</span><div style="flex:1"><b style="font-size:12px;">제품·제형</b><div class="bar l" style="margin-top:5px;"></div></div></div>
+            <div class="judge-row"><span class="verdict-badge" style="width:22px;height:22px;font-size:11px;">✅</span><div style="flex:1"><b style="font-size:12px;">매체·톤</b><div class="bar l" style="margin-top:5px;"></div></div></div>
+            <div class="judge-row" style="border-bottom:none;"><span class="verdict-badge" style="width:22px;height:22px;font-size:11px;">⚠️</span><div style="flex:1"><b style="font-size:12px;">타겟</b><div class="bar m" style="margin-top:5px;"></div></div></div>
+          </div>
+
+          <!-- 블록3: 활용 방안 -->
+          <div class="ph-label">③ 활용 방안</div>
+          <div class="stack" style="margin-bottom:16px;">
+            <div class="bar full"></div><div class="bar l"></div>
+          </div>
+
+          <!-- 블록4: 수집 근거 (접힘) -->
+          <div class="wf-box" style="padding:10px 14px; display:flex; align-items:center; gap:8px;">
+            <span class="muted">④ 수집 근거 (출처 N건)</span>
+            <span class="chip" style="margin-left:auto;">Naver</span><span class="chip">YouTube</span><span class="chip">＋ 펼치기 ▾</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2·3순위 접힌 카드 -->
+      <div class="wf-solid collapsed" style="display:flex; align-items:center; gap:12px; padding:14px 16px; margin-bottom:8px;">
+        <div class="verdict-badge">2</div><div class="bar m dark"></div>
+        <span class="chip" style="margin-left:auto;">🔥 정점</span>
+        <span>신뢰도 <span class="meter"><i class="on"></i><i class="on"></i><i></i></span></span>
+        <span style="font-size:14px; color:var(--note);">▸</span>
+      </div>
+      <div class="wf-solid collapsed" style="display:flex; align-items:center; gap:12px; padding:14px 16px;">
+        <div class="verdict-badge">3</div><div class="bar m dark"></div>
+        <span class="chip" style="margin-left:auto;">📉 하락</span>
+        <span>신뢰도 <span class="meter"><i class="on"></i><i></i><i></i></span></span>
+        <span style="font-size:14px; color:var(--note);">▸</span>
+      </div>
+
+      <div class="foot-note">— 해당 리포트는 트렌드핏 AI가 작성했습니다 —</div>
+
+      <div class="note">
+        <b>데이터 연결:</b> 각 카드는 <code>writer-output.json</code>의 <code>contents[]</code> 1개 = 트렌드 1개.
+        ①현황=<code>summary_bullets</code>, ②매칭=<code>match_reasons(✅/⚠️/❌ + detail)</code>, ③활용=<code>usage_plan</code>, ④근거=<code>evidence[]</code>.
+        1순위 카드만 기본 펼침, 신뢰도 미터 3칸 = <code>confidence</code>(높음/중간/낮음).
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 화면 4: 내보내기 ===================== -->
+  <section class="screen">
+    <div class="screen-label"><span class="num">4</span> 내보내기 / 공유 <span class="tag">PDF · 링크</span></div>
+    <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url"></span></div>
+    <div class="canvas">
+      <div class="grid-2">
+        <div class="wf-box center" style="padding:28px;">
+          <div class="img-ph" style="width:120px; height:150px; margin:0 auto 14px;"></div>
+          <div class="muted" style="margin-bottom:14px;">PDF 미리보기<br/>(신뢰도 근거 블록 포함)</div>
+          <span class="btn primary">PDF 다운로드 ⤓</span>
+        </div>
+        <div class="stack">
+          <div class="wf-solid" style="padding:14px; display:flex; align-items:center; gap:10px;">
+            <div class="icon" style="width:30px;height:30px;background:var(--fill);border:1.5px solid var(--line);border-radius:6px;"></div>
+            <div style="flex:1"><b style="font-size:13px;">공유 링크 복사</b><div class="muted">읽기 전용 리포트 URL</div></div>
+            <span class="btn ghost">복사</span>
+          </div>
+          <div class="wf-solid" style="padding:14px; display:flex; align-items:center; gap:10px;">
+            <div class="icon" style="width:30px;height:30px;background:var(--fill);border:1.5px solid var(--line);border-radius:6px;"></div>
+            <div style="flex:1"><b style="font-size:13px;">새 트렌드 매칭</b><div class="muted">다른 브랜드/캠페인으로 다시</div></div>
+            <span class="btn ghost">시작</span>
+          </div>
+        </div>
+      </div>
+      <div class="note">
+        <b>설계 의도:</b> HTML 리포트와 PDF는 동일 컴포넌트(<code>match-report.js</code>)로 렌더 → 일관성 보장.
+        PDF에만 <b>신뢰도 근거 블록</b>(출처종류·신선도·검증가능성)이 추가 노출됨.
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

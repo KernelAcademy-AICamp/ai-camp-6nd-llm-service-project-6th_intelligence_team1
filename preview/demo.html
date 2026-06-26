@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>트렌드핏 — 임원 데모 (자동 재생)</title>
+<style>
+  :root{
+    --pink:#ff5d8f; --pink-soft:#fff0f5; --pink-line:#ffc9da;
+    --lav:#9b8cff; --lav-soft:#f1edff;
+    --ink:#241b2e; --muted:#8a8294; --line:#ececf2;
+    --ok:#22a06b; --warn:#e0982a;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:radial-gradient(1200px 700px at 50% -10%, #2a2140, #15101f 70%);
+    color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* 뷰포트 스케일러 */
+  .viewport{ width:1000px; height:640px; transform-origin:top center; }
+
+  /* 녹화 모드 (?record=1) — 컨트롤·배경 제거, 스테이지만 꽉 차게 */
+  body.record{ padding:0; background:#000; min-height:0; display:block; }
+  body.record .controls{ display:none; }
+  body.record .viewport{ transform:none !important; height:640px !important; }
+  body.record .stage{ border-radius:0; box-shadow:none; }
+
+  /* 녹화 프레임 */
+  .stage{
+    position:relative; width:1000px; height:640px; background:#fff;
+    border-radius:16px; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.55);
+    cursor:none;
+  }
+  /* 브라우저 크롬 */
+  .chrome{ height:44px; background:#f6f5f9; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:8px; padding:0 16px; position:relative; z-index:5;}
+  .chrome .d{ width:11px; height:11px; border-radius:50%; }
+  .chrome .d.r{background:#ff5f57;} .chrome .d.y{background:#febc2e;} .chrome .d.g{background:#28c840;}
+  .chrome .addr{ margin:0 auto; width:46%; height:24px; background:#fff; border:1px solid var(--line);
+    border-radius:12px; display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px; color:var(--muted);}
+  .rec{ position:absolute; right:16px; display:flex; align-items:center; gap:6px; font-size:11px; color:#c0392b; font-weight:700;}
+  .rec .dot{ width:9px; height:9px; border-radius:50%; background:#e23b3b; animation:blink 1s steps(2) infinite;}
+  @keyframes blink{50%{opacity:.2;}}
+
+  /* 화면 스택 */
+  .screens{ position:absolute; inset:44px 0 0 0; }
+  .scene{ position:absolute; inset:0; opacity:0; visibility:hidden; transform:scale(1.015);
+    transition:opacity .5s ease, transform .5s ease; overflow:hidden; }
+  .scene.active{ opacity:1; visibility:visible; transform:scale(1); }
+  .scene-inner{ position:absolute; inset:0; overflow:hidden; }
+
+  /* 공통 타이포 */
+  h1,h2,h3{margin:0;}
+  .muted{color:var(--muted);}
+  .pad{padding:34px 44px;}
+
+  /* ---- 타이틀 씬 ---- */
+  .title-scene{ background:linear-gradient(135deg,#fff0f5, #f1edff); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .logo{ font-size:15px; font-weight:800; letter-spacing:1px; color:var(--pink); display:flex; align-items:center; gap:8px; }
+  .logo .mk{ width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg,var(--pink),var(--lav)); }
+  .title-scene h1{ font-size:46px; letter-spacing:-1px; margin:18px 0 10px; }
+  .title-scene .sub{ font-size:17px; color:var(--muted); }
+  .title-scene .pill{ margin-top:26px; padding:8px 18px; border:1px solid var(--pink-line); border-radius:20px; color:var(--pink); font-size:13px; font-weight:600; background:#fff; }
+
+  /* ---- 입력 씬 ---- */
+  .head-row{ display:flex; align-items:baseline; gap:10px; margin-bottom:20px; }
+  .head-row h2{ font-size:24px; letter-spacing:-.4px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+  .field{ margin-bottom:16px; }
+  .field .lbl{ font-size:12px; font-weight:700; color:#5b5366; margin-bottom:7px; }
+  .inp{ height:40px; border:1.5px solid var(--line); border-radius:9px; background:#fff; display:flex; align-items:center; padding:0 12px; font-size:14px; color:var(--ink); }
+  .inp .cap{ display:inline-block; width:1px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ padding:7px 14px; border:1.5px solid var(--line); border-radius:18px; font-size:12.5px; color:#6b6377; background:#fff; transition:.25s; }
+  .chip.on{ background:var(--pink); color:#fff; border-color:var(--pink); box-shadow:0 6px 16px rgba(255,93,143,.35); }
+  .chip.small{ padding:5px 11px; font-size:11.5px; }
+  .cta{ display:inline-flex; align-items:center; gap:8px; padding:14px 26px; border-radius:11px; font-size:15px; font-weight:700; color:#fff;
+    background:linear-gradient(135deg,var(--pink),#ff7eaa); box-shadow:0 12px 26px rgba(255,93,143,.4); }
+
+  /* ---- 처리 씬 ---- */
+  .proc-scene{ background:linear-gradient(180deg,#fff,#fbf8ff); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .pipe{ width:560px; }
+  .pipe-row{ display:flex; align-items:center; gap:14px; padding:15px 18px; border:1.5px solid var(--line); border-radius:12px; background:#fff; margin-bottom:12px; transition:.35s; }
+  .pipe-row .ic{ width:38px; height:38px; border-radius:10px; background:var(--lav-soft); display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .pipe-row .tx{ flex:1; }
+  .pipe-row .tx b{ font-size:14px; } .pipe-row .tx .s{ font-size:12px; color:var(--muted); }
+  .pipe-row .state{ font-size:13px; color:var(--muted); display:flex; align-items:center; gap:8px; }
+  .spin{ width:18px; height:18px; border-radius:50%; border:3px solid #eee; border-top-color:var(--pink); animation:sp 0.8s linear infinite; }
+  @keyframes sp{to{transform:rotate(360deg);}}
+  .pipe-row.run{ border-color:var(--pink); box-shadow:0 10px 24px rgba(255,93,143,.16); }
+  .pipe-row.done .ic{ background:#e7f7ef; }
+  .pipe-row.done .state{ color:var(--ok); font-weight:700; }
+  .pipe-row.wait{ opacity:.5; }
+
+  /* ---- 리포트 씬 ---- */
+  .report-scene{ background:#fff; }
+  .report-scroll{ position:absolute; inset:0; overflow:hidden; }
+  .report-pad{ padding:30px 44px 60px; }
+  .r-head{ display:flex; align-items:center; gap:14px; margin-bottom:18px; }
+  .r-head .badge{ width:46px; height:46px; border-radius:13px; background:linear-gradient(135deg,var(--pink),var(--lav)); }
+  .r-head h2{ font-size:22px; }
+  .r-head .meta{ margin-left:auto; display:flex; gap:8px; }
+  .funnel{ display:flex; align-items:center; gap:18px; background:var(--pink-soft); border:1px solid var(--pink-line); border-radius:14px; padding:16px 22px; margin-bottom:22px; }
+  .funnel .big{ font-size:26px; font-weight:800; }
+  .funnel .arr{ color:var(--pink); font-size:22px; }
+  .sec-label{ font-size:12px; font-weight:800; letter-spacing:.5px; color:var(--pink); margin:6px 0 12px; }
+  .cards3{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:26px; }
+  .tcard{ border:1.5px solid var(--line); border-radius:14px; padding:16px; }
+  .tcard .rk{ width:26px; height:26px; border-radius:50%; background:var(--ink); color:#fff; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+  .tcard h3{ font-size:15px; margin-bottom:8px; }
+  .tcard p{ font-size:12.5px; color:var(--muted); line-height:1.5; margin:0; }
+
+  .detail{ border:1.5px solid var(--pink-line); border-radius:16px; overflow:hidden; }
+  .detail .dhead{ display:flex; align-items:center; gap:12px; padding:16px 18px; background:var(--pink-soft); }
+  .detail .dhead .rk{ width:30px; height:30px; border-radius:50%; background:var(--pink); color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; }
+  .detail .dhead h3{ font-size:17px; }
+  .detail .dhead .stage-tag{ margin-left:auto; font-size:12px; font-weight:700; color:var(--ok); background:#e7f7ef; padding:5px 12px; border-radius:14px; }
+  .meter{ display:inline-flex; gap:3px; vertical-align:middle; margin-left:6px; }
+  .meter i{ width:16px; height:9px; border-radius:2px; background:#eee; } .meter i.on{ background:var(--lav); }
+  .dbody{ padding:18px; }
+  .block{ margin-bottom:18px; }
+  .block .bl{ font-size:12px; font-weight:800; color:#5b5366; margin-bottom:8px; }
+  .block ul{ margin:0; padding-left:18px; } .block li{ font-size:13px; line-height:1.7; color:#3f3850; }
+  .judge{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px dashed var(--line); }
+  .judge:last-child{border-bottom:none;}
+  .judge .v{ width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; }
+  .judge .v.ok{ background:#e7f7ef; } .judge .v.wn{ background:#fdf3e3; }
+  .judge b{ font-size:12.5px; width:64px; } .judge span{ font-size:12.5px; color:var(--muted); }
+
+  /* ---- 내보내기 씬 ---- */
+  .export-scene{ background:linear-gradient(180deg,#fff,#f1edff); display:flex; align-items:center; justify-content:center; }
+  .export-wrap{ display:flex; gap:34px; align-items:center; }
+  .pdf{ width:240px; height:320px; border-radius:14px; background:#fff; box-shadow:0 20px 50px rgba(120,90,180,.28); border:1px solid var(--line); padding:22px; }
+  .pdf .ln{ height:9px; border-radius:3px; background:#eee; margin-bottom:8px; }
+  .pdf .ln.t{ background:var(--pink); width:55%; height:14px; margin-bottom:16px; }
+  .export-actions .opt{ display:flex; align-items:center; gap:12px; padding:16px 18px; border:1.5px solid var(--line); border-radius:13px; width:330px; margin-bottom:14px; background:#fff; }
+  .export-actions .opt .ic{ width:40px; height:40px; border-radius:11px; background:var(--lav-soft); display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .export-actions .opt b{ font-size:14px; } .export-actions .opt .s{ font-size:12px; color:var(--muted); }
+  .export-actions .opt .go{ margin-left:auto; font-size:13px; font-weight:700; color:var(--pink); }
+
+  /* ---- 엔드 씬 ---- */
+  .end-scene{ background:linear-gradient(135deg,#241b2e,#3a2b52); color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .end-scene h1{ font-size:34px; letter-spacing:-.5px; margin-bottom:14px; }
+  .end-scene p{ font-size:16px; color:#cfc6e0; }
+  .end-scene .logo{ color:#fff; opacity:.95; margin-bottom:22px; }
+
+  /* ---- 가상 커서 ---- */
+  .cursor{ position:absolute; left:500px; top:320px; width:26px; height:26px; z-index:50; pointer-events:none;
+    transition:left .7s cubic-bezier(.5,0,.2,1), top .7s cubic-bezier(.5,0,.2,1); filter:drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+  .cursor.fast{ transition:left .45s cubic-bezier(.5,0,.2,1), top .45s cubic-bezier(.5,0,.2,1); }
+  .cursor.click{ transform:scale(.82); }
+  .ripple{ position:absolute; z-index:48; width:14px; height:14px; border-radius:50%; border:2px solid var(--pink);
+    transform:translate(-50%,-50%); animation:rip .55s ease-out forwards; pointer-events:none; }
+  @keyframes rip{ from{opacity:.8; width:14px; height:14px;} to{opacity:0; width:64px; height:64px;} }
+
+  /* ---- 스포트라이트 하이라이트 ---- */
+  .spot{ position:absolute; z-index:40; border-radius:12px; pointer-events:none; opacity:0;
+    box-shadow:0 0 0 3px var(--pink), 0 0 0 9999px rgba(20,10,30,.30); transition:all .4s ease; }
+  .spot.show{ opacity:1; }
+  .tip{ position:absolute; z-index:46; background:var(--ink); color:#fff; font-size:13px; font-weight:600;
+    padding:8px 13px; border-radius:9px; opacity:0; transform:translateY(4px); transition:.3s; white-space:nowrap; pointer-events:none; }
+  .tip.show{ opacity:1; transform:translateY(0); }
+  .tip::after{ content:""; position:absolute; left:18px; bottom:-5px; width:10px; height:10px; background:var(--ink); transform:rotate(45deg); }
+
+  /* ---- 자막 ---- */
+  .caption{ position:absolute; left:0; right:0; bottom:0; z-index:44; display:flex; justify-content:center; padding:0 0 26px; pointer-events:none; }
+  .caption .box{ background:rgba(20,12,30,.82); color:#fff; padding:11px 22px; border-radius:24px; font-size:15px; font-weight:600;
+    opacity:0; transform:translateY(8px); transition:.35s; max-width:80%; text-align:center; backdrop-filter:blur(4px); }
+  .caption .box.show{ opacity:1; transform:translateY(0); }
+
+  /* ---- 진행 바 ---- */
+  .progress{ position:absolute; top:0; left:0; height:3px; width:0%; background:linear-gradient(90deg,var(--pink),var(--lav)); z-index:60; transition:width .4s linear; }
+
+  /* ---- 컨트롤 ---- */
+  .controls{ display:flex; gap:10px; align-items:center; }
+  .btn{ padding:10px 18px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08);
+    color:#fff; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
+  .btn:hover{ background:rgba(255,255,255,.16); }
+  .btn.primary{ background:var(--pink); border-color:var(--pink); }
+  .hint{ color:#9d93b3; font-size:12px; }
+</style>
+</head>
+<body>
+
+  <div class="viewport" id="viewport">
+    <div class="stage" id="stage">
+      <div class="progress" id="progress"></div>
+
+      <!-- 브라우저 크롬 -->
+      <div class="chrome">
+        <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+        <span class="addr">🔒 trendfit.ai/match</span>
+        <span class="rec"><span class="dot"></span>REC <span id="timer">00:00</span></span>
+      </div>
+
+      <div class="screens">
+
+        <!-- 0. 타이틀 -->
+        <section class="scene title-scene" data-scene="title">
+          <div class="logo"><span class="mk"></span>TRENDFIT</div>
+          <h1>우리 브랜드에 맞는 트렌드,<br/>찾아드립니다</h1>
+          <div class="sub">뷰티 브랜드 × 트렌드 매칭 · 멀티 에이전트 AI</div>
+          <div class="pill">임원 보고용 데모 · 전체 플로우</div>
+        </section>
+
+        <!-- 1. 입력 -->
+        <section class="scene" data-scene="input">
+          <div class="scene-inner pad">
+            <div class="head-row"><h2>브랜드 정보 입력</h2><span class="muted">5가지만 입력하면 끝</span></div>
+            <div class="grid2">
+              <div>
+                <div class="field"><div class="lbl">브랜드 · 제품명</div>
+                  <div class="inp"><span id="t-brand"></span><span class="cap"></span></div></div>
+                <div class="field"><div class="lbl">카테고리</div>
+                  <div class="inp"><span id="t-cat"></span></div></div>
+                <div class="field"><div class="lbl">톤앤매너 (7종 중 선택)</div>
+                  <div class="chips">
+                    <span class="chip" id="chip-tone">Z세대·트렌디</span>
+                    <span class="chip">클린뷰티</span><span class="chip">로맨틱·감성</span>
+                    <span class="chip">럭셔리</span><span class="chip">더마</span>
+                  </div></div>
+              </div>
+              <div>
+                <div class="field"><div class="lbl">타겟 — 성별 / 연령</div>
+                  <div class="chips">
+                    <span class="chip small on">여성</span><span class="chip small on">20대</span>
+                    <span class="chip small">30대</span>
+                  </div></div>
+                <div class="field"><div class="lbl">타겟 — 니즈 / 동기</div>
+                  <div class="inp" style="height:64px; align-items:flex-start; padding-top:9px;"><span class="muted" style="font-size:13px;">번들거림 방지 · 자기표현 · 데일리 지속력</span></div></div>
+                <div class="field"><div class="lbl">검색 키워드</div>
+                  <div class="chips">
+                    <span class="chip small on">매트 쿠션</span><span class="chip small on">20대 메이크업</span>
+                    <span class="chip small">＋ 추가</span>
+                  </div></div>
+              </div>
+            </div>
+            <div style="text-align:center; margin-top:26px;">
+              <span class="cta" id="start-btn">트렌드 매칭 시작 ▶</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. 처리 -->
+        <section class="scene proc-scene" data-scene="proc">
+          <div class="scene-inner" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <h2 style="font-size:22px; margin-bottom:6px;">AI 에이전트가 분석 중입니다</h2>
+            <p class="muted" style="margin:0 0 26px;">트렌드를 수집하고 우리 브랜드와의 적합도를 평가해요</p>
+            <div class="pipe">
+              <div class="pipe-row" id="p1"><div class="ic">🔎</div><div class="tx"><b>트렌드 수집가</b><div class="s">네이버 · YouTube · Tavily 검색</div></div><div class="state"><span class="spin"></span></div></div>
+              <div class="pipe-row wait" id="p2"><div class="ic">⚖️</div><div class="tx"><b>매칭가</b><div class="s">2질문 × 2비교 적합도 평가</div></div><div class="state">대기</div></div>
+              <div class="pipe-row wait" id="p3"><div class="ic">🎨</div><div class="tx"><b>디자인가</b><div class="s">트렌드 기반 비주얼 시안</div></div><div class="state">대기</div></div>
+              <div class="pipe-row wait" id="p4"><div class="ic">✍️</div><div class="tx"><b>작성가</b><div class="s">최종 리포트 생성</div></div><div class="state">대기</div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. 리포트 -->
+        <section class="scene report-scene" data-scene="report">
+          <div class="report-scroll" id="reportScroll">
+            <div class="report-pad">
+              <div class="r-head">
+                <div class="badge"></div>
+                <div><h2>힌스 — 트렌드 매칭 리포트</h2><div class="muted" style="font-size:13px;">커버 매트 쿠션 · 메이크업>베이스 · 20대 여성</div></div>
+                <div class="meta"><span class="chip small">PDF</span><span class="chip small">공유</span></div>
+              </div>
+
+              <div class="funnel" id="r-funnel">
+                <div><div class="big">1,240</div><div class="muted" style="font-size:12px;">전체 수집 데이터</div></div>
+                <div class="arr">▶</div>
+                <div><div class="big" style="color:var(--pink);">3</div><div class="muted" style="font-size:12px;">엄선된 트렌드</div></div>
+                <div style="margin-left:auto; font-size:12px; color:var(--muted); max-width:260px;">네이버·유튜브·Tavily 1,240건을 훑어 적합도 높은 3개만 선별</div>
+              </div>
+
+              <div class="sec-label">PART I · 한눈에 보는 상위 트렌드</div>
+              <div class="cards3" id="r-part1">
+                <div class="tcard"><div class="rk">1</div><h3>매트 쿠션의 재부상</h3><p>글래스 스킨에서 매트로 — 번들거림 없는 마감 수요 급증</p></div>
+                <div class="tcard"><div class="rk">2</div><h3>미니멀 베이스</h3><p>두껍게 덮기보다 얇게, 결을 살리는 레이어링 화장법</p></div>
+                <div class="tcard"><div class="rk">3</div><h3>웰니스 스킨케어</h3><p>피부 장벽·회복 중심의 케어형 메이크업 확산</p></div>
+              </div>
+
+              <div class="sec-label">PART II · 1순위 트렌드 상세</div>
+              <div class="detail">
+                <div class="dhead">
+                  <div class="rk">1</div>
+                  <h3>매트 쿠션의 재부상</h3>
+                  <span style="font-size:12px; color:var(--muted);">신뢰도 <span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+                  <span class="stage-tag">📈 상승 중</span>
+                </div>
+                <div class="dbody">
+                  <div class="block" id="b-status">
+                    <div class="bl">① 트렌드 현황</div>
+                    <ul>
+                      <li>글래스 스킨·과한 광택 대신 보송한 세미매트 선호가 빠르게 확산</li>
+                      <li>'매트 쿠션' 검색량 지수 38.9 → 47.4 (+22%, 최근 5개월)</li>
+                      <li>20대 여성층이 검색·언급을 주도</li>
+                    </ul>
+                  </div>
+                  <div class="block" id="b-match">
+                    <div class="bl">② 매칭 분석 — 왜 우리 브랜드에 맞나요?</div>
+                    <div class="judge"><span class="v ok">✅</span><b>제품·제형</b><span>브랜드의 매트 텍스처가 트렌드 핵심 키워드와 직결</span></div>
+                    <div class="judge"><span class="v ok">✅</span><b>매체·톤</b><span>Z세대·트렌디 톤이 트렌드 무드와 친화</span></div>
+                    <div class="judge"><span class="v wn">⚠️</span><b>타겟</b><span>20대 여성 비중 높음 — 30대 확장 여지</span></div>
+                  </div>
+                  <div class="block" id="b-plan">
+                    <div class="bl">③ 활용 방안</div>
+                    <ul>
+                      <li>'매트 쿠션' 키워드로 2026 신상품 런칭 캠페인 전개</li>
+                      <li>YouTube에서 '매트 vs 글로우' 비교 콘텐츠로 검색 트래픽 흡수</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. 내보내기 -->
+        <section class="scene export-scene" data-scene="export">
+          <div class="scene-inner" style="display:flex; align-items:center; justify-content:center;">
+            <div class="export-wrap">
+              <div class="pdf">
+                <div class="ln t"></div><div class="ln" style="width:90%"></div><div class="ln" style="width:75%"></div>
+                <div class="ln" style="width:85%"></div><div class="ln" style="width:60%; margin-bottom:18px;"></div>
+                <div class="ln" style="background:var(--pink-soft); height:60px; width:100%; border:1px solid var(--pink-line);"></div>
+                <div class="ln" style="width:80%; margin-top:14px;"></div><div class="ln" style="width:65%"></div>
+              </div>
+              <div class="export-actions">
+                <h2 style="font-size:21px; margin-bottom:16px;">리포트 공유</h2>
+                <div class="opt" id="ex-pdf"><div class="ic">⤓</div><div><b>PDF 다운로드</b><div class="s">신뢰도 근거 포함 인쇄본</div></div><span class="go">받기</span></div>
+                <div class="opt"><div class="ic">🔗</div><div><b>공유 링크 복사</b><div class="s">읽기 전용 리포트 URL</div></div><span class="go">복사</span></div>
+                <div class="opt"><div class="ic">↺</div><div><b>새 트렌드 매칭</b><div class="s">다른 브랜드로 다시 실행</div></div><span class="go">시작</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. 엔드 -->
+        <section class="scene end-scene" data-scene="end">
+          <div class="logo"><span class="mk"></span>TRENDFIT</div>
+          <h1>입력 5가지 → 근거 있는 트렌드 리포트</h1>
+          <p>마케터의 감이 아니라, 데이터로 검증된 트렌드 전략을 5분 만에.</p>
+        </section>
+
+      </div>
+
+      <!-- 오버레이 -->
+      <div class="spot" id="spot"></div>
+      <div class="tip" id="tip"></div>
+      <svg class="cursor" id="cursor" viewBox="0 0 24 24" fill="none">
+        <path d="M4 2 L4 20 L9 15 L12.5 22 L15 21 L11.5 14 L18 14 Z" fill="#fff" stroke="#241b2e" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+
+      <div class="caption"><div class="box" id="capBox"></div></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn primary" id="replay">▶ 다시 재생</button>
+    <button class="btn" id="full">⛶ 전체화면</button>
+    <span class="hint">QuickTime(⌘⇧5)으로 이 영역을 녹화하면 MP4 데모가 됩니다</span>
+  </div>
+
+<script>
+const stage = document.getElementById('stage');
+const cursor = document.getElementById('cursor');
+const spot = document.getElementById('spot');
+const tip = document.getElementById('tip');
+const capBox = document.getElementById('capBox');
+const progress = document.getElementById('progress');
+const timerEl = document.getElementById('timer');
+const scenes = {};
+document.querySelectorAll('.scene').forEach(s=>scenes[s.dataset.scene]=s);
+
+let runId = 0;
+let curScale = 1;
+const RECORD = new URLSearchParams(location.search).get('record');
+if(RECORD) document.body.classList.add('record');
+
+function fit(){
+  if(RECORD){ curScale = 1;
+    document.getElementById('viewport').style.transform = 'none';
+    document.getElementById('viewport').style.height = '640px'; return; }
+  const avail = Math.min(window.innerWidth-48, 1000);
+  curScale = avail/1000;
+  document.getElementById('viewport').style.transform = `scale(${curScale})`;
+  document.getElementById('viewport').style.height = (640*curScale)+'px';
+}
+window.addEventListener('resize', fit); fit();
+
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+async function wait(ms){ const id=runId; await sleep(ms); if(id!==runId) throw 'cancel'; }
+
+function center(sel){
+  const el = typeof sel==='string'? document.querySelector(sel): sel;
+  const s = stage.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  return { x:(r.left-s.left)/curScale + (r.width/curScale)/2, y:(r.top-s.top)/curScale + (r.height/curScale)/2,
+           left:(r.left-s.left)/curScale, top:(r.top-s.top)/curScale, w:r.width/curScale, h:r.height/curScale };
+}
+
+async function moveTo(sel, fast){
+  const c = center(sel);
+  cursor.classList.toggle('fast', !!fast);
+  cursor.style.left = c.x+'px'; cursor.style.top = c.y+'px';
+  await wait(fast?500:760);
+}
+async function click(){
+  cursor.classList.add('click');
+  const rp = document.createElement('div'); rp.className='ripple';
+  rp.style.left = (parseFloat(cursor.style.left))+'px';
+  rp.style.top = (parseFloat(cursor.style.top))+'px';
+  stage.appendChild(rp); setTimeout(()=>rp.remove(),600);
+  await wait(160); cursor.classList.remove('click'); await wait(220);
+}
+async function showScene(name, prog){
+  Object.values(scenes).forEach(s=>s.classList.remove('active'));
+  scenes[name].classList.add('active');
+  if(prog!=null) progress.style.width = prog+'%';
+  await wait(560);
+}
+function hideSpot(){ spot.classList.remove('show'); tip.classList.remove('show'); }
+async function highlight(sel, text){
+  const c = center(sel);
+  spot.style.left=(c.left-8)+'px'; spot.style.top=(c.top-8)+'px';
+  spot.style.width=(c.w+16)+'px'; spot.style.height=(c.h+16)+'px';
+  spot.classList.add('show');
+  if(text){
+    tip.textContent=text; tip.classList.add('show');
+    tip.style.left=(c.left-8)+'px';
+    tip.style.top=(c.top-8-40)+'px';
+  } else { tip.classList.remove('show'); }
+  await wait(140);
+}
+async function caption(text){
+  capBox.classList.remove('show'); await wait(180);
+  capBox.textContent=text; capBox.classList.add('show'); await wait(120);
+}
+async function type(sel, text, speed=55){
+  const el = document.querySelector(sel); el.textContent='';
+  for(const ch of text){ el.textContent+=ch; await wait(speed); }
+}
+async function scrollReport(to){
+  const sc = document.getElementById('reportScroll');
+  sc.scrollTo({top:to, behavior:'smooth'}); await wait(700);
+}
+function resetReport(){ const sc=document.getElementById('reportScroll'); if(sc) sc.scrollTop=0; }
+
+// 타이머
+let timerInt=null, secs=0;
+function startTimer(){ secs=0; timerEl.textContent='00:00';
+  clearInterval(timerInt);
+  timerInt=setInterval(()=>{ secs++; const m=String(Math.floor(secs/60)).padStart(2,'0'); const s=String(secs%60).padStart(2,'0'); timerEl.textContent=`${m}:${s}`; },1000);
+}
+
+function resetAll(){
+  hideSpot(); resetReport();
+  ['p1','p2','p3','p4'].forEach(id=>{ const r=document.getElementById(id); r.className='pipe-row wait'; r.querySelector('.state').innerHTML='대기'; });
+  document.getElementById('p1').className='pipe-row run'; document.getElementById('p1').querySelector('.state').innerHTML='<span class="spin"></span>';
+  document.querySelector('#t-brand').textContent='';
+  document.querySelector('#t-cat').textContent='';
+  document.getElementById('chip-tone').classList.remove('on');
+  cursor.style.left='500px'; cursor.style.top='320px';
+  capBox.classList.remove('show'); progress.style.width='0%';
+}
+
+async function setPipe(id, state, label){
+  const r=document.getElementById(id);
+  r.classList.remove('wait','run','done');
+  r.classList.add(state==='done'?'done':'run');
+  r.querySelector('.state').innerHTML = state==='done'? ('✓ '+label) : '<span class="spin"></span>';
+}
+
+async function play(){
+  runId++; const id=runId; resetAll(); startTimer();
+  window.__demoDone = false;
+  try{
+    // 타이틀
+    await showScene('title', 5);
+    await caption('트렌드핏 — 뷰티 브랜드를 위한 AI 트렌드 매칭 서비스');
+    await wait(1900);
+
+    // 입력
+    await showScene('input', 18);
+    await caption('① 마케터는 브랜드 정보 5가지만 입력합니다');
+    await moveTo('#t-brand'); await type('#t-brand','힌스 — 커버 매트 쿠션', 48);
+    await type('#t-cat','메이크업 > 베이스', 40);
+    await moveTo('#chip-tone'); await highlight('#chip-tone','톤앤매너 선택');
+    document.getElementById('chip-tone').classList.add('on'); await click(); hideSpot();
+    await caption('톤앤매너·타겟·키워드까지 — 클릭 몇 번이면 끝');
+    await wait(700);
+    await moveTo('#start-btn'); await highlight('#start-btn','매칭 시작');
+    await click(); hideSpot(); await wait(300);
+
+    // 처리
+    await showScene('proc', 38);
+    await caption('② AI 에이전트 4개가 순차적으로 일합니다');
+    await wait(900);
+    await setPipe('p1','done','수집 완료'); await setPipe('p2','run'); await wait(1100);
+    await setPipe('p2','done','평가 완료'); await setPipe('p3','run'); await wait(1100);
+    await setPipe('p3','done','시안 완료'); await setPipe('p4','run');
+    await caption('수집 → 매칭 평가 → 비주얼 → 리포트 작성까지 자동');
+    await wait(1100);
+    await setPipe('p4','done','생성 완료'); await wait(700);
+
+    // 리포트
+    await showScene('report', 62);
+    await caption('③ 근거가 담긴 트렌드 리포트가 완성됩니다');
+    await wait(700);
+    await moveTo('#r-funnel', true); await highlight('#r-funnel','1,240건 → 핵심 3개로 압축');
+    await wait(1700); hideSpot();
+    await caption('수천 건의 데이터를 적합도 높은 3개 트렌드로 압축');
+    await moveTo('#r-part1', true); await highlight('#r-part1','상위 3 트렌드 한눈에');
+    await wait(1700); hideSpot();
+    await scrollReport(330);
+    await caption('1순위 트렌드는 "왜 맞는지"까지 근거로 보여줍니다');
+    await moveTo('#b-status', true); await highlight('#b-status','트렌드 현황 — 검색량 +22%');
+    await wait(1700); hideSpot();
+    await scrollReport(560);
+    await moveTo('#b-match', true); await highlight('#b-match','매칭 분석 — 제품·톤·타겟 적합도');
+    await wait(1900); hideSpot();
+    await scrollReport(760);
+    await moveTo('#b-plan', true); await highlight('#b-plan','바로 쓰는 활용 방안');
+    await wait(1700); hideSpot();
+
+    // 내보내기
+    await showScene('export', 85);
+    await caption('④ PDF·링크로 팀과 즉시 공유합니다');
+    await wait(700);
+    await moveTo('#ex-pdf'); await highlight('#ex-pdf','PDF 다운로드');
+    await click(); await wait(1500); hideSpot();
+
+    // 엔드
+    await showScene('end', 100);
+    await caption('입력 5가지 → 근거 있는 트렌드 전략, 5분이면 충분합니다');
+    await wait(2600);
+    clearInterval(timerInt);
+    window.__demoDone = true;
+  }catch(e){ if(e!=='cancel') console.error(e); }
+}
+
+document.getElementById('replay').addEventListener('click', play);
+document.getElementById('full').addEventListener('click', ()=>{
+  const v=document.getElementById('viewport');
+  if(!document.fullscreenElement){ stage.requestFullscreen?.(); } else { document.exitFullscreen?.(); }
+});
+
+window.addEventListener('load', ()=> setTimeout(play, 500));
+</script>
+</body>
+</html>
