@@ -260,15 +260,16 @@
     );
   }
 
-  // 신뢰도 — c.confidence(높음/중간/낮음 또는 high/mid/low) 우선, 없으면 evidence 개수로 추정
+  // 신뢰도 — 2단계(높음/중간). c.confidence(높음/중간 또는 high/mid) 우선, 없으면 evidence 개수로 추정.
+  // 옛 데이터의 '낮음'/'low'는 중간으로 흡수.
   function confidenceOf(c) {
-    var MAP = { "높음": "high", high: "high", "중간": "mid", mid: "mid", "낮음": "low", low: "low" };
+    var MAP = { "높음": "high", high: "high", "중간": "mid", mid: "mid", "낮음": "mid", low: "mid" };
     var lvl = c.confidence ? (MAP[c.confidence] || "mid") : null;
     if (!lvl) {
       var n = (c.evidence || []).length;
-      lvl = n >= 3 ? "high" : n === 2 ? "mid" : "low";
+      lvl = n >= 3 ? "high" : "mid";
     }
-    return { lvl: lvl, label: { high: "높음", mid: "중간", low: "낮음" }[lvl] };
+    return { lvl: lvl, label: { high: "높음", mid: "중간" }[lvl] };
   }
 
   // 출처 코드 → 사람이 읽는 라벨
@@ -349,8 +350,8 @@
     var stage = c.trend_stage && TREND_STAGE[c.trend_stage];
     var stageChip = stage ? '<span class="mr-stage-chip">' + stage + "</span>" : "";
     var conf = confidenceOf(c);
-    // 정도 미터 — 높음=3칸, 중간=2칸, 낮음=1칸
-    var filled = conf.lvl === "high" ? 3 : conf.lvl === "mid" ? 2 : 1;
+    // 정도 미터 — 3칸 유지: 높음=3칸, 중간=2칸 (2단계)
+    var filled = conf.lvl === "high" ? 3 : 2;
     var bars = "";
     for (var bi = 0; bi < 3; bi++) bars += '<span class="mr-conf-bar' + (bi < filled ? " mr-on" : "") + '"></span>';
     var basis = c.confidence_basis;

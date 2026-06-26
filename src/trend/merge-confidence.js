@@ -15,10 +15,9 @@
 //   fresh_count      = published_at이 최근 RECENT_DAYS 이내인 근거 수
 //   verifiable_count = url 있음 OR (집계성 출처 + period 있음) 근거 수
 //   total_evidence   = 근거 총 개수
-// 등급 (잠정 — 첫 분포 보고 튜닝. 검증 하네스 confidence_dist_check.py와 동일 규칙)
+// 등급 (2단계 — 높음/중간. 잠정, 첫 분포 보고 튜닝)
 //   높음: source_count >= 3 그리고 fresh_count >= 1 그리고 verifiable_count >= 1 (3신호 모두 충족)
-//   중간: source_count == 2
-//   낮음: source_count <= 1
+//   중간: 그 외 (높음 조건 미충족 — 기존 '낮음'은 중간으로 통합)
 //
 // 렌더러(match-report.js의 confidenceOf)가 trend.confidence를 우선 사용하므로 채우면 자동 반영.
 // confidence_basis는 툴팁 근거 노출용(출처 종류·근거 수·신선/검증 건수·기간).
@@ -69,11 +68,11 @@ function readJson(path) {
   }
 }
 
-// 등급 판정 (3신호 — 출처 다양성·신선·검증가능성. 하네스와 동일)
+// 등급 판정 (2단계 — 높음/중간). 3신호(출처 다양성·신선·검증가능성)를 모두 충족하면 높음,
+// 아니면 중간. 기존 3단계의 '낮음'(source_count<=1)은 중간으로 흡수.
 function gradeOf(sourceCount, freshCount, verifiableCount) {
   if (sourceCount >= 3 && freshCount >= 1 && verifiableCount >= 1) return "높음";
-  if (sourceCount === 2) return "중간";
-  return "낮음";
+  return "중간";
 }
 
 const trendDoc = readJson(TREND_PATH);
@@ -84,7 +83,7 @@ if (!Array.isArray(trends)) {
 }
 
 const cutoff = Date.now() - RECENT_DAYS * 24 * 60 * 60 * 1000;
-const dist = { 높음: 0, 중간: 0, 낮음: 0 };
+const dist = { 높음: 0, 중간: 0 };
 const missingEvidence = [];
 
 for (const trend of trends) {
@@ -140,7 +139,7 @@ writeFileSync(TREND_PATH, JSON.stringify(trendDoc, null, 2) + "\n", "utf-8");
 
 console.log("✅ confidence 산출 완료 (evidence 기반 · 결정적 — LLM 아님)");
 console.log(
-  `   분포 — 높음 ${dist["높음"]} / 중간 ${dist["중간"]} / 낮음 ${dist["낮음"]} (총 ${trends.length})`,
+  `   분포 — 높음 ${dist["높음"]} / 중간 ${dist["중간"]} (총 ${trends.length})`,
 );
 
 // 변별 경고 — 신호가 평평하면 임계값 튜닝으론 못 고침

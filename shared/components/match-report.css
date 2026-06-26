@@ -89,7 +89,7 @@
 .mr-conf-high { background: #dcecd6; color: #5e7a54; }
 .mr-conf-mid { background: #faecd0; color: #9a7b3a; }
 .mr-conf-low { background: #ece8ec; color: #8a7e8a; }
-/* 신뢰도 정도 미터 — 3칸 막대 (높음 3 / 중간 2 / 낮음 1 채움) */
+/* 신뢰도 정도 미터 — 3칸 막대 (2단계: 높음 3 / 중간 2 채움). .mr-conf-low는 옛 데이터 폴백용 잔존 */
 .mr-conf-meter {
   display: inline-flex;
   gap: 4px;

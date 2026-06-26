@@ -112,11 +112,11 @@
       "추가: trends[].evidence[].published_at·url — analyze.js id-조인이 코드로 부여(LLM 작성 ❌). 집계성 근거(데이터랩 등)는 url·발행일 없으면 null이 정상",
       "용도: 신뢰도(evidence 기반) 산출 입력 — 출처 다양성(distinct source)·신선도(published_at)·검증가능성(url). 빈도(언급 수) 방식은 broad 키워드로 변별 불가라 폐기",
       "변경: merge-confidence.js를 source_search_keywords 조인(채널 포화로 전부 '높음') → evidence 기반 산출로 재작성 완료. confidence_basis = { source_count, source_types[], fresh_count, verifiable_count, total_evidence, period } (기존 { mention_total, channel_count, recent_count }에서 교체)",
-      "등급(잠정): 높음=source_count>=3 && fresh_count>=1 && verifiable_count>=1(3신호) / 중간=source_count==2 / 낮음=source_count<=1. 검증 하네스 confidence_dist_check.py와 동일 규칙. 첫 분포 보고 튜닝",
+      "등급(2단계 — 높음/중간): 높음=source_count>=3 && fresh_count>=1 && verifiable_count>=1(3신호) / 중간=그 외(기존 '낮음' source_count<=1은 중간으로 통합). 첫 분포 보고 튜닝",
       "TODO: published_at 포함 재수집(npm run trend) 후 첫 분포로 변별 검증. 신선/검증을 채워도 출처종류만 2~3으로 움직여 변별 부족 가능 → 수집 키워드 확장 검토"
     ],
     "v0.7_changelog": [
-      "추가: trends[].confidence ('높음'|'중간'|'낮음') — 트렌드별 신뢰도. 렌더러 match-report.js의 confidenceOf가 이 필드를 우선 사용(없으면 evidence 개수로 폴백)",
+      "추가: trends[].confidence ('높음'|'중간' — 2단계. v0.7 당시엔 '낮음' 포함 3단계였으나 이후 2단계로 통합) — 트렌드별 신뢰도. 렌더러 match-report.js의 confidenceOf가 이 필드를 우선 사용(없으면 evidence 개수로 폴백)",
       "추가: trends[].confidence_basis { mention_total, channel_count, recent_count } — 신뢰도 근거 노출용. mention_total은 '매체 언급 건수'(네이버 검색량 아님 — 라벨은 '언급 N건'으로 표기 권장)",
       "산출 방식: src/trend/merge-confidence.js가 trend-analysis.json + trend_raw.json 읽어 결정적으로 계산(LLM 아님). 지지 raw = raw query ∈ source_search_keywords. (npm run trend:merge-confidence)",
       "등급(잠정): 높음=channel_count>=3 && recent_count>=1 / 중간=channel_count==2 / 낮음=channel_count<=1. 첫 분포 보고 튜닝. 주의: youtube 180일·naver 18개월 수집창이라 30일내 recent_count 표본이 적을 수 있음. naver_datalab은 표기 차이로 조인이 거의 안 돼 실질 channel_count는 최대 4(youtube/tavily/naver_blog/naver_news)",

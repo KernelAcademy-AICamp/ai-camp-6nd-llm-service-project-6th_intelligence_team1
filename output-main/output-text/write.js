@@ -285,12 +285,36 @@ function metricStrip(td) {
   return parts.length ? `> 📊 ${parts.join(" · ")}` : "";
 }
 
+// 신뢰도 등급 → 정렬 가중치 (2단계: 높음=2 / 중간=1). 렌더러 match-report.js의
+// confidenceOf와 동일 기준(confidence 필드 우선, 없으면 evidence 개수로 폴백)이라
+// '표시되는 신뢰도'와 순위가 어긋나지 않는다. legacy '낮음'은 중간으로 흡수.
+function confidenceWeight(td) {
+  const c = td?.confidence;
+  if (c === "높음" || c === "high") return 2;
+  if (c) return 1; // 중간/낮음(legacy) → 중간
+  const n = Array.isArray(td?.evidence) ? td.evidence.length : 0;
+  return n >= 3 ? 2 : 1; // confidence 미기재 — 렌더러와 동일하게 evidence 개수로 추정
+}
+
+// 리포트 순위 재정렬 — 신뢰도(높음 > 중간) 우선, 동일 신뢰도면 매칭 점수 순.
+// 매칭가는 매칭 점수로 rank를 매기지만(recommendations는 이미 점수 내림차순),
+// 리포트에선 신뢰도를 우선해 다시 나열한다. 동점 신뢰도는 기존 rank(=매칭 점수)로 갈라
+// "신뢰도 같으면 매칭 점수 높은 쪽이 위" 규칙을 만족. rank는 1..N으로 다시 부여.
+function reRankByConfidence(recommendations, trends) {
+  const byName = new Map((trends ?? []).map((t) => [t.trend_name, t]));
+  return (recommendations ?? [])
+    .map((r, i) => ({ r, origRank: r.rank ?? i + 1, w: confidenceWeight(byName.get(r.trend_name)) }))
+    .sort((a, b) => b.w - a.w || a.origRank - b.origRank)
+    .map((x, i) => ({ ...x.r, rank: i + 1 }));
+}
+
 export function generateReport({ brand, trend, match, trendSummary } = {}) {
   const b = unwrap(brand);
   const t = unwrap(trend);
   const m = unwrap(match);
 
-  const top = m.recommendations ?? [];
+  // 리포트 순위는 신뢰도 우선(동점이면 매칭 점수). 매칭가의 점수 기반 rank를 재정렬.
+  const top = reRankByConfidence(m.recommendations ?? [], t.trends ?? []);
   const findTrend = (name) => (t.trends ?? []).find((x) => x.trend_name === name);
 
   const lines = [];
@@ -1742,7 +1766,9 @@ export async function generateWriterOutput({ brand, trend, match, trendRaw } = {
   const tRaw = unwrap(trendRaw);
   const rawData = Array.isArray(tRaw?.raw_data) ? tRaw.raw_data : [];
 
-  const top = m.recommendations ?? [];
+  // 리포트 순위는 신뢰도 우선(동점이면 매칭 점수). 매칭가의 점수 기반 rank를 재정렬.
+  // 카드 순서·rank·순위별 활용 문구가 모두 이 순서를 따른다.
+  const top = reRankByConfidence(m.recommendations ?? [], t.trends ?? []);
   const evaluations = m.evaluations ?? [];
   const findTrend = (name) => (t.trends ?? []).find((x) => x.trend_name === name);
   const findEval = (name) => evaluations.find((e) => e.trend_name === name);
