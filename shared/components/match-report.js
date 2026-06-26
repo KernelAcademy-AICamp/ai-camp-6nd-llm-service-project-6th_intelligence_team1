@@ -378,13 +378,13 @@
           keywordTags(c.keywords) +
           metricStrip(c) +   // 지표(검색량 지수·기간) — 핑크 헤더 박스 안. 접으면 CSS로 숨김
         "</summary>" +
-        // 단일 컬럼 — 순서: (헤더 안 지표) → 유행현황 → 매칭 분석 → 활용방안 → 수집근거 → 신뢰도 근거
+        // 단일 컬럼 — 순서: (헤더 안 지표) → 트렌드 현황 → 매칭 분석 → 활용방안 → 수집근거 → 신뢰도 근거
         //   신뢰도 근거(.mr-conf-block)는 화면 숨김 / PDF에만 표시 (CSS가 제어)
-        // 유행현황 — summary_bullets[0]는 PART I 본문(intro_summary 또는 동일 텍스트)으로
+        // 트렌드 현황 — summary_bullets[0]는 PART I 본문(intro_summary 또는 동일 텍스트)으로
         //   이미 노출되므로 PART II에선 [1:]만 표시해 중복 방지.
         '<div class="mr-card-body">' +
           '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">≡</span> 유행현황 (Status)</div>' +
+            '<div class="mr-block-label"><span class="mr-ico">≡</span> 트렌드 현황 (Status)</div>' +
             bulletList((c.summary_bullets || []).slice(1)) +
           "</div>" +
           '<div class="mr-block">' +
@@ -441,7 +441,7 @@
 
   // PART I — 트렌드 요약 (순위 + 트렌드명 + 한 줄 요약)
   // body 우선순위:
-  //   1) intro_summary       — LLM이 유행현황을 새 표현으로 압축 (WRITER_NO_LLM 미설정 시)
+  //   1) intro_summary       — LLM이 트렌드 현황을 새 표현으로 압축 (WRITER_NO_LLM 미설정 시)
   //   2) intro_body_fallback — write.js 코드 템플릿 (출처+수치+단계 신호 한 줄)
   //   3) summary_bullets[0]  — 트렌드 분석가 원문 (PART II와 겹쳐 보일 수 있어 최후 폴백)
   function summarySection(contents) {
@@ -618,13 +618,13 @@
         "</div>"
       : "";
     // PART I: 3개 카드 레이아웃(번호 + 트렌드명 + 본문).
-    // 본문은 c.intro_summary(LLM이 유행현황 압축) 우선, 없으면 summary_bullets[0]로 fallback.
+    // 본문은 c.intro_summary(LLM이 트렌드 현황 압축) 우선, 없으면 summary_bullets[0]로 fallback.
     el.innerHTML =
       '<div class="mr-report">' +
         headerSection(brand) +
         funnel +
         summarySection(contents) +
-        sectionHead("PART II", "트렌드 카드", "유행현황 · 수집 근거 · 매칭이유 · 매칭 기준") +
+        sectionHead("PART II", "트렌드 카드", "트렌드 현황 · 수집 근거 · 매칭이유 · 매칭 기준") +
         '<div class="mr-trend-grid">' + contents.map(card).join("") + "</div>" +
         '<div class="mr-report-footer">해당 리포트는 트렌드핏 AI가 작성했습니다.</div>' +
       "</div>";
