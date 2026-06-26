@@ -1907,7 +1907,7 @@
                 ${c.metrics?.period ? `<div><div class="rp-m-label">기간</div><div class="rp-m-value" style="font-size:0.9rem">${esc(c.metrics.period)}</div></div>` : ''}
               </div>` : '';
             const q1 = c.match_passes?.q1 ?? 0, q2 = c.match_passes?.q2 ?? 0;
-            const status = (c.summary_bullets || []).length ? `<div class="rp-block"><div class="rp-block-label">📊 유행현황</div><ul class="rp-list">${c.summary_bullets.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : '';
+            const status = (c.summary_bullets || []).length ? `<div class="rp-block"><div class="rp-block-label">📊 트렌드 현황</div><ul class="rp-list">${c.summary_bullets.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : '';
             const ev = (c.evidence || []);
             const evHtml = ev.length ? `<div class="rp-block"><div class="rp-block-label">📚 수집 근거</div>${
                 ev.map(e => {
@@ -2152,7 +2152,7 @@
             if (ct.keywords && ct.keywords.length) md += `\n${ct.keywords.map(k => '`' + k + '`').join(' ')}\n`;
             const hm = ct.headline_metric;
             if (hm && (hm.value || hm.metric)) md += `\n- **${hm.metric || '핵심지표'}**: ${hm.value || ''}${hm.delta ? ' (' + hm.delta + ')' : ''}\n`;
-            if (ct.summary_bullets && ct.summary_bullets.length) { md += `\n**유행현황**\n`; ct.summary_bullets.forEach(s => md += `- ${s}\n`); }
+            if (ct.summary_bullets && ct.summary_bullets.length) { md += `\n**트렌드 현황**\n`; ct.summary_bullets.forEach(s => md += `- ${s}\n`); }
             if (ct.reason_bullets && ct.reason_bullets.length) { md += `\n**매칭이유**\n`; ct.reason_bullets.forEach(s => md += `- ${s}\n`); }
             if (ct.evidence && ct.evidence.length) {
                 md += `\n**근거**\n`;
@@ -2205,7 +2205,7 @@
             if (hm && hm.value) head += `\n📈 ${hm.metric || '지표'}: *${hm.value}*${hm.delta ? ' (' + hm.delta + ')' : ''}`;
             blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut(head) } });
             if (ct.summary_bullets && ct.summary_bullets.length)
-                blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut('*📊 유행현황*\n' + ct.summary_bullets.map(s => '• ' + s).join('\n')) } });
+                blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut('*📊 트렌드 현황*\n' + ct.summary_bullets.map(s => '• ' + s).join('\n')) } });
             if (ct.reason_bullets && ct.reason_bullets.length)
                 blocks.push({ type: 'section', text: { type: 'mrkdwn', text: cut('*💘 매칭이유*\n' + ct.reason_bullets.map(s => '• ' + s).join('\n')) } });
             if (ct.evidence && ct.evidence.length) {
