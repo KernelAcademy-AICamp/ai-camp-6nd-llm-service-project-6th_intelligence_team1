@@ -149,6 +149,20 @@
   font-size: 11px;
   color: var(--mr-text-mute);
 }
+/* 신뢰도 근거 블록 — 화면에선 숨김(신뢰도 칩 호버 툴팁으로 노출), PDF(인쇄)에만 표시.
+   confidenceBlock()이 항상 렌더하되 가시성은 CSS가 제어. 호버 툴팁은 인쇄 땐 호버가
+   없어 자연히 안 나오므로, 결과적으로 화면=툴팁 / PDF=블록 으로 갈린다. */
+.mr-conf-block { display: none; }
+@media print { .mr-conf-block { display: block; } }
+/* 리포트 푸터 — 맨 아래 작성 주체 문구 (화면·PDF 공통) */
+.mr-report-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--mr-border);
+  text-align: center;
+  font-size: 12px;
+  color: var(--mr-text-mute);
+}
 /* funnel (전체 — 분석한 트렌드 수 → 선별 수) */
 /* funnel — 박스 3개 (PART 뱃지색 배경 + 흰 글자 / 라벨 · 플랫폼 · 큰 숫자 · 캡션) */
 .mr-funnel { display: flex; align-items: stretch; gap: 12px; margin: 0 0 22px; flex-wrap: wrap; }
@@ -160,18 +174,25 @@
   border-radius: 14px;
   padding: 18px 20px;
 }
-/* 상단 라벨 — 뱃지형 (리포트 톤: 소프트 핑크) */
+/* 상단 라벨 — 뱃지(pill) 대신 앞에 동그란 점(불렛) + 텍스트 */
 .mr-fc-label {
   display: inline-flex;
   align-items: center;
-  font-size: 13px;
+  gap: 7px;
+  font-size: 15px;
   font-weight: 700;
-  color: #fff;
-  background: var(--mr-primary);
-  padding: 4px 12px;
-  border-radius: 999px;
+  color: var(--mr-text);
   margin-bottom: 12px;
 }
+.mr-fc-label::before {
+  content: "";
+  flex: none;
+  width: 3px;
+  height: 15px;
+  border-radius: 999px;
+  background: var(--mr-primary);
+}
+/* 숫자·노트는 작대기 선(카드 왼쪽)에 맞춰 — 들여쓰기 없음 */
 .mr-fc-value { font-size: 28px; font-weight: 800; color: var(--mr-text); line-height: 1; letter-spacing: -0.02em; }
 .mr-fc-unit { font-size: 15px; font-weight: 700; margin-left: 2px; color: var(--mr-text-sub); }
 .mr-fc-note { font-size: 13px; color: var(--mr-text-mute); font-weight: 400; margin-top: 10px; line-height: 1.4; }
@@ -309,15 +330,11 @@ details.mr-trend-card:not([open]) > summary .mr-metric-strip { display: none; }
   flex-direction: column;
   gap: 24px;
 }
-/* 블록 사이 실선 구분 (수집근거 · 매칭이유 · 매칭 설명) */
+/* 블록 사이 실선 구분 (트렌드 현황 · 매칭분석 · 활용방안 · 수집근거)
+   수집근거(.mr-evidence-details)도 .mr-block 클래스를 갖고 있어 이 규칙으로 구분선이 붙는다. */
 .mr-card-body > .mr-block + .mr-block {
   border-top: 1px solid var(--mr-border);
   padding-top: 24px;
-}
-/* 유행현황 ↔ 수집근거 사이 선은 제거 (여백만 유지) */
-.mr-card-body > .mr-block + .mr-evidence-details {
-  border-top: none;
-  padding-top: 0;
 }
 .mr-block-label {
   display: inline-flex;
@@ -678,6 +695,17 @@ a.mr-src-chip[href]::after { content: '↗'; font-size: 10px; opacity: 0.85; mar
 .mr-summary-title { font-size: 20px; font-weight: 700; margin: 0 0 12px; color: var(--mr-text); }
 .mr-summary-body { font-size: 16px; color: var(--mr-text-sub); margin: 0; line-height: 1.9; }
 
+/* LLM이 만든 트렌드 한 문장 요약 — A/B/C 리스트 대신 노출 */
+.mr-summary-card.mr-trend-summary { padding: 32px 32px; }
+.mr-summary-card.mr-trend-summary > p {
+  font-size: 18px;
+  line-height: 1.85;
+  margin: 0;
+  color: var(--mr-text);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
 /* ===== DATA — 트렌드 점수 비교 그래프 ===== */
 .mr-compare-card {
   background: var(--mr-surface);
@@ -874,6 +902,9 @@ a.mr-src-chip[href]::after { content: '↗'; font-size: 10px; opacity: 0.85; mar
   padding: 9px 12px;
 }
 .mr-usage { font-size: 17px; line-height: 1.7; color: var(--mr-text-sub); }
+ul.mr-usage { margin: 0; padding-left: 1.4em; list-style: disc; }
+ul.mr-usage > li { margin: 4px 0; }
+ul.mr-usage > li::marker { color: var(--mr-text-sub); }
 
 /* 활용 방안 — 카드 하단 전체 폭 */
 .mr-card-usage {

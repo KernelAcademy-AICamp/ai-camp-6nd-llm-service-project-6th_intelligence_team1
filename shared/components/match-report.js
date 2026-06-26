@@ -70,7 +70,43 @@
     return '<div class="mr-keyword-tags">' + chips + "</div>";
   }
 
-  // 정량 지표 — headline_metric(지표·값·증감) + 기간(metrics.period)
+  // 수집 플랫폼 — 데이터(d.platforms)에서 동적으로. 소스 키는 한글 라벨로 매핑, 라벨이면 그대로.
+  //  허용: 배열(["youtube","naver_blog"] 또는 ["YouTube","네이버 블로그"]) 또는 " · "/"," 구분 문자열
+  var PLATFORM_LABEL = {
+    youtube: "YouTube",
+    naver: "네이버",
+    naver_blog: "네이버 블로그",
+    naver_news: "네이버 뉴스",
+    naver_datalab: "데이터랩",
+    naver_olive: "올리브영",
+    instagram: "인스타그램",
+    tavily: "Tavily",
+  };
+  function formatPlatforms(p) {
+    if (!p) return "";
+    var arr = Array.isArray(p) ? p : String(p).split(/\s*[·,]\s*/);
+    return arr
+      .filter(Boolean)
+      .map(function (x) { return PLATFORM_LABEL[String(x).trim()] || String(x).trim(); })
+      .join(" · ");
+  }
+
+  // metrics.period("2026-03 ~ 2026-06") → 6개월 윈도우 표기("2026-01 ~ 2026-06").
+  // 끝 월 기준 5개월 전부터로 통일. 카드별 시작일 다르던 들쭉날쭉 해소.
+  function format6MonthPeriod(period) {
+    if (!period) return period;
+    var m = String(period).match(/^\s*(\d{4})-(\d{1,2})\s*~\s*(\d{4})-(\d{1,2})\s*$/);
+    if (!m) return period;
+    var y2 = parseInt(m[3], 10);
+    var em = parseInt(m[4], 10);
+    var sm = em - 5;
+    var y1 = y2;
+    if (sm < 1) { sm += 12; y1 -= 1; }
+    var pad = function (n) { return n < 10 ? "0" + n : String(n); };
+    return y1 + "-" + pad(sm) + " ~ " + y2 + "-" + pad(em);
+  }
+
+  // 정량 지표 — headline_metric(지표·값·증감) + 기간(metrics.period, 6개월 윈도우).
   function metricStrip(c) {
     var hm = c.headline_metric || {};
     var period = c.metrics && c.metrics.period;
@@ -83,9 +119,10 @@
       );
     }
     if (period) {
+      var displayPeriod = format6MonthPeriod(period);
       cells.push(
         '<div class="mr-metric"><div class="mr-m-label">기간</div>' +
-        '<div class="mr-m-value">' + esc(period) + "</div></div>"
+        '<div class="mr-m-value">' + esc(displayPeriod) + "</div></div>"
       );
     }
     return cells.length ? '<div class="mr-metric-strip">' + cells.join("") + "</div>" : "";
@@ -206,10 +243,10 @@
     var groups = reasons
       .map(function (r) {
         var resultPrefix = r.result ? esc(r.result) + " " : "";
+        // r.summary는 detail에 포함된 내용 중복이라 노출 안 함.
         return (
           '<div class="mr-ed-group">' +
             '<div class="mr-ed-group-title">' + resultPrefix + esc(r.title || "") + "</div>" +
-            (r.summary ? '<div class="mr-ed-summary">' + esc(r.summary) + "</div>" : "") +
             '<div class="mr-ed-reason">' + esc(r.detail || "") + "</div>" +
           "</div>"
         );
@@ -288,6 +325,36 @@
     );
   }
 
+  // 신뢰도 근거 — confidence_basis를 카드 본문 블록으로 노출 (호버 툴팁과 동일 내용을
+  // 항상 보이게 + PDF에도 포함). 수집근거 아래에 배치.
+  function confidenceBlock(c) {
+    var b = c.confidence_basis;
+    if (!b) return "";
+    var conf = confidenceOf(c);
+    var types = (b.source_types || []).map(srcLabel);
+    var srcText = types.length
+      ? types.join("·") + " " + types.length + "종"
+      : (b.source_count || 0) + "종";
+    function row(k, v) {
+      return (
+        '<span class="mr-conf-tip-row"><span class="mr-conf-tip-k">' + k +
+        '</span><span class="mr-conf-tip-v">' + esc(v) + "</span></span>"
+      );
+    }
+    var rows =
+      row("신뢰도", conf.label) +
+      row("출처", srcText) +
+      row("신선도", "최근 30일 근거 " + (b.fresh_count || 0) + "건") +
+      row("검증", "원문 확인 " + (b.verifiable_count || 0) + "/" + (b.total_evidence || 0) + "건");
+    if (b.period) rows += row("기간", b.period);
+    return (
+      '<div class="mr-block mr-conf-block">' +
+        '<div class="mr-block-label"><span class="mr-ico">≡</span> 신뢰도 근거</div>' +
+        '<div class="mr-conf-basis">' + rows + "</div>" +
+      "</div>"
+    );
+  }
+
   function card(c) {
     var rankCls = " mr-c" + (c.rank || 1); // 순위별 카드 색 구분 (mr-c1/c2/c3)
     // "보완 활용 권장" 배지 — 매칭 기준(q1/q2 passes·rank)과 별개. Safe-Fit 신호에만 연동.
@@ -327,27 +394,40 @@
           keywordTags(c.keywords) +
           metricStrip(c) +   // 지표(검색량 지수·기간) — 핑크 헤더 박스 안. 접으면 CSS로 숨김
         "</summary>" +
-        // 단일 컬럼 — 이미지 순서: (헤더 안 지표) → 유행현황 → 수집근거 → 매칭이유 → 매칭 설명
+        // 단일 컬럼 — 순서: (헤더 안 지표) → 트렌드 현황 → 매칭 분석 → 활용방안 → 수집근거 → 신뢰도 근거
+        //   신뢰도 근거(.mr-conf-block)는 화면 숨김 / PDF에만 표시 (CSS가 제어)
+        // 트렌드 현황 — summary_bullets[0]는 PART I 본문(intro_summary 또는 동일 텍스트)으로
+        //   이미 노출되므로 PART II에선 [1:]만 표시해 중복 방지.
         '<div class="mr-card-body">' +
           '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">≡</span> 유행현황 (Status)</div>' +
-            bulletList(c.summary_bullets) +
+            '<div class="mr-block-label"><span class="mr-ico">≡</span> 트렌드 현황 (Status)</div>' +
+            bulletList((c.summary_bullets || []).slice(1)) +
+          "</div>" +
+          '<div class="mr-block">' +
+            '<div class="mr-block-label"><span class="mr-ico">≡</span> 매칭 분석</div>' +
+            matchExplain(c.match_reasons) +
+          "</div>" +
+          // 활용 방안 — usage_plan은 write.js에서 "\n"으로 3문장 분리되어 들어옴
+          //   불렛 리스트로 분리 렌더 (이전 한 줄 텍스트 → UL/LI). 마침표는 unbullet
+          //   가독성 위해 제거. 빈 경우 placeholder.
+          '<div class="mr-block">' +
+            '<div class="mr-block-label"><span class="mr-ico">≡</span> 활용 방안</div>' +
+            (c.usage_plan
+              ? '<ul class="mr-usage">' +
+                c.usage_plan
+                  .split("\n")
+                  .map(function (line) { return line.trim().replace(/\.$/, ""); })
+                  .filter(Boolean)
+                  .map(function (line) { return "<li>" + esc(line) + "</li>"; })
+                  .join("") +
+                "</ul>"
+              : '<div class="mr-usage mr-fit-placeholder">활용방안 작성</div>') +
           "</div>" +
           '<details class="mr-block mr-evidence-details">' +
             '<summary class="mr-block-label"><span class="mr-ico">≡</span> 수집 근거</summary>' +
             evidenceList(c.evidence) +
           "</details>" +
-          '<div class="mr-block">' +
-            '<div class="mr-block-label"><span class="mr-ico">≡</span> 매칭 분석</div>' +
-            matchExplain(c.match_reasons) +
-          "</div>" +
-        "</div>" +
-        // 활용 방안 — 카드 하단 전체 폭
-        '<div class="mr-card-usage">' +
-          '<div class="mr-block-label"><span class="mr-ico">≡</span> 활용 방안</div>' +
-          (c.usage_plan
-            ? '<div class="mr-usage">' + esc(c.usage_plan) + "</div>"
-            : '<div class="mr-usage mr-fit-placeholder">활용방안 작성</div>') +
+          confidenceBlock(c) +
         "</div>" +
       "</details>"
     );
@@ -366,11 +446,28 @@
     );
   }
 
+  // PART I — 트렌드 한 문장 요약 (LLM이 contents 종합해 만든 단일 문장).
+  // writer-output.json의 data.trend_summary가 있을 때 summarySection 대신 사용.
+  function trendSummarySection(text) {
+    return (
+      sectionHead("PART I", "트렌드 요약", "") +
+      '<div class="mr-summary-card mr-trend-summary"><p>' + esc(text) + "</p></div>"
+    );
+  }
+
   // PART I — 트렌드 요약 (순위 + 트렌드명 + 한 줄 요약)
+  // body 우선순위:
+  //   1) intro_summary       — LLM이 트렌드 현황을 새 표현으로 압축 (WRITER_NO_LLM 미설정 시)
+  //   2) intro_body_fallback — write.js 코드 템플릿 (출처+수치+단계 신호 한 줄)
+  //   3) summary_bullets[0]  — 트렌드 분석가 원문 (PART II와 겹쳐 보일 수 있어 최후 폴백)
   function summarySection(contents) {
     var items = contents
       .map(function (c) {
-        var body = (c.summary_bullets && c.summary_bullets[0]) || c.trend_name;
+        var body =
+          c.intro_summary ||
+          c.intro_body_fallback ||
+          (c.summary_bullets && c.summary_bullets[0]) ||
+          c.trend_name;
         return (
           '<div class="mr-summary-item">' +
             '<div class="mr-summary-letter">' + esc(c.rank) + "</div>" +
@@ -435,9 +532,7 @@
         var tag = resTag.tag
           ? '<span class="mr-fit-tag ' + resTag.cls + '">' + esc(r.result || "") + " " + resTag.tag + "</span>"
           : "";
-        var summary = r.summary
-          ? '<div class="mr-fit-summary">' + esc(r.summary) + "</div>"
-          : "";
+        // r.summary는 detail에 이미 모두 포함된 내용이라 중복 노출 안 함.
         var detail = r.detail
           ? '<div class="mr-fit-reason">' + esc(r.detail) + "</div>"
           : '<div class="mr-fit-reason mr-fit-placeholder">여기에 어떤 기준으로 매칭했는지 작성</div>';
@@ -445,7 +540,6 @@
           '<div class="mr-fit-row">' +
             '<div class="mr-fit-head"><span class="mr-fit-name">' + esc(r.title || "") + "</span>" + tag + "</div>" +
             '<div class="mr-fit-desc">' + esc(REASON_DESC[r.id] || "") + "</div>" +
-            summary +
             detail +
           "</div>"
         );
@@ -517,7 +611,7 @@
     var steps = [];
     if (d.raw_count) steps.push({
       label: "전체 수집 데이터",
-      platforms: d.platforms || "YouTube · 네이버 · Tavily · 데이터랩",
+      platforms: formatPlatforms(d.platforms), // 실제 수집 소스 기반 (없으면 미표시)
       value: d.raw_count,
       note: "훑어본 데이터",
     });
@@ -539,13 +633,16 @@
             .join("") +
         "</div>"
       : "";
+    // PART I: 3개 카드 레이아웃(번호 + 트렌드명 + 본문).
+    // 본문은 c.intro_summary(LLM이 트렌드 현황 압축) 우선, 없으면 summary_bullets[0]로 fallback.
     el.innerHTML =
       '<div class="mr-report">' +
         headerSection(brand) +
         funnel +
         summarySection(contents) +
-        sectionHead("PART II", "트렌드 카드", "유행현황 · 수집 근거 · 매칭이유 · 매칭 기준") +
+        sectionHead("PART II", "트렌드 카드", "트렌드 현황 · 수집 근거 · 매칭이유 · 매칭 기준") +
         '<div class="mr-trend-grid">' + contents.map(card).join("") + "</div>" +
+        '<div class="mr-report-footer">해당 리포트는 트렌드핏 AI가 작성했습니다.</div>' +
       "</div>";
     return el;
   }
