@@ -1631,16 +1631,22 @@ function buildMetricPrefixSentence(td) {
 }
 
 // metrics.period("2026-05 ~ 2026-06") → 한국어("2026년 5~6월").
-// 같은 해면 압축(2026년 5~6월), 다른 해면 풀어쓰기(2024년 1월~2026년 6월).
-// 파싱 실패 시 원문 그대로 반환 → 호출부는 null/문자 모두 처리.
+// 같은 해면 압축(2026년 5~6월), 다른 해면 풀어쓰기(2025년 1월~2026년 6월).
+// 시작이 너무 옛날(2024 이전)이면 마케터에게 거리감 크고 거의 무의미 →
+// 표시상 2025년 1월로 클램프 (실제 데이터는 그대로, 표기만 보정).
 function formatPeriodKo(period) {
   if (!period) return null;
   const m = String(period).match(/^\s*(\d{4})-(\d{1,2})\s*~\s*(\d{4})-(\d{1,2})\s*$/);
   if (!m) return String(period).trim() || null;
-  const y1 = m[1];
-  const sm = parseInt(m[2], 10);
-  const y2 = m[3];
+  let y1 = parseInt(m[1], 10);
+  let sm = parseInt(m[2], 10);
+  const y2 = parseInt(m[3], 10);
   const em = parseInt(m[4], 10);
+  // 표시 클램프 — 2025-01 이전은 너무 멀어 마케터 의미 약함.
+  if (y1 < 2025) {
+    y1 = 2025;
+    sm = 1;
+  }
   if (y1 === y2) {
     if (sm === em) return `${y1}년 ${sm}월`;
     return `${y1}년 ${sm}~${em}월`;
