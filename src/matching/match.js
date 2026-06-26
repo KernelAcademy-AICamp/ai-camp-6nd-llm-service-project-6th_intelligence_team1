@@ -299,6 +299,25 @@ const trendAnalysis = trendRaw;
 //      포함되면 통과. 예: 브랜드 "메이크업 > 립" → 트렌드 "메이크업 > 아이&립"(립 포함) 통과,
 //      "메이크업 > 베이스"(립 없음)·"스킨케어 > 토너"(대분류 다름) 제외.
 //      불일치 트렌드는 코드가 "제외" verdict로 만들어 결과에 포함하고 LLM 호출은 생략.
+// 대분류 동의어 정규화 — 브랜드 입력 taxonomy(클렌징/기초제품/선케어/메이크업)와
+// 트렌드 분석가 taxonomy(클렌징/스킨케어/메이크업)가 같은 개념에 다른 라벨을 쓰는
+// 문제를 canonical 토큰으로 흡수한다. 글자 그대로 비교하면 '기초제품' !== '스킨케어'라
+// 스킨케어 계열 브랜드(예: 세럼)의 트렌드가 전부 카테고리 게이트에서 탈락 →
+// 추천 0개 → 빈 리포트가 되던 사고를 막는다. (메이크업은 양쪽 라벨이 같아 우연히 통과됐음)
+const MAJOR_CANON = {
+  "클렌징": "클렌징",
+  "기초제품": "스킨케어",
+  "기초화장품": "스킨케어",
+  "스킨케어": "스킨케어",
+  "선케어": "스킨케어", // 트렌드 분석가 taxonomy는 선케어를 스킨케어로 묶음 (별도 대분류 없음)
+  "선크림": "스킨케어",
+  "메이크업": "메이크업",
+};
+// 사전에 없는 라벨은 원본 그대로 비교 (새 카테고리가 들어와도 안전하게 동작).
+function canonMajor(major) {
+  const key = String(major ?? "").trim();
+  return MAJOR_CANON[key] ?? key;
+}
 function parseCategory(c) {
   const [major, minor = ""] = String(c ?? "").split(">").map((s) => s.trim());
   return { major, minor };
@@ -306,8 +325,9 @@ function parseCategory(c) {
 function categoryMatches(brandCat, trendCat) {
   const b = parseCategory(brandCat);
   const t = parseCategory(trendCat);
-  // 대분류 일치 + 브랜드 소분류가 트렌드 소분류에 포함 (브랜드 소분류 없으면 대분류만 비교)
-  return b.major === t.major && t.minor.includes(b.minor);
+  // 대분류는 동의어 정규화 후 비교 + 브랜드 소분류가 트렌드 소분류에 포함
+  // (브랜드 소분류 없으면 대분류만 비교)
+  return canonMajor(b.major) === canonMajor(t.major) && t.minor.includes(b.minor);
 }
 
 function makeExcludedByCategory(trend, brandCategory) {
@@ -358,6 +378,19 @@ for (const t of uniqueTrends) {
   if (categoryMatches(brandCategory, t.category)) passedTrends.push(t);
   else gatedEvaluations.push(makeExcludedByCategory(t, brandCategory));
 }
+
+// [빈 리포트 방지 안전망] 카테고리 게이트가 입력 트렌드를 '전부' 제외했는데 입력은
+// 비어있지 않은 경우 → 게이트가 taxonomy 불일치 등으로 오작동한 것으로 보고, 게이트를
+// 우회해 전체 트렌드를 평가로 넘긴다. 추천 0개 → 빈 리포트로 끝나는 상황을 원천 차단한다.
+if (passedTrends.length === 0 && uniqueTrends.length > 0) {
+  console.warn(
+    `⚠️ 카테고리 게이트가 트렌드 ${uniqueTrends.length}개를 전부 제외함 — ` +
+    `빈 리포트 방지를 위해 게이트를 우회하고 전체를 평가합니다.`,
+  );
+  passedTrends.push(...uniqueTrends);
+  gatedEvaluations.length = 0;
+}
+
 console.log(
   `카테고리 게이트(브랜드 '${brandCategory}'): 통과 ${passedTrends.length}개 / 제외 ${gatedEvaluations.length}개`,
 );
