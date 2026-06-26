@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "trendfit-demo",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/static-server.mjs"],
+      "port": 4178
+    }
+  ]
+}

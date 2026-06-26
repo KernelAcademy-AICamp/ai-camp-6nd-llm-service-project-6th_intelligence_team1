@@ -28,6 +28,8 @@
             font-family: 'Pretendard', sans-serif;
             overflow-x: hidden;
             min-height: 100vh;
+            /* 커스텀 마우스 커서 (cur265.cur). 제거하려면 이 줄 삭제 */
+            cursor: url('/web/cur265-cursor.cur'), auto;
         }
 
         /* ── Ambient blobs ── */
@@ -122,7 +124,7 @@
         }
         .step-item {
             display: flex; align-items: center; gap: 8px;
-            cursor: pointer; transition: opacity 0.3s;
+            cursor: default; transition: opacity 0.3s;
             flex-shrink: 0;
         }
         .step-item.locked { cursor: not-allowed; opacity: 0.85; }
@@ -516,6 +518,34 @@
             transition: all .25s; z-index: 200;
         }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ── Confirm modal (시안 생성 전 안내 팝업) ── */
+        .confirm-modal-overlay {
+            position: fixed; inset: 0; z-index: 1100;
+            background: rgba(74, 66, 74, 0.35);
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            display: none; align-items: center; justify-content: center; padding: 24px;
+        }
+        .confirm-modal-overlay.open { display: flex; animation: fadeIn 0.25s var(--ease-out-expo); }
+        .confirm-modal {
+            background: #fffdfc;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: var(--radius-md);
+            padding: 40px 36px; max-width: 440px; width: 100%;
+            text-align: center;
+            box-shadow: 0 30px 80px rgba(126, 107, 126, 0.3);
+            animation: float-in 0.35s var(--ease-out-expo);
+        }
+        @keyframes float-in {
+            from { opacity: 0; transform: translateY(20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .confirm-modal-emoji { font-size: 2.4rem; margin-bottom: 12px; }
+        .confirm-modal-title { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary); margin-bottom: 12px; }
+        .confirm-modal-desc { font-size: 0.98rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 28px; }
+        .confirm-modal-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .confirm-modal-actions .back-button,
+        .confirm-modal-actions .cta-button { padding: 14px 24px; font-size: 0.95rem; }
 
         @media (max-width: 768px) {
             .form-card { padding: 40px 24px; border-radius: var(--radius-md); }
@@ -975,17 +1005,19 @@
 
         <div class="submit-row">
             <button class="back-button" onclick="goToPage(2)">← 돌아가기</button>
-            <!-- 리포트 공유: 시안 없이도 리포트 페이지에서 바로 가능 (시안 페이지 STEP5와 동일 동작) -->
-            <div class="share-area">
-                <button class="cta-button share-report-btn" onclick="toggleShareOptions(this)">리포트 공유하기</button>
-                <div class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end;">
-                    <button class="share-btn-channel" onclick="shareTo('PDF')">📄 PDF</button>
-                    <button class="share-btn-channel" onclick="shareTo('Notion')">📝 Notion</button>
-                    <button class="share-btn-channel" onclick="shareTo('Slack')">💬 Slack</button>
-                    <button class="share-btn-channel" onclick="shareTo('Google Drive')">📁 Google Drive</button>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <!-- 리포트 공유: 시안 없이도 리포트 페이지에서 바로 가능 (시안 페이지 STEP5와 동일 동작) -->
+                <div class="share-area">
+                    <button class="cta-button share-report-btn" onclick="toggleShareOptions(this)">리포트 공유하기</button>
+                    <div class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end;">
+                        <button class="share-btn-channel" onclick="shareTo('PDF')">📄 PDF</button>
+                        <button class="share-btn-channel" onclick="shareTo('Notion')">📝 Notion</button>
+                        <button class="share-btn-channel" onclick="shareTo('Slack')">💬 Slack</button>
+                        <button class="share-btn-channel" onclick="shareTo('Google Drive')">📁 Google Drive</button>
+                    </div>
                 </div>
+                <button class="cta-button" onclick="askReportDownloaded()">시안 생성하러 가기 →</button>
             </div>
-            <button class="cta-button" onclick="showPageById('page-photo')">시안 생성하러 가기 →</button>
         </div>
     </div>
 </section>
@@ -1010,8 +1042,7 @@
                 <img id="photo-preview" style="display:none;max-width:100%;max-height:300px;border-radius:12px;" alt="제품 사진 미리보기">
             </div>
         </div>
-        <div class="submit-row">
-            <button class="back-button" onclick="goToPage(3)">← 돌아가기</button>
+        <div class="submit-row" style="justify-content: flex-end;">
             <button class="cta-button" id="to-mockup-btn" onclick="generateMockups()" disabled style="opacity:.5;">예상 시안 확인하기 →</button>
         </div>
     </div>
@@ -1040,15 +1071,11 @@
 
         <p class="mockup-note">* 시안은 입력 정보를 바탕으로 AI가 생성한 이미지입니다.</p>
 
-        <div class="submit-row">
-            <button class="back-button" onclick="showPageById('page-photo')">← 돌아가기</button>
-            <div class="share-area">
-                <button class="cta-button share-report-btn" id="share-report-btn" onclick="toggleShareOptions(this)">리포트 공유하기</button>
+        <div class="submit-row" style="justify-content: flex-end;">
+            <div class="share-area" data-share-mode="visuals">
+                <button class="cta-button share-report-btn" id="share-report-btn" onclick="toggleShareOptions(this)">시안 공유하기</button>
                 <div id="share-options-row" class="share-options-row" style="display: none; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end;">
-                    <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-secondary);cursor:pointer;white-space:nowrap;">
-                        <input type="checkbox" class="include-visuals" id="include-visuals"> 시안 포함하기
-                    </label>
-                    <button class="share-btn-channel" onclick="shareTo('PDF')">📄 PDF</button>
+                    <button class="share-btn-channel" onclick="shareTo('JPG')">🖼️ JPG</button>
                     <button class="share-btn-channel" onclick="shareTo('Notion')">📝 Notion</button>
                     <button class="share-btn-channel" onclick="shareTo('Slack')">💬 Slack</button>
                     <button class="share-btn-channel" onclick="shareTo('Google Drive')">📁 Google Drive</button>
@@ -1059,6 +1086,19 @@
 </section>
 
 <div class="toast" id="toast">복사했어요</div>
+
+<!-- ============ 시안 생성 전 확인 팝업 ============ -->
+<div class="confirm-modal-overlay" id="report-download-modal" onclick="if(event.target===this)closeReportModal()">
+    <div class="confirm-modal">
+        <div class="confirm-modal-emoji">✋</div>
+        <h3 class="confirm-modal-title">잠깐! 리포트는 다운 받으셨나요?</h3>
+        <p class="confirm-modal-desc">이 페이지를 벗어나면 리포트를 다시 다운받을 수 없어요.</p>
+        <div class="confirm-modal-actions">
+            <button class="back-button" onclick="closeReportModal()">아직 안 받았어요</button>
+            <button class="cta-button" onclick="proceedToDesign()">받았어요 →</button>
+        </div>
+    </div>
+</div>
 
 <script>
     /* ===== 카테고리/특징 매핑 ===== */
@@ -1310,13 +1350,9 @@
         }
         switchPage(n);
     }
-    /* 네비게이션 클릭: 이미 지나온 단계만 이동 가능 */
+    /* 네비게이션 바: 진행 상태 표시 전용 — 클릭해도 페이지 이동하지 않음 */
     function navByStepper(n) {
-        if (n > maxReached) {
-            showToast('아직 도달하지 않은 단계예요');
-            return;
-        }
-        switchPage(n);
+        return; // 스텝퍼는 현재 단계를 보여주는 인디케이터일 뿐, 클릭 이동 비활성화
     }
     function validateStep(step) {
         const errs = [];
@@ -2089,6 +2125,20 @@
     }
     // 공유 영역이 리포트 페이지(STEP4)·시안 페이지(STEP5) 두 곳에 있어, 클릭한 버튼이 속한
     // .share-area 기준으로 동작하도록 컨텍스트 기반 처리.
+    /* 시안 생성 전 '리포트 다운받으셨나요?' 안내 팝업 */
+    function askReportDownloaded() {
+        const m = document.getElementById('report-download-modal');
+        if (m) m.classList.add('open');
+    }
+    function closeReportModal() {
+        const m = document.getElementById('report-download-modal');
+        if (m) m.classList.remove('open');
+    }
+    function proceedToDesign() {
+        closeReportModal();
+        showPageById('page-photo');
+    }
+
     let _activeShareArea = null;
     function toggleShareOptions(btn) {
         const area = (btn && btn.closest && btn.closest('.share-area')) || document.querySelector('.share-area');
@@ -2122,9 +2172,59 @@
     };
     function shareTo(channel) {
         if (channel === 'PDF') { downloadPDF(); return; }
+        if (channel === 'JPG') { downloadVisualsAsJPG(); return; }
         if (channel === 'Notion') { shareToNotion(); return; }
         if (channel === 'Slack') { shareToSlack(); return; }
         if (channel === 'Google Drive') { shareToDrive(); return; }
+    }
+
+    /* 파일명에 못 쓰는 문자 제거 (/ \ : * ? " < > |) */
+    function sanitizeFilename(name) {
+        return String(name == null ? '' : name).replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, ' ').trim().slice(0, 120) || '시안';
+    }
+    /* 시안 이미지 1장을 JPG로 변환해 기기에 저장 */
+    function saveImageAsJpg(url, baseName) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth || 1200;
+                canvas.height = img.naturalHeight || 900;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff'; // JPG는 투명도 미지원 → 흰 배경 깔기
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob((blob) => {
+                    if (!blob) { reject(new Error('이미지 변환 실패')); return; }
+                    const objUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = objUrl;
+                    a.download = sanitizeFilename(baseName) + '.jpg';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
+                    resolve();
+                }, 'image/jpeg', 0.92);
+            };
+            img.onerror = () => reject(new Error('이미지 로드 실패'));
+            img.src = url;
+        });
+    }
+    /* [JPG] 시안 전체를 '순서. 제목.jpg'로 저장 (예: 1. 클린걸 메이크업…) */
+    async function downloadVisualsAsJPG() {
+        const items = window.__lightboxItems || [];
+        if (!items.length) { showToast('저장할 시안이 없어요'); return; }
+        showToast('시안 이미지를 저장하는 중...');
+        let saved = 0;
+        for (let i = 0; i < items.length; i++) {
+            try {
+                await saveImageAsJpg(items[i].url, `${i + 1}. ${items[i].title || '시안'}`);
+                saved++;
+            } catch (e) { console.error('시안 저장 실패:', e); }
+        }
+        showToast(saved ? `시안 ${saved}장을 저장했어요` : '시안 저장에 실패했어요');
     }
 
     /* [시안 포함하기] 체크 여부 */
@@ -2132,6 +2232,61 @@
         const area = _activeShareArea || document;
         const cb = area.querySelector('.include-visuals');
         return !!(cb && cb.checked);
+    }
+
+    /* 공유 모드: 시안 페이지(STEP5)는 'visuals'(시안만), 리포트 페이지(STEP4)는 'report' */
+    function getShareMode() {
+        const area = _activeShareArea;
+        return (area && area.getAttribute && area.getAttribute('data-share-mode') === 'visuals') ? 'visuals' : 'report';
+    }
+
+    /* 시안만 → 마크다운 (노션용) */
+    function visualsToMarkdown() {
+        const vis = window.__visualUrls || [];
+        const wd = window.__writerData || {};
+        const b = wd.brand || {};
+        let md = `# TrendFit 예상 시안\n\n`;
+        if (b.name) md += `**브랜드**: ${b.name}${b.product_name ? ' / ' + b.product_name : ''}\n\n`;
+        if (!vis.length) return md + `_시안 이미지가 아직 없어요._\n`;
+        vis.forEach(v => { md += `\n## ${v.title || '시안'}\n\n![${v.title || '시안'}](${v.url})\n`; });
+        return md;
+    }
+
+    /* 시안만 → 브라우저 인쇄(PDF). 리포트 본문은 잠시 숨기고 시안만 page-step4에 넣어 출력 */
+    async function printVisualsOnly() {
+        const items = window.__lightboxItems || [];
+        if (!items.length) { showToast('저장할 시안이 없어요'); return; }
+        showToast('인쇄 창에서 "PDF로 저장"을 선택하세요');
+        const meta = document.getElementById('report_meta');
+        const body = document.getElementById('report_body');
+        const prevMeta = meta ? meta.style.display : '';
+        const prevBody = body ? body.style.display : '';
+        if (meta) meta.style.display = 'none';
+        if (body) body.style.display = 'none';
+        const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const visBlock = document.createElement('div');
+        visBlock.id = 'print-visuals';
+        visBlock.innerHTML = '<h2 style="font-size:1.4rem;font-weight:800;margin:0 0 18px">예상 시안</h2>'
+            + '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">'
+            + items.map(v => `<figure style="margin:0;break-inside:avoid;page-break-inside:avoid"><img src="${esc(v.url)}" alt="${esc(v.title)}" style="width:100%;border-radius:10px;border:1px solid #eee"><figcaption style="margin-top:8px;font-size:0.85rem;color:#7e6b7e;text-align:center">${esc(v.title)}</figcaption></figure>`).join('')
+            + '</div>';
+        (body || meta).insertAdjacentElement('afterend', visBlock);
+        const now = new Date();
+        const mmdd = String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
+        const prevTitle = document.title;
+        document.title = 'TrendFit_visuals_' + mmdd;
+        const restore = () => {
+            document.title = prevTitle;
+            if (visBlock) visBlock.remove();
+            if (meta) meta.style.display = prevMeta;
+            if (body) body.style.display = prevBody;
+            window.removeEventListener('afterprint', restore);
+        };
+        window.addEventListener('afterprint', restore);
+        await Promise.all([...visBlock.querySelectorAll('img')].map(img =>
+            img.complete ? Promise.resolve() : (img.decode ? img.decode().catch(() => {}) : new Promise(r => { img.onload = img.onerror = r; }))
+        ));
+        window.print();
     }
 
     /* 리포트 데이터(window.__writerData) → 마크다운 문자열 */
@@ -2164,12 +2319,18 @@
 
     /* 노션: 리포트를 마크다운으로 클립보드 복사 */
     async function shareToNotion() {
-        const wd = window.__writerData;
-        if (!wd) { showToast('리포트가 아직 준비되지 않았어요'); return; }
-        let md = reportToMarkdown(wd);
-        if (includeVisuals()) {
-            const vis = window.__visualUrls || [];
-            if (vis.length) { md += `\n## 예상 시안\n`; vis.forEach(v => { md += `\n![${v.title || '시안'}](${v.url})\n`; }); }
+        const visualsOnly = getShareMode() === 'visuals';
+        let md;
+        if (visualsOnly) {
+            md = visualsToMarkdown();
+        } else {
+            const wd = window.__writerData;
+            if (!wd) { showToast('리포트가 아직 준비되지 않았어요'); return; }
+            md = reportToMarkdown(wd);
+            if (includeVisuals()) {
+                const vis = window.__visualUrls || [];
+                if (vis.length) { md += `\n## 예상 시안\n`; vis.forEach(v => { md += `\n![${v.title || '시안'}](${v.url})\n`; }); }
+            }
         }
         try {
             await navigator.clipboard.writeText(md);
@@ -2218,16 +2379,33 @@
         return { blocks: blocks.slice(0, 50), text: fallback }; // Slack 블록 최대 50개
     }
     async function shareToSlack() {
-        const wd = window.__writerData;
-        if (!wd) { showToast('리포트가 아직 준비되지 않았어요'); return; }
-        showToast('슬랙으로 전송 중...');
-        try {
-            const { blocks, text } = reportToSlackBlocks(wd);
+        const visualsOnly = getShareMode() === 'visuals';
+        let blocks, text;
+        if (visualsOnly) {
+            const vis = window.__visualUrls || [];
+            if (!vis.length) { showToast('공유할 시안이 없어요'); return; }
+            const wd = window.__writerData || {};
+            const b = wd.brand || {};
+            blocks = [{ type: 'header', text: { type: 'plain_text', text: '🎨 TrendFit 예상 시안', emoji: true } }];
+            if (b.name) blocks.push({ type: 'section', text: { type: 'mrkdwn', text: `*${b.name}*${b.product_name ? ' / ' + b.product_name : ''}` } });
+            // 노션 공유처럼 각 이미지에 제목('순서. 시안제목')을 함께 표시
+            vis.forEach((v, i) => {
+                const title = `${i + 1}. ${v.title || '시안'}`;
+                blocks.push({ type: 'image', image_url: v.url, alt_text: title, title: { type: 'plain_text', text: title.slice(0, 2000), emoji: false } });
+            });
+            text = `TrendFit 예상 시안 — ${b.name || ''}`;
+        } else {
+            const wd = window.__writerData;
+            if (!wd) { showToast('리포트가 아직 준비되지 않았어요'); return; }
+            ({ blocks, text } = reportToSlackBlocks(wd));
             if (includeVisuals()) {
                 (window.__visualUrls || []).forEach(v => {
                     blocks.push({ type: 'image', image_url: v.url, alt_text: v.title || '시안' });
                 });
             }
+        }
+        showToast('슬랙으로 전송 중...');
+        try {
             const res = await fetch('/share/slack', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2252,6 +2430,11 @@
 
     /* 구글 드라이브: 인쇄 창(PDF 저장) 후 드라이브로 이동 버튼 노출 */
     function shareToDrive() {
+        if (getShareMode() === 'visuals') {
+            // 시안 공유: PDF 대신 JPG 파일을 내려받은 뒤 드라이브로 이동 버튼 노출
+            downloadVisualsAsJPG().then(showDriveButton);
+            return;
+        }
         const body = document.getElementById('report_body');
         if (!body || !body.innerHTML.trim()) { showToast('리포트가 아직 준비되지 않았어요'); return; }
         showToast('인쇄 창에서 "PDF로 저장" 후, 드라이브로 이동하세요');
@@ -2275,6 +2458,7 @@
     /* 리포트(step4)를 브라우저 기본 인쇄로 PDF 저장
        → @media print CSS가 리포트만 전체 출력. 사용자는 인쇄 창에서 "PDF로 저장" 선택. */
     async function downloadPDF() {
+    if (getShareMode() === 'visuals') { await printVisualsOnly(); return; }
        const body = document.getElementById('report_body');
     if (!body || !body.innerHTML.trim()) {
         showToast('리포트가 아직 준비되지 않았어요');

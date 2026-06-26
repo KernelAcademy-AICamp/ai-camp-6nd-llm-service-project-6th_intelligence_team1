@@ -18,21 +18,32 @@ const brandContext = {
   tone: brandAnalysis.data.tone_and_manner.join(", ")
 };
 
+// ── 수집 기간 창: 다른 소스(유튜브 등)와 동일하게 최근 180일(6개월)로 통일 ──
+//    Tavily SDK는 startDate(YYYY-MM-DD)로 발행일 필터를 지원한다.
+//    general 토픽은 publishedDate가 없는 결과가 일부 있어, 아래 안전망 필터로 보강한다.
+const WINDOW_DAYS = 180;
+const START_DATE = new Date(Date.now() - WINDOW_DAYS * 864e5).toISOString().slice(0, 10);
+
 async function fetchTrendArticles(query) {
   const response = await client.search(query, {
     searchDepth: "basic",
     maxResults: 10,
     includeAnswer: false,
+    startDate: START_DATE,   // 최근 180일만 요청 (카드 표기 "최근 6개월"과 일치)
   });
 
-  return response.results.map(result => ({
-    query: query,
-    source: "tavily",
-    title: result.title,
-    description: result.content,
-    published_at: null,   // Tavily는 항목별 발행일 없음 → 최신성 미집계(정상)
-    url: result.url
-  }));
+  const cutoff = Date.now() - WINDOW_DAYS * 864e5;
+  return response.results
+    // 발행일이 있으면 180일 안쪽인지 한 번 더 확인 (없으면 통과 — general 토픽은 발행일 누락 가능)
+    .filter(result => !result.publishedDate || new Date(result.publishedDate).getTime() >= cutoff)
+    .map(result => ({
+      query: query,
+      source: "tavily",
+      title: result.title,
+      description: result.content,
+      published_at: result.publishedDate || null,   // 실제 발행일 확보 → 신뢰도 최신성 집계 합류
+      url: result.url
+    }));
 }
 
 // ── 캐시 재사용 조건: ① 7일 이내 ② 입력 검색 키워드가 캐시 생성 당시와 동일 ──

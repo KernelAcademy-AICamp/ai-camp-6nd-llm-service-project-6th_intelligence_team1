@@ -32,9 +32,29 @@ try {
 const brandContext = raw.brand_context ?? {};
 // 각 raw 항목에 안정적 조인 키(id) 부여 — merge.js가 부여하지만, 옛 파일 호환용으로
 // 없으면 인덱스로 폴백. evidence.source_ids가 이 id를 가리켜 url·발행일을 조인한다.
-const rawData = (raw.raw_data ?? []).map((d, i) => ({ ...d, id: d.id ?? `r${i}` }));
-if (rawData.length === 0) {
+const rawDataAll = (raw.raw_data ?? []).map((d, i) => ({ ...d, id: d.id ?? `r${i}` }));
+if (rawDataAll.length === 0) {
   console.error("❌ raw_data가 비어있습니다. 수집기 실행을 확인하세요.");
+  process.exit(1);
+}
+
+// 1-1. 수집 기간 통일(180일=6개월) 안전망 — 발행일이 180일보다 오래된 raw 항목은 분석에서 제외.
+//      수집기에서 이미 180일로 자르지만, 옛 캐시·발행일 누락 등으로 새는 경우를 코드로 한 번 더 막는다.
+//      → evidence에 6개월 넘은(예: 2024년) 기사가 인용되는 일을 결정적으로 차단. 리포트 "최근 6개월" 표기와 일치.
+//      published_at이 없는 항목(데이터랩·검색광고·Tavily 발행일 누락)은 오래됐다 단정할 수 없으므로 유지.
+const TREND_WINDOW_DAYS = 180;
+const windowCutoff = Date.now() - TREND_WINDOW_DAYS * 864e5;
+const rawData = rawDataAll.filter((d) => {
+  if (!d.published_at) return true;                    // 발행일 없으면 유지
+  const t = new Date(d.published_at).getTime();
+  return Number.isNaN(t) || t >= windowCutoff;         // 파싱 불가도 유지, 그 외엔 180일 이내만
+});
+const droppedOld = rawDataAll.length - rawData.length;
+if (droppedOld > 0) {
+  console.log(`[기간필터] 발행일 ${TREND_WINDOW_DAYS}일(6개월) 초과 raw ${droppedOld}개 제외 — 최근 6개월 통일`);
+}
+if (rawData.length === 0) {
+  console.error("❌ 180일 필터 후 raw_data가 비었습니다 — 최근 6개월 내 수집 항목이 없습니다. 수집 기간/캐시를 확인하세요.");
   process.exit(1);
 }
 
