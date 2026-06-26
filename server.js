@@ -335,7 +335,7 @@ const server = http.createServer(async (req, res) => {
   await serveStatic(req, res, req.url);
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`\n🚀 데모 서버 실행 중 → http://localhost:${PORT}`);
   console.log(`   입력 폼: http://localhost:${PORT}/`);
   console.log(`   실행 명령(RUN_CMD): ${RUN_CMD}`);
