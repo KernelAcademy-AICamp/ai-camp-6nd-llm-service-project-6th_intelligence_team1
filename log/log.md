@@ -14,3 +14,15 @@
 **비율 설계**: 톤앤매너=1단어 앵커(무드 통일), shot_direction+composition=R1/R2/R3 차별, trend=변주. → "무드 통일 + 구성 다양".
 
 **검증**: node --check 통과, 매핑 로직 확인. 실제 쿼리 풀런 검증은 미실행(API 비용, 오주님 승인 대기).
+
+## 2026-06-29 (이어서) — R1 풀런 검증 중 발견한 품질 이슈 2건
+
+가히/럭셔리·프리미엄 R1 풀런(MAX_CONTENTS=1)으로 톤앤매너 앵커 검증 중 발견·수정.
+
+**이슈 1 — 손 등장 (prompt.js)**: R1은 flat lay 제품 정물인데 손모델이 등장. 원인은 negative 부메랑 — Gemini 2.5 Flash Image엔 진짜 negative 파라미터가 없어 "Avoid: hands..."의 hand 단어를 오히려 흡수해 손 생성. 손 negative(원 FIXED_NEGATIVE)는 R2 인물컷의 손 기형 방지용인데 손 없어야 할 R1에도 무차별 적용된 게 버그.
+- 수정: negative를 HAND/PLACEMENT/GENERAL로 3분할. shot_direction==="product"면 손·신체 단어를 negative에서 빼고(노출이 손 유도) 본문을 긍정형("isolated product still life, sole subject, clean empty surface")으로 보강. model 구도만 손 기형 negative 유지.
+- 검증: R1 재실행 → 손 사라짐.
+
+**이슈 2 — 배경 패턴 (prompt.md)**: 레퍼런스 핀은 미니멀 단색인데 결과 배경에 기하학 링·나뭇잎 데코 생성. 원인은 analyze가 선별 1장(background="뉴트럴 그레이 단색")과 20장 종합(source_specific="기하학적 추상 이미지")을 함께 내보내고, prompt.md에 배경 충실/장식 금지 규칙이 없어 LLM이 source_specific 장식어를 "geometric abstract elements"로 직역.
+- 수정: prompt.md 제품샷 규칙에 "background 분석값 충실, 단색·미니멀이면 기하 오브제·소품·패턴·잎 추가 금지, source_specific은 무드 톤 참고로만" 추가.
+- 검증: R1 재실행 → geometric/abstract 어휘 0, 배경 단색.

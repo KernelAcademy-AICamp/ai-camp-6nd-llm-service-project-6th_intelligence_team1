@@ -13,6 +13,7 @@
   - `key_objects` → 오브제·소품 어휘.
 - **제품 형태·재질·색 텍스트 어휘 금지** — 제품 자체는 첨부 사진(Img2Img)이 담당. 제품 묘사는 `"the product"`로 일반화.
 - ⚠️ **shot_type이 제품샷(product still life, texture shot 등)이면 `key_objects` 무시** — 레퍼런스 이미지에서 추출된 오브젝트(dropper, bottle, container 등)는 참고 제품과 다를 수 있으므로 프롬프트에 포함하지 말 것. 조명·텍스처·배경·컬러만 반영.
+- ⚠️ **제품샷 배경은 `background` 분석값을 충실히 따를 것** — `background`가 단색·미니멀·빈 배경이면 그대로 유지하고 **기하학적 오브제·소품·패턴·잎·데코·추상 요소를 추가하지 말 것**(`geometric abstract elements`, `decorative props`, `abstract shapes`, `foliage` 등 금지). `source_specific`은 **무드 톤(컬러·조명 분위기) 참고로만** 쓰고, 거기 담긴 장식적 묘사(기하학적 추상·패브릭·소품 등)를 배경 오브제로 직역하지 말 것. 제품 정물의 배경은 비울수록 좋다.
 - ⚠️ **제품 제형(consistency)은 제품 형태(`product_name`·`category`)에 맞게만 묘사** — 텍스처/매크로 컷에서 제형을 다룰 때 아래 두 갈래로 갈린다(line 14의 "재질 어휘 금지"보다 이 규칙이 우선):
   - **비액상 = 스틱·밤·콤팩트·파우더·쿠션 등 고체**: `liquid`, `gel-like`, `serum`, `droplet`, `dropper`, `pipette`, `oil`, `cream texture`, `essence` 같은 액상·제형 어휘를 **절대 넣지 말 것**(넣으면 모델이 스포이드·세럼 방울 같은 없는 소품을 지어냄). 표면·마감 위주로: `smooth matte finish`, `velvety surface`, `soft powdery finish` 등.
   - **액상 = 세럼·오일·앰플·에센스·토너 등이고 텍스처/매크로 컷이면**: 제형을 **적극적으로 시각화**할 것 — `a glossy droplet of the serum with soft sheen`, `a glistening swatch of oil`, `smooth dewy gel texture` 등. 단 **스포이드·피펫 소품은 쓰지 말 것**. 액체는 ①제품에서 토출되거나(`a drop dispensed from the product`) ②표면·손등 위 스와치/방울로만 표현하며, 출처 규칙(아래)을 따른다.
