@@ -138,13 +138,19 @@ ${block("Pinterest", pin)}
 
   const base = data.generation_prompt.trim().replace(/[.,\s]+$/, "");
 
-  // 정물(product)이면 손/사람 단어를 negative에 노출하지 않는다(Gemini 역효과 방지).
-  // 대신 본문을 긍정형으로 보강해 "제품만 단독"을 강제하고, negative는 품질 결함만.
-  // 인물(model)이면 손 기형·신체 배치 negative를 유지, 손에 쥐는 구도면 한 손만 강제.
+  // 정물(product): 손/사람 단어를 negative에 노출하지 않고(Gemini 역효과 방지)
+  //   본문을 긍정형으로 보강해 "제품만 단독"을 강제. negative는 품질 결함만.
+  // 라이프스타일(lifestyle): 제품이 공간(화장대·욕실 등) 맥락에 놓인 컷. 인물·손 중심이
+  //   아니므로 손 negative는 빼되, isolated는 강제하지 않아 공간 맥락을 살린다.
+  // 인물(model): 손 기형·신체 배치 negative 유지, 손에 쥐는 구도면 한 손만 강제.
   const isProductStill = content.shot_direction === "product";
+  const isLifestyle = content.shot_direction === "lifestyle";
   let body, negatives;
   if (isProductStill) {
     body = `${base}, isolated product still life, product is the sole subject, clean empty surface`;
+    negatives = GENERAL_NEGATIVE;
+  } else if (isLifestyle) {
+    body = base;
     negatives = GENERAL_NEGATIVE;
   } else {
     body = base;

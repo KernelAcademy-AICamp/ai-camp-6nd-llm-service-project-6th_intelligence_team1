@@ -26,3 +26,13 @@
 **이슈 2 — 배경 패턴 (prompt.md)**: 레퍼런스 핀은 미니멀 단색인데 결과 배경에 기하학 링·나뭇잎 데코 생성. 원인은 analyze가 선별 1장(background="뉴트럴 그레이 단색")과 20장 종합(source_specific="기하학적 추상 이미지")을 함께 내보내고, prompt.md에 배경 충실/장식 금지 규칙이 없어 LLM이 source_specific 장식어를 "geometric abstract elements"로 직역.
 - 수정: prompt.md 제품샷 규칙에 "background 분석값 충실, 단색·미니멀이면 기하 오브제·소품·패턴·잎 추가 금지, source_specific은 무드 톤 참고로만" 추가.
 - 검증: R1 재실행 → geometric/abstract 어휘 0, 배경 단색.
+
+## 2026-06-29 (이어서) — R1·R3 수렴 해결: R3을 라이프스타일 컷으로
+
+R1·R3이 둘 다 shot_direction=product라 "흰 케이스 정면 단독 + 베이지 배경"으로 거의 동일. R3 extreme macro가 약하게 구현된 데다 제품이 고체 스틱이라 텍스처 매크로 소재도 빈약 → 차별 실패.
+
+**수정 (design.js, prompt.js)**:
+- design.js: SHOT_DIRECTION_BY_RANK[3] product→lifestyle, COMPOSITION_BY_RANK[3]을 "화장대·욕실 공간 + 창광 + 리추얼 맥락, 제품이 초점"으로. (search.md에 lifestyle shot_direction 이미 정의돼 쿼리는 자동 공간·리추얼 어휘로 전환.)
+- prompt.js: lifestyle 분기 추가 — 손 negative는 빼되(인물·손 중심 아님) isolated/clean empty surface는 강제 안 함(공간 맥락 보존). product/model 이분법을 3분기로.
+
+**검증**: 전체 재실행 → R3 쿼리 "vanity skincare ritual / bathroom aesthetic / morning glow routine"(앵커 유지), 이미지는 대리석 화장대·꽃·골드용기 라이프스타일. R1(빈 배경 정물)과 명확히 구분. 세 슬롯이 무드 통일 + 구성(정물/인물/공간) 차별 달성.

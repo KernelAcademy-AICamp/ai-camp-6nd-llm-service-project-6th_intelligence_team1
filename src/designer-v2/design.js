@@ -58,17 +58,17 @@ const brandName = matchData.brand_name;
 // 매칭가 recommendations → designer contents 변환 (rank 1~3, 오름차순)
 // 슬롯별 샷 방향 고정 — "model"(인물) / "product"(제품·제형). rank별로 지정.
 const SHOT_DIRECTION_BY_RANK = {
-  1: "product", // R1 — 제품·정물샷
-  2: "model",   // R2 — 인물·모델샷
-  3: "product", // R3 — 제품·제형 매크로
+  1: "product",   // R1 — 제품·정물샷 (top-down flat lay)
+  2: "model",     // R2 — 인물·모델샷
+  3: "lifestyle", // R3 — 공간·리추얼 라이프스타일 컷 (R1 정물과 차별)
 };
 const DEFAULT_SHOT_DIRECTION = "product";
 
-// 슬롯별 구도 키워드 — 같은 shot_direction이라도 구도가 겹치지 않도록 강제
+// 슬롯별 구도 키워드 — shot_direction이 겹쳐도 구도로 차별. R3은 공간 맥락으로 R1과 분리.
 const COMPOSITION_BY_RANK = {
   1: "top-down flat lay, overhead arrangement, neatly arranged composition", // R1 평면 배치
   2: "upper-body portrait close-up", // R2 인물 클로즈업
-  3: "extreme macro close-up, product texture and finish detail", // R3 초근접 매크로 (제형 종류는 제품에 맞게 — 액상 vs 고체)
+  3: "lifestyle scene, product placed on a vanity or bathroom shelf with soft natural window light, ambient skincare-ritual context, product remains the clear focal point", // R3 공간·리추얼 라이프스타일
 };
 
 const contents = matchData.recommendations
