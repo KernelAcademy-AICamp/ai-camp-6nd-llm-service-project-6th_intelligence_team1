@@ -39,6 +39,29 @@ const PINTEREST_ACTOR = "silentflow/pinterest-scraper-ppr";
 const PINTEREST_PER_QUERY = 7; // 3쿼리 × 7 = 21. cap 20 적용
 const MAX_PER_SOURCE = 20; // Pinterest 최대 (analyze에서 다 활용)
 
+// 톤앤매너 7종(매칭가 enum) → 핀터레스트 영문 무드 앵커(동의어 세트).
+// 트렌드 단어는 핀터레스트 무드 앵커로 약하지만 톤앤매너 어휘는 인덱스가 풍부·일관 →
+// 쿼리 맨 앞에 이 앵커를 고정해 무드를 통일하고, 트렌드는 변주로만 얹는다.
+// 세트가 3개인 이유: 쿼리 3개에 서로 다른 앵커를 회전시켜 동질화(다 비슷한 핀)를 막기 위함.
+const TONE_ANCHOR = {
+  "클린뷰티": ["clean beauty", "minimal natural", "pure skincare"],
+  "로맨틱·감성": ["romantic soft", "dreamy pastel", "soft feminine"],
+  "럭셔리·프리미엄": ["luxury premium", "elegant editorial", "high-end minimal"],
+  "키치·플레이풀": ["playful colorful", "kitsch pop", "vibrant fun"],
+  "더마·과학적": ["clinical", "derma cosmetic", "clean lab"],
+  "Z세대·트렌디": ["trendy y2k", "bold streetwear", "gen-z aesthetic"],
+  "비건": ["vegan botanical", "earthy natural", "organic green"],
+};
+
+// tone_and_manner(배열, 보통 1개)에서 첫 매칭 라벨의 앵커 세트 반환. 매핑 없으면 null(기존 동작 유지).
+function toneAnchors(tone_and_manner) {
+  const labels = Array.isArray(tone_and_manner) ? tone_and_manner : [];
+  for (const label of labels) {
+    if (TONE_ANCHOR[label]) return TONE_ANCHOR[label];
+  }
+  return null;
+}
+
 export async function generateQueriesAndSearch({ brand, content, usedQueries = [], shot_direction = null }) {
   // 1-1. LLM 호출 — 쿼리 생성
   const usedBlock = usedQueries.length
@@ -53,6 +76,12 @@ export async function generateQueriesAndSearch({ brand, content, usedQueries = [
     ? `\n## 구도 (필수 반영)\ncomposition: **${content.composition_hint}** — 이 구도에 맞는 레퍼런스가 걸리도록 쿼리에 구도 어휘를 반영하세요.`
     : "";
 
+  // 톤앤매너 → 영문 무드 앵커. 매핑되면 쿼리 맨 앞 고정 앵커로 강제, 안 되면 빈 블록(기존 동작).
+  const anchors = toneAnchors(brand.tone_and_manner);
+  const anchorBlock = anchors
+    ? `\n## 톤앤매너 무드 앵커 (최우선 — 모든 쿼리 맨 앞에 1개)\n핀터레스트 무드 앵커: ${anchors.map((a) => `"${a}"`).join(", ")}\n쿼리 3개 각각 **맨 앞에 위 앵커 중 서로 다른 1개**를 놓고, 나머지 단어로 변주(구도·오브제·트렌드)하세요. 트렌드 concept은 앵커를 밀어내지 말고 변주로만 얹으세요.`
+    : "";
+
   const userMessage = `브랜드와 트렌드 콘텐츠로 Pinterest 영문 쿼리 3개를 만드세요.
 
 ## 브랜드
@@ -63,7 +92,7 @@ export async function generateQueriesAndSearch({ brand, content, usedQueries = [
 
 ## 트렌드 콘텐츠
 - trend_name: ${content.trend_name}
-- concept: ${content.concept ?? "(없음)"}${content.mood ? `\n- mood: ${content.mood}` : ""}${content.key_message ? `\n- key_message: ${content.key_message}` : ""}${directionBlock}${compositionBlock}${usedBlock}
+- concept: ${content.concept ?? "(없음)"}${content.mood ? `\n- mood: ${content.mood}` : ""}${content.key_message ? `\n- key_message: ${content.key_message}` : ""}${anchorBlock}${directionBlock}${compositionBlock}${usedBlock}
 
 \`queries\` (Pinterest용) 3개 반환.`;
 
