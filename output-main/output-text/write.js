@@ -542,9 +542,9 @@ function legacyPasses(fits) {
 // LLM 없이 분석가가 만든 텍스트를 그대로 활용.
 function buildSummaryBullets(td) {
   if (!td) return [];
-  return [td.summary, td.meaning, td.status].filter(
-    (x) => typeof x === "string" && x.trim().length > 0,
-  );
+  return [td.summary, td.meaning, td.status]
+    .filter((x) => typeof x === "string" && x.trim().length > 0)
+    .map((x) => expandNumberAbbreviations(x));
 }
 
 // evidence: 분석가가 만든 원본을 v2 enum 형식으로 정규화
@@ -556,11 +556,12 @@ function buildEvidence(td) {
     .filter((e) => !isExcluded(e.source))
     .map((e) => {
       const src = normalizeSource(e.source);
-      const value = expandNPlus(e.value);
+      const metric = expandNumberAbbreviations(e.metric);
+      const value = expandNumberAbbreviations(expandNPlus(e.value));
       return {
         source: src,
         label: SOURCE_LABEL[src] ?? e.source,
-        description: [e.metric, e.period ? `(${e.period})` : null, value]
+        description: [metric, e.period ? `(${e.period})` : null, value]
           .filter(Boolean)
           .join(" "),
         url: e.url ?? sourceUrl(e.source) ?? null,
@@ -579,7 +580,7 @@ function buildEvidence(td) {
       const dedupKey = `${platform}|${keyword}`;
       if (seen.has(dedupKey)) return;
       seen.add(dedupKey);
-      const humanized = humanizeApifyEvidence(data.evidence);
+      const humanized = expandNumberAbbreviations(humanizeApifyEvidence(data.evidence));
       fromApify.push({
         source: platform,
         label: SOURCE_LABEL[platform] ?? platform,
@@ -807,6 +808,33 @@ function expandNPlus(text) {
   // 일반 "30+" — 한글·공백·구두점이 따라올 때만 (영문/숫자 다음은 안 건드림)
   result = result.replace(/(\d+)\+(?=\s|$|[,.!?…·)\]가-힣])/g, "$1건 이상");
   return result;
+}
+
+// LLM이 evidence.value·status에 약식 표기("2.1k", "120k", "1.5m")로 쓰면
+// 마케터에게 백엔드 식 노출됨 → 한국식 만·억 단위로 풀어 씀.
+//   "2.1k" → "2,100" (만 미만은 콤마)
+//   "80k"  → "8만"   "100k" → "10만"   "1.5m" → "150만"
+//   만 단위로 안 떨어지면 콤마 유지 ("1.25만"보다 "12,500"이 마케터에게 명확)
+// 영문 "k"가 한글·숫자·구두점 뒤에 단독 등장할 때만 (단어 일부 회피).
+function toKoreanUnit(n) {
+  if (n < 10000) return n.toLocaleString("ko-KR");
+  if (n < 100000000) {
+    if (n % 10000 === 0) return n / 10000 + "만";
+    return n.toLocaleString("ko-KR");
+  }
+  if (n % 100000000 === 0) return n / 100000000 + "억";
+  return n.toLocaleString("ko-KR");
+}
+function expandNumberAbbreviations(text) {
+  if (!text) return text;
+  return String(text).replace(
+    /(\d+(?:\.\d+)?)\s*([kKmM])(?=\s|[,.!?…·)\]가-힣]|$)/g,
+    (match, num, unit) => {
+      const n = parseFloat(num);
+      const multiplier = unit.toLowerCase() === "k" ? 1000 : 1000000;
+      return toKoreanUnit(Math.round(n * multiplier));
+    },
+  );
 }
 
 // ─── usage_plan 코드 템플릿 (LLM 호출 없음) ─────────────────────────
