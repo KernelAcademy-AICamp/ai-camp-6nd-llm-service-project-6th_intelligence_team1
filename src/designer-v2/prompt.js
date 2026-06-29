@@ -18,7 +18,10 @@ const promptSystemPrompt = readFileSync(
 // 입력: 매체별 분석 결과 배열 (Pinterest·Instagram·Mintoiro)
 // 출력: 코드가 `vertical 3:4 portrait composition. Avoid: ...` 자동 통합한 단일 텍스트
 
-const FIXED_NEGATIVE = [
+// 손·팔·손가락 기형 방지 — 인물/손이 등장하는 구도(model)에만 적용.
+// 제품 정물(product) 구도에 붙이면 "hand" 단어가 Gemini에 손을 유도하는 역효과 →
+// 손 없어야 할 컷에 손이 생긴다. 그래서 구도별로 분기해 붙인다.
+const HAND_NEGATIVE = [
   "duplicate hands",
   "duplicated hands",
   "two left hands",
@@ -44,12 +47,9 @@ const FIXED_NEGATIVE = [
   "disconnected arms",
   "arms not connected to body",
   "unnatural arm angle",
-  "text",
-  "watermark",
-  "low quality",
-  "blurry",
-  "oversaturated",
-  "deformed packaging",
+];
+// 제품을 신체에 얹는 부자연 배치 — 인물 구도(model)에서만 의미. 정물엔 신체가 없어 불필요.
+const PLACEMENT_NEGATIVE = [
   "product resting on the back of the hand",
   "product balanced flat on hand",
   "product lying flat on skin",
@@ -60,6 +60,15 @@ const FIXED_NEGATIVE = [
   "product balanced on décolletage",
   "product standing on clothing",
   "product propped on fabric",
+];
+// 구도 무관 공통 — 품질·패키지 결함.
+const GENERAL_NEGATIVE = [
+  "text",
+  "watermark",
+  "low quality",
+  "blurry",
+  "oversaturated",
+  "deformed packaging",
 ];
 // (A) 제품을 손에 쥐는 구도일 때만 추가 — 한 손만 보이게 강제.
 //     제품을 표면에 두는 (B) 구도는 양손 포즈가 정상이므로 적용 안 함.
@@ -128,11 +137,22 @@ ${block("Pinterest", pin)}
   if (!data) throw new Error("프롬프트 생성 실패 (LLM 응답 파싱 실패)");
 
   const base = data.generation_prompt.trim().replace(/[.,\s]+$/, "");
-  // 제품을 손에 쥐는 구도면 "한 손만" negative를 추가로 적용.
-  const negatives = GRIP_RE.test(base)
-    ? [...FIXED_NEGATIVE, ...GRIP_NEGATIVE]
-    : FIXED_NEGATIVE;
-  const final = `${base}, ${ASPECT_TAIL}. Avoid: ${negatives.join(", ")}.`;
+
+  // 정물(product)이면 손/사람 단어를 negative에 노출하지 않는다(Gemini 역효과 방지).
+  // 대신 본문을 긍정형으로 보강해 "제품만 단독"을 강제하고, negative는 품질 결함만.
+  // 인물(model)이면 손 기형·신체 배치 negative를 유지, 손에 쥐는 구도면 한 손만 강제.
+  const isProductStill = content.shot_direction === "product";
+  let body, negatives;
+  if (isProductStill) {
+    body = `${base}, isolated product still life, product is the sole subject, clean empty surface`;
+    negatives = GENERAL_NEGATIVE;
+  } else {
+    body = base;
+    negatives = GRIP_RE.test(base)
+      ? [...HAND_NEGATIVE, ...PLACEMENT_NEGATIVE, ...GENERAL_NEGATIVE, ...GRIP_NEGATIVE]
+      : [...HAND_NEGATIVE, ...PLACEMENT_NEGATIVE, ...GENERAL_NEGATIVE];
+  }
+  const final = `${body}, ${ASPECT_TAIL}. Avoid: ${negatives.join(", ")}.`;
 
   return {
     generation_prompt: final,
